@@ -1,0 +1,2 @@
+logs/*
+client/distributedGrepClient/testing/*.log
