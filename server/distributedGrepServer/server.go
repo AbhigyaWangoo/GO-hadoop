@@ -18,7 +18,7 @@ var CLIENT_TCP_PORT string = ":2345"
 var MAX_TCP_REQUEST_LEN int = 1024
 
 func InitializeServer() {
-	machine_file := "../../logs/machine.txt"
+	machine_file := "../logs/machine.txt"
 
 	content, read_err := os.ReadFile(machine_file)
 	if read_err != nil {
@@ -92,7 +92,7 @@ func HandleGrepRequest(addr string, conn net.Conn, machine_num int, _cache *Cach
 	var data string
 
 	if grepCacheOutput == nil {
-		exec_query := fmt.Sprintf("grep -rH %s ../../logs/machine.%d.log", GrepCommand, machine_num)
+		exec_query := fmt.Sprintf("grep -rH %s ../logs/machine.%d.log", GrepCommand, machine_num)
 		cmd := exec.Command("bash", "-c", exec_query)
 
 		var stdout, stderr bytes.Buffer
