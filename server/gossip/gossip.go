@@ -23,6 +23,8 @@ func InitializeGossip() {
 
 	// We can take older versions out, need to worry about false positives
 	// Index by hostname
+	utils.MembershipList = make(map[string]utils.Member)
+	utils.MembershipUpdateTimes = make(map[string]int64) // TODO is int64 ok for nanoseconds?
 
 	utils.MembershipList[utils.Ip] = newMember
 	utils.MembershipUpdateTimes[utils.Ip] = timestamp
@@ -35,8 +37,8 @@ func InitializeGossip() {
 	if utils.Ip != utils.INTRODUCER_IP {
 		PingServer(utils.INTRODUCER_IP)
 	}
-	go ListenForLists()
-	go SendMembershipList()
+	ListenForLists()
+	SendMembershipList()
 
 	<-ch // infinite waiting, todo is this the best way to do this?
 
