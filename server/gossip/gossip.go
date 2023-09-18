@@ -9,9 +9,9 @@ import (
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 )
 
-func main() {
+func InitializeGossip() {
 	utils.Ip = GetOutboundIP().String()
-	timestamp := time.Now().Unix()
+	timestamp := time.Now().UnixNano()
 
 	newMember := utils.Member{
 		Ip:                utils.Ip,
@@ -20,17 +20,26 @@ func main() {
 		HeartbeatCounter:  0,
 		State:             utils.ALIVE,
 	}
-	utils.MembershipList[utils.Ip] = make([]utils.Member, 1)
-	utils.MembershipList[utils.Ip] = append(utils.MembershipList[utils.Ip], newMember)
+
+	// We can take older versions out, need to worry about false positives
+	// Index by hostname
+
+	utils.MembershipList[utils.Ip] = newMember
 	utils.MembershipUpdateTimes[utils.Ip] = timestamp
 
-	// for member := range membershipList {
-	// 	fmt.Println("Member string: ", MemberPrint(membershipList[member]))
-	// }
+	for member := range utils.MembershipList {
+		fmt.Println("Member string: ", MemberPrint(utils.MembershipList[member]))
+	}
+	ch := make(chan struct{})
 
-	// PingIntroducer() I SHOULD ONLY RUN IF THIS MACHINE IS THE INTRODUCER MACHINE
-	// ListenForLists() // TODO RUN ME IN A THREAD
-	// go SendMembershipList()
+	if utils.Ip != utils.INTRODUCER_IP {
+		PingServer(utils.INTRODUCER_IP)
+	}
+	go ListenForLists()
+	go SendMembershipList()
+
+	<-ch // infinite waiting, todo is this the best way to do this?
+
 }
 
 func MemberPrint(m utils.Member) string {
@@ -51,15 +60,30 @@ func GetOutboundIP() net.IP {
 
 // Check if nodes need to be degraded from ALIVE or DOWN statuses
 func PruneNodeMembers() {
+
 	// Go through all currently stored nodes and check their lastUpdatedTimes
 	for nodeIp, lastUpdateTime := range utils.MembershipUpdateTimes {
+
 		// If the time elasped since last updated is greater than 6 (Tfail + Tcleanup), mark node as DOWN
-		if time.Now().Unix()-lastUpdateTime >= 6 {
-			utils.MembershipList[nodeIp][0].State = utils.DOWN
-		} else if time.Now().Unix()-lastUpdateTime >= 5 { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
-			utils.MembershipList[nodeIp][0].State = utils.SUSPECTED
+		if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail+utils.Tcleanup {
+			if node, ok := utils.MembershipList[nodeIp]; ok {
+				node.State = utils.DOWN
+				utils.MembershipList[nodeIp] = node
+			}
+		} else if time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
+			if node, ok := utils.MembershipList[nodeIp]; ok {
+				if utils.ENABLE_SUSPICION {
+					node.State = utils.SUSPECTED
+				} else {
+					node.State = utils.DOWN
+				}
+				utils.MembershipList[nodeIp] = node
+			}
 		} else {
-			utils.MembershipList[nodeIp][0].State = utils.ALIVE
+			if node, ok := utils.MembershipList[nodeIp]; ok {
+				node.State = utils.ALIVE
+				utils.MembershipList[nodeIp] = node
+			}
 		}
 	}
 }

@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 )
 
-func SerializeStruct(data map[string][]utils.Member) ([]byte, error) {
+func SerializeStruct(data map[string]utils.Member) ([]byte, error) {
 	var buf bytes.Buffer
 	encoder := gob.NewEncoder(&buf)
 
@@ -21,8 +22,8 @@ func SerializeStruct(data map[string][]utils.Member) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func PingIntroducer() {
-	serverAddr, err := net.ResolveUDPAddr("udp", utils.INTRODUCER_IP+":"+utils.GOSSIP_PORT)
+func PingServer(ServerIpAddr string) {
+	serverAddr, err := net.ResolveUDPAddr("udp", ServerIpAddr+":"+utils.GOSSIP_PORT)
 	if err != nil {
 		fmt.Println("Error resolving server address:", err)
 		os.Exit(1)
@@ -53,5 +54,17 @@ func PingIntroducer() {
 }
 
 func SendMembershipList() {
-	// IN A WHILE LOOP, CONSTANTLY SEND YOUR MEMBERSHIP LIST TO K RANDOM ADDRESSES IN THE SUBNET
+	// IN A WHILE LOOP, CONSTANTLY SEND YOUR MEMBERSHIP LIST TO K RANDOM ADDRESSES IN THE SUBNET. Need to increment hearbeats every time we send data
+
+	for {
+		// 1. Select k ip addrs, and send mlist to each
+		ipAddrs := utils.RandomKIpAddrs()
+		
+		for ipAddr := range ipAddrs {
+			PingServer(ipAddrs[ipAddr])
+		}
+
+		// 2. Sleep for x nanoseconds
+		time.Sleep((time.Second / 2))
+	}
 }
