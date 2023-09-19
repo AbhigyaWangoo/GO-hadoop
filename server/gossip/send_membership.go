@@ -50,7 +50,7 @@ func PingServer(ServerIpAddr string) {
 		os.Exit(1)
 	}
 
-	fmt.Println("Data sent to", serverAddr)
+	// fmt.Println("Data sent to", serverAddr)
 }
 
 func SendMembershipList() {

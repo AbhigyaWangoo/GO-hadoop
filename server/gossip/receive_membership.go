@@ -26,6 +26,7 @@ func DeserializeStruct(serializedData []byte) (map[string]utils.Member, error) {
 // With merge, only need to check if incomming member info has more recent data. If local member info has more data, changes will be reflected in push
 func Merge(NewMemberInfo map[string]utils.Member) {
 
+
 	// Iterate through the incoming membership list
 	for newMemberIp, newMemberVersion := range NewMemberInfo {
 
@@ -92,7 +93,7 @@ func ListenForLists() {
 	buffer := make([]byte, utils.MLIST_SIZE)
 	for {
 		// Read data from the UDP connection
-		n, addr, err := udpConn.ReadFromUDP(buffer)
+		n, _, err := udpConn.ReadFromUDP(buffer)
 		if err != nil {
 			fmt.Println("Error reading from UDP connection:", err)
 			continue
@@ -104,8 +105,12 @@ func ListenForLists() {
 		if errDeseriealize != nil {
 			fmt.Println("Inbound data was not a membership list: ", errDeseriealize)
 		} else {
-			go Merge(newlist)
-			fmt.Printf("Received data from %s: %s\n", addr, data)
+			Merge(newlist)
+			
+			// for member := range utils.MembershipList {
+			// 	fmt.Println("Member string: ", MemberPrint(utils.MembershipList[member]))
+			// }
+			fmt.Println("Member length: ", len(utils.MembershipList))
 		}
 	}
 }
