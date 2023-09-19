@@ -8,13 +8,13 @@ import (
 	"os"
 	"time"
 
+	cmap "github.com/orcaman/concurrent-map/v2"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 )
 
-func SerializeStruct(data map[string]utils.Member) ([]byte, error) {
+func SerializeStruct(data cmap.ConcurrentMap[string, utils.Member]) ([]byte, error) {
 	var buf bytes.Buffer
 	encoder := gob.NewEncoder(&buf)
-
 	if err := encoder.Encode(data); err != nil {
 		return nil, err
 	}
@@ -37,13 +37,13 @@ func PingServer(ServerIpAddr string) {
 	}
 	defer conn.Close()
 
-	if node, ok := utils.MembershipList[utils.Ip]; ok {
+	if node, ok := utils.MembershipMap.Get(utils.Ip); ok {
 		node.HeartbeatCounter += 1
-		utils.MembershipList[utils.Ip] = node
+		utils.MembershipMap.Set(utils.Ip, node)
 	}
 
 	// Data to send
-	message, errDeseriealize := SerializeStruct(utils.MembershipList)
+	message, errDeseriealize := SerializeStruct(utils.MembershipMap)
 	if errDeseriealize != nil {
 		panic(err)
 	}

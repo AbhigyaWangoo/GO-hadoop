@@ -7,44 +7,47 @@ import (
 	"net"
 	"os"
 	"time"
-	"github.com/orcman/concurrent-map/v2"
 
+	cmap "github.com/orcaman/concurrent-map/v2"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 )
 
-func DeserializeStruct(serializedData []byte) (map[string]utils.Member, error) {
-	var data map[string]utils.Member
+func DeserializeStruct(serializedData []byte) (cmap.ConcurrentMap[string, utils.Member], error) {
+	var data cmap.ConcurrentMap[string, utils.Member]
 	buf := bytes.NewBuffer(serializedData)
 
 	decoder := gob.NewDecoder(buf)
 	if err := decoder.Decode(&data); err != nil {
-		return nil, err
+		var e cmap.ConcurrentMap[string, utils.Member]
+		return e, err
 	}
 
 	return data, nil
 }
 
 // With merge, only need to check if incomming member info has more recent data. If local member info has more data, changes will be reflected in push
-func Merge(NewMemberInfo map[string]utils.Member) {
+func Merge(NewMemberInfo cmap.ConcurrentMap[string, utils.Member]) {
 
 	// Iterate through the incoming membership list
-	for newMemberIp, newMemberVersion := range NewMemberInfo {
-
+	for info := range NewMemberInfo.Iter() {
+		newMemberIp, newMemberVersion := info.Key, info.Val
 		// Check if the a node in the current membership list matches a found node in the incoming membership list
-		if localMemberVersion, exists := utils.MembershipList[newMemberIp]; exists {
+		if localMemberVersion, exists := utils.MembershipMap.Get(newMemberIp); exists {
 
 			// Call update membership to get most up to date information on node
 			upToDateMember := UpdateMembership(localMemberVersion, newMemberVersion)
 
 			// Set current membership list to most updated node membership
-			utils.MembershipList[newMemberIp] = upToDateMember
+			utils.MembershipMap.Set(newMemberIp, upToDateMember)
 		} else { // If its a new node not currently in the membership list
 			// Update the local membership list's version history and update time
-			utils.MembershipList[newMemberIp] = newMemberVersion
-			utils.MembershipUpdateTimes[newMemberIp] = time.Now().Unix()
+			utils.MembershipMap.Set(newMemberIp, newMemberVersion)
+			utils.MembershipUpdateTimes.Set(newMemberIp, time.Now().Unix())
 		}
 
-		fmt.Printf("Heartbeat on ip: %s is %d\n", newMemberIp, utils.MembershipList[newMemberIp].HeartbeatCounter)
+		if member, ok := utils.MembershipMap.Get(newMemberIp); ok {
+			fmt.Printf("Heartbeat on ip: %s is %d\n", newMemberIp, member.HeartbeatCounter)
+		}
 	}
 
 }
@@ -60,13 +63,13 @@ func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Me
 			localMember.HeartbeatCounter = upToDateMember.HeartbeatCounter
 			localMember.State = utils.ALIVE
 			// Set that the node has been updated at the most recent local time
-			utils.MembershipUpdateTimes[localMember.Ip] = time.Now().Unix()
+			utils.MembershipUpdateTimes.Set(localMember.Ip, time.Now().Unix())
 		}
 		// Return the updated local member and that a new node doesn't needed to be added to the version history
 		return localMember
 	} else if localMember.CreationTimestamp < newMember.CreationTimestamp { // If the local version is lower than the new version, return that the new member needs to be added to the local version history
 		// Update the local update time for the node
-		utils.MembershipUpdateTimes[localMember.Ip] = time.Now().Unix()
+		utils.MembershipUpdateTimes.Set(localMember.Ip, time.Now().Unix())
 		newMember.State = utils.ALIVE
 		// Return that the incoming node is a new node version
 		return newMember
