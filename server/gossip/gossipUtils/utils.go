@@ -3,6 +3,8 @@ package gossiputils
 import (
 	"math/rand"
 	"time"
+
+	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 const (
@@ -30,8 +32,8 @@ const GOSSIP_SEND_T int64 = 2
 const Tfail = 5 * 1e9    // 5 seconds * 10^9 nanoseconds
 const Tcleanup = 1 * 1e9 // 1 second * 10^9 nanoseconds
 
-var MembershipList map[string]Member
-var MembershipUpdateTimes map[string]int64
+var MembershipMap cmap.ConcurrentMap[string, Member]
+var MembershipUpdateTimes cmap.ConcurrentMap[string, int64]
 var Ip string
 
 // Returns most up to date member and if any update occurs and if any update needs to be made (members have different heartbeats)
@@ -53,17 +55,15 @@ func Max(a int, b int) int {
 func RandomKIpAddrs() []string {
 	rand.Seed(time.Now().UnixNano())
 
-	keys := make([]string, 0, len(MembershipList))
-	for key := range MembershipList {
-		keys = append(keys, key)
-	}
+	keys := MembershipMap.Keys()
+	// keys := make([]string, 0, len(MembershipList.Items()))
 
-	if len(MembershipList) < GOSSIP_K {
+	if len(keys) < GOSSIP_K {
 		return keys
 	}
 
 	min := 0
-	max := len(MembershipList) - 1
+	max := len(keys) - 1
 
 	// Generate k random IP addrs from membership list
 	rv := make([]string, GOSSIP_K)

@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	cmap "github.com/orcaman/concurrent-map/v2"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 )
 
@@ -23,20 +24,22 @@ func InitializeGossip() {
 
 	// We can take older versions out, need to worry about false positives
 	// Index by hostname
-	utils.MembershipList = make(map[string]utils.Member)
-	utils.MembershipUpdateTimes = make(map[string]int64) // TODO is int64 ok for nanoseconds?
+	utils.MembershipMap = cmap.New[utils.Member]()
+	utils.MembershipUpdateTimes = cmap.New[int64]() // TODO is int64 ok for nanoseconds?
 
-	utils.MembershipList[utils.Ip] = newMember
-	utils.MembershipUpdateTimes[utils.Ip] = timestamp
+	utils.MembershipMap.Set(utils.Ip, newMember)
+	utils.MembershipUpdateTimes.Set(utils.Ip, timestamp)
 
-	for member := range utils.MembershipList {
-		fmt.Println("Member string: ", MemberPrint(utils.MembershipList[member]))
+	for info := range utils.MembershipMap.Iter() {
+		if member, ok := utils.MembershipMap.Get(info.Key); ok {
+			fmt.Println("Member string: ", MemberPrint(member))
+		}
 	}
 
 	if utils.Ip != utils.INTRODUCER_IP {
 		PingServer(utils.INTRODUCER_IP)
 	}
-	
+
 	go SendMembershipList()
 	ListenForLists()
 }
@@ -61,27 +64,27 @@ func GetOutboundIP() net.IP {
 func PruneNodeMembers() {
 
 	// Go through all currently stored nodes and check their lastUpdatedTimes
-	for nodeIp, lastUpdateTime := range utils.MembershipUpdateTimes {
-
+	for info := range utils.MembershipUpdateTimes.Iter() {
+		nodeIp, lastUpdateTime := info.Key, info.Val
 		// If the time elasped since last updated is greater than 6 (Tfail + Tcleanup), mark node as DOWN
 		if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail+utils.Tcleanup {
-			if node, ok := utils.MembershipList[nodeIp]; ok {
+			if node, ok := utils.MembershipMap.Get(nodeIp); ok {
 				node.State = utils.DOWN
-				utils.MembershipList[nodeIp] = node
+				utils.MembershipMap.Set(nodeIp, node)
 			}
 		} else if time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
-			if node, ok := utils.MembershipList[nodeIp]; ok {
+			if node, ok := utils.MembershipMap.Get(nodeIp); ok {
 				if utils.ENABLE_SUSPICION {
 					node.State = utils.SUSPECTED
 				} else {
 					node.State = utils.DOWN
 				}
-				utils.MembershipList[nodeIp] = node
+				utils.MembershipMap.Set(nodeIp, node)
 			}
 		} else {
-			if node, ok := utils.MembershipList[nodeIp]; ok {
+			if node, ok := utils.MembershipMap.Get(nodeIp); ok {
 				node.State = utils.ALIVE
-				utils.MembershipList[nodeIp] = node
+				utils.MembershipMap.Set(nodeIp, node)
 			}
 		}
 	}
