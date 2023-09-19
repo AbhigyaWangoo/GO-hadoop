@@ -32,16 +32,13 @@ func InitializeGossip() {
 	for member := range utils.MembershipList {
 		fmt.Println("Member string: ", MemberPrint(utils.MembershipList[member]))
 	}
-	ch := make(chan struct{})
 
 	if utils.Ip != utils.INTRODUCER_IP {
 		PingServer(utils.INTRODUCER_IP)
 	}
+	
+	go SendMembershipList()
 	ListenForLists()
-	SendMembershipList()
-
-	<-ch // infinite waiting, todo is this the best way to do this?
-
 }
 
 func MemberPrint(m utils.Member) string {

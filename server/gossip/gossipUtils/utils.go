@@ -65,7 +65,12 @@ func RandomKIpAddrs() []string {
 	rv := make([]string, GOSSIP_K)
 	for i := 0; i < GOSSIP_K; i++ {
 		idx := rand.Intn(max-min+1) + min
-		rv = append(rv, keys[idx])
+		
+		if keys[idx] == Ip {
+			i--;
+		} else {
+			rv = append(rv, keys[idx])
+		}
 	}
 
 	return rv
