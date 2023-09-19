@@ -73,30 +73,28 @@ func PruneNodeMembers() {
 			}
 
 			// If the time elasped since last updated is greater than 6 (Tfail + Tcleanup), mark node as DOWN
-			if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail+utils.Tcleanup {
-				if node, ok := utils.MembershipMap.Get(nodeIp); ok {
-					node.State = utils.DOWN
-					utils.MembershipMap.Set(nodeIp, node)
-				}
-			} else if time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
-				if node, ok := utils.MembershipMap.Get(nodeIp); ok {
-					if utils.ENABLE_SUSPICION {
-						node.State = utils.SUSPECTED
-					} else {
-						if node.State != utils.DOWN {
-							fmt.Printf("SETTING NODE WITH IP %s AS DOWN", nodeIp)
-						}
-						
-						node.State = utils.DOWN
+			if node, ok := utils.MembershipMap.Get(nodeIp); ok {
+				if time.Now().UnixNano()-lastUpdateTime >= utils.Tfail+utils.Tcleanup {
+					if node.State != utils.DOWN {
+						fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 79\n", nodeIp) // todo send this to file
 					}
-					utils.MembershipMap.Set(nodeIp, node)
-				}
-			} else {
-				if node, ok := utils.MembershipMap.Get(nodeIp); ok {
+					node.State = utils.DOWN
+				} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
+					if node.State != utils.SUSPECTED {
+						fmt.Printf("SETTING NODE WITH IP %s AS SUS ON LINE 82\n", nodeIp) // todo send this to file
+					}
+					node.State = utils.SUSPECTED
+				} else if !utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail {
+					if node.State != utils.DOWN {
+						fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 85\n", nodeIp) // todo send this to file
+					}
+					node.State = utils.DOWN
+				} else {
 					node.State = utils.ALIVE
-					utils.MembershipMap.Set(nodeIp, node)
 				}
+				utils.MembershipMap.Set(nodeIp, node)
 			}
+
 		}
 	}
 }
