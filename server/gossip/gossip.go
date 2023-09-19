@@ -41,6 +41,7 @@ func InitializeGossip() {
 	}
 
 	go SendMembershipList()
+	go PruneNodeMembers()
 	ListenForLists()
 }
 
@@ -62,29 +63,39 @@ func GetOutboundIP() net.IP {
 
 // Check if nodes need to be degraded from ALIVE or DOWN statuses
 func PruneNodeMembers() {
+	for {
+		// Go through all currently stored nodes and check their lastUpdatedTimes
+		for info := range utils.MembershipUpdateTimes.IterBuffered() {
+			nodeIp, lastUpdateTime := info.Key, info.Val
 
-	// Go through all currently stored nodes and check their lastUpdatedTimes
-	for info := range utils.MembershipUpdateTimes.Iter() {
-		nodeIp, lastUpdateTime := info.Key, info.Val
-		// If the time elasped since last updated is greater than 6 (Tfail + Tcleanup), mark node as DOWN
-		if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail+utils.Tcleanup {
-			if node, ok := utils.MembershipMap.Get(nodeIp); ok {
-				node.State = utils.DOWN
-				utils.MembershipMap.Set(nodeIp, node)
+			if nodeIp == utils.Ip {
+				continue
 			}
-		} else if time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
-			if node, ok := utils.MembershipMap.Get(nodeIp); ok {
-				if utils.ENABLE_SUSPICION {
-					node.State = utils.SUSPECTED
-				} else {
+
+			// If the time elasped since last updated is greater than 6 (Tfail + Tcleanup), mark node as DOWN
+			if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail+utils.Tcleanup {
+				if node, ok := utils.MembershipMap.Get(nodeIp); ok {
 					node.State = utils.DOWN
+					utils.MembershipMap.Set(nodeIp, node)
 				}
-				utils.MembershipMap.Set(nodeIp, node)
-			}
-		} else {
-			if node, ok := utils.MembershipMap.Get(nodeIp); ok {
-				node.State = utils.ALIVE
-				utils.MembershipMap.Set(nodeIp, node)
+			} else if time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
+				if node, ok := utils.MembershipMap.Get(nodeIp); ok {
+					if utils.ENABLE_SUSPICION {
+						node.State = utils.SUSPECTED
+					} else {
+						if node.State != utils.DOWN {
+							fmt.Printf("SETTING NODE WITH IP %s AS DOWN", nodeIp)
+						}
+						
+						node.State = utils.DOWN
+					}
+					utils.MembershipMap.Set(nodeIp, node)
+				}
+			} else {
+				if node, ok := utils.MembershipMap.Get(nodeIp); ok {
+					node.State = utils.ALIVE
+					utils.MembershipMap.Set(nodeIp, node)
+				}
 			}
 		}
 	}

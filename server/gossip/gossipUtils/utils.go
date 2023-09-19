@@ -29,8 +29,8 @@ const ENABLE_SUSPICION bool = false
 const GOSSIP_K int = 2
 const GOSSIP_SEND_T int64 = 2
 
-const Tfail = 5 * 1e9    // 5 seconds * 10^9 nanoseconds
-const Tcleanup = 1 * 1e9 // 1 second * 10^9 nanoseconds
+const Tfail int64 = 5 * 1e9    // 5 seconds * 10^9 nanoseconds
+const Tcleanup int64 = 1 * 1e9 // 1 second * 10^9 nanoseconds
 
 var MembershipMap cmap.ConcurrentMap[string, Member]
 var MembershipUpdateTimes cmap.ConcurrentMap[string, int64]
@@ -70,7 +70,12 @@ func RandomKIpAddrs() []string {
 	for i := 0; i < GOSSIP_K; i++ {
 		idx := rand.Intn(max-min+1) + min
 
-		if keys[idx] == Ip {
+		node, exists := MembershipMap.Get(keys[idx]) 
+		if !exists {
+			panic("Race condition in random k selection")
+		}
+		
+		if keys[idx] == Ip || node.State == DOWN {
 			i--
 		} else {
 			rv = append(rv, keys[idx])
