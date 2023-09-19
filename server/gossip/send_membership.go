@@ -1,8 +1,6 @@
 package gossip
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"net"
 	"os"
@@ -13,13 +11,15 @@ import (
 )
 
 func SerializeStruct(data cmap.ConcurrentMap[string, utils.Member]) ([]byte, error) {
-	var buf bytes.Buffer
-	encoder := gob.NewEncoder(&buf)
-	if err := encoder.Encode(data); err != nil {
-		return nil, err
-	}
+	// var buf bytes.Buffer
+	// encoder := gob.NewEncoder(&buf)
+	json, errMarshal := data.MarshalJSON()
 
-	return buf.Bytes(), nil
+	// if err := encoder.Encode(json); err != nil {
+	// return nil, err
+	// }
+
+	return json, errMarshal
 }
 
 func PingServer(ServerIpAddr string) {
