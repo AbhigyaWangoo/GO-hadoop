@@ -50,7 +50,7 @@ func PingServer(ServerIpAddr string) {
 		os.Exit(1)
 	}
 
-	// fmt.Println("Data sent to", serverAddr)
+	fmt.Println("Data sent to", serverAddr)
 }
 
 func SendMembershipList() {
@@ -61,10 +61,13 @@ func SendMembershipList() {
 		ipAddrs := utils.RandomKIpAddrs()
 		
 		for ipAddr := range ipAddrs {
-			PingServer(ipAddrs[ipAddr])
+			if ipAddrs[ipAddr] != utils.Ip {
+				PingServer(ipAddrs[ipAddr])
+			}
 		}
 
 		// 2. Sleep for x nanoseconds
 		time.Sleep((time.Second / 2))
+		fmt.Println("am i running")
 	}
 }
