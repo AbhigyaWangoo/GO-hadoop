@@ -26,7 +26,6 @@ func DeserializeStruct(serializedData []byte) (map[string]utils.Member, error) {
 // With merge, only need to check if incomming member info has more recent data. If local member info has more data, changes will be reflected in push
 func Merge(NewMemberInfo map[string]utils.Member) {
 
-
 	// Iterate through the incoming membership list
 	for newMemberIp, newMemberVersion := range NewMemberInfo {
 
@@ -43,6 +42,8 @@ func Merge(NewMemberInfo map[string]utils.Member) {
 			utils.MembershipList[newMemberIp] = newMemberVersion
 			utils.MembershipUpdateTimes[newMemberIp] = time.Now().Unix()
 		}
+
+		fmt.Printf("Heartbeat on ip: %s is %d\n", newMemberIp, utils.MembershipList[newMemberIp].HeartbeatCounter)
 	}
 
 }
@@ -106,11 +107,11 @@ func ListenForLists() {
 			fmt.Println("Inbound data was not a membership list: ", errDeseriealize)
 		} else {
 			Merge(newlist)
-			
+
 			// for member := range utils.MembershipList {
 			// 	fmt.Println("Member string: ", MemberPrint(utils.MembershipList[member]))
 			// }
-			fmt.Println("Member length: ", len(utils.MembershipList))
+			// fmt.Println("Member length: ", len(utils.MembershipList))
 		}
 	}
 }
