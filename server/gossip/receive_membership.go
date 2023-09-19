@@ -1,8 +1,6 @@
 package gossip
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"net"
 	"os"
@@ -13,16 +11,11 @@ import (
 )
 
 func DeserializeStruct(serializedData []byte) (cmap.ConcurrentMap[string, utils.Member], error) {
-	var data cmap.ConcurrentMap[string, utils.Member]
-	buf := bytes.NewBuffer(serializedData)
+	var data cmap.ConcurrentMap[string, utils.Member] = cmap.New[utils.Member]()
 
-	decoder := gob.NewDecoder(buf)
-	if err := decoder.Decode(&data); err != nil {
-		var e cmap.ConcurrentMap[string, utils.Member]
-		return e, err
-	}
+	err := data.UnmarshalJSON(serializedData)
 
-	return data, nil
+	return data, err
 }
 
 // With merge, only need to check if incomming member info has more recent data. If local member info has more data, changes will be reflected in push
