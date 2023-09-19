@@ -37,6 +37,11 @@ func PingServer(ServerIpAddr string) {
 	}
 	defer conn.Close()
 
+	if node, ok := utils.MembershipList[utils.Ip]; ok {
+		node.HeartbeatCounter += 1
+		utils.MembershipList[utils.Ip] = node
+	}
+
 	// Data to send
 	message, errDeseriealize := SerializeStruct(utils.MembershipList)
 	if errDeseriealize != nil {
@@ -59,7 +64,7 @@ func SendMembershipList() {
 	for {
 		// 1. Select k ip addrs, and send mlist to each
 		ipAddrs := utils.RandomKIpAddrs()
-		
+
 		for ipAddr := range ipAddrs {
 			if ipAddrs[ipAddr] != utils.Ip {
 				PingServer(ipAddrs[ipAddr])
@@ -68,6 +73,5 @@ func SendMembershipList() {
 
 		// 2. Sleep for x nanoseconds
 		time.Sleep((time.Second / 2))
-		fmt.Println("am i running")
 	}
 }
