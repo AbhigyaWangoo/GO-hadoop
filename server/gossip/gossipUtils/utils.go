@@ -24,7 +24,7 @@ type Member struct {
 const INTRODUCER_IP string = "172.22.158.162"
 const GOSSIP_PORT string = "9998"
 const MLIST_SIZE int = 20480
-const ENABLE_SUSPICION bool = false
+const ENABLE_SUSPICION bool = true
 
 const GOSSIP_K int = 2
 const GOSSIP_SEND_T int64 = 2
