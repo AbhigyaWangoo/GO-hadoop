@@ -39,6 +39,7 @@ func PingServer(ServerIpAddr string) {
 
 	if node, ok := utils.MembershipMap.Get(utils.Ip); ok {
 		node.HeartbeatCounter += 1
+		node.State = utils.ALIVE
 		utils.MembershipMap.Set(utils.Ip, node)
 	}
 
