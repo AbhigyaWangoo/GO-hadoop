@@ -29,7 +29,7 @@ func Merge(NewMemberInfo cmap.ConcurrentMap[string, utils.Member]) {
 
 			// Call update membership to get most up to date information on node
 			upToDateMember := UpdateMembership(localMemberVersion, newMemberVersion)
-
+			
 			// Set current membership list to most updated node membership
 			utils.MembershipMap.Set(newMemberIp, upToDateMember)
 		} else { // If its a new node not currently in the membership list
@@ -49,14 +49,23 @@ func Merge(NewMemberInfo cmap.ConcurrentMap[string, utils.Member]) {
 func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Member {
 	// If both members are the same version of a node
 	if localMember.CreationTimestamp == newMember.CreationTimestamp {
+		if localMember.State == FAILED || newMember.State == FAILED {
+			localMember.State == FAILED
+			return localMember
+		}
+
 		// Find the current most up to date member by heartbeats
-		upToDateMember := utils.CurrentMember(localMember, newMember)
-		// If that member isn't the local member, update the local member
-		if localMember != upToDateMember {
+		upToDateMember, sameHeartbeatCount := utils.CurrentMember(localMember, newMember)
+		if sameHeartbeatCount {
+			localMember.State = utils.Max(localMember.State, newMember.State)
+		} else {
 			localMember.HeartbeatCounter = upToDateMember.HeartbeatCounter
-			localMember.State = utils.ALIVE
-			// Set that the node has been updated at the most recent local time
-			utils.MembershipUpdateTimes.Set(localMember.Ip, time.Now().UnixNano())
+			localMember.State = upToDateMember.State
+			// If the newest isn't the local member, update the local member
+			if localMember != upToDateMember && upToDateMember.State == utils.ALIVE {
+				// Set that the node has been updated at the most recent local time
+				utils.MembershipUpdateTimes.Set(localMember.Ip, time.Now().UnixNano())
+			}
 		}
 		// Return the updated local member and that a new node doesn't needed to be added to the version history
 		return localMember
