@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -49,6 +50,13 @@ func main() {
 			if selfMember, ok := utils.MembershipMap.Get(utils.Ip); ok {
 				fmt.Printf("%d\n", selfMember.CreationTimestamp)
 			}
+		} else if strings.Contains(command, "leave") {
+			if member, ok := utils.MembershipMap.Get(utils.Ip); ok {
+				member.State = utils.LEFT
+				// gossip.SendMembershipList()
+				time.Sleep(time.Second)
+			}
+			os.Exit(0)
 		}
 	}
 }

@@ -18,12 +18,15 @@ func DeserializeStruct(serializedData []byte) (cmap.ConcurrentMap[string, utils.
 	return data, err
 }
 
-// With merge, only need to check if incomming member info has more recent data. If local member info has more data, changes will be reflected in push
+// With merge, only need to check if incoming member info has more recent data. If local member info has more data, changes will be reflected in push
 func Merge(NewMemberInfo cmap.ConcurrentMap[string, utils.Member]) {
 
 	// Iterate through the incoming membership list
-	for info := range NewMemberInfo.Iter() {
+	for info := range NewMemberInfo.IterBuffered() {
 		newMemberIp, newMemberVersion := info.Key, info.Val
+		if newMemberIp == utils.Ip {
+			continue
+		}
 		// Check if the a node in the current membership list matches a found node in the incoming membership list
 		if localMemberVersion, exists := utils.MembershipMap.Get(newMemberIp); exists {
 
@@ -47,10 +50,20 @@ func Merge(NewMemberInfo cmap.ConcurrentMap[string, utils.Member]) {
 
 // Returns updated member and if updated member needs to be added to list. Member creation timestamp created on originating machine
 func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Member {
+
 	// If both members are the same version of a node
 	if localMember.CreationTimestamp == newMember.CreationTimestamp {
 		if localMember.State == utils.DOWN || newMember.State == utils.DOWN {
 			localMember.State = utils.DOWN
+			return localMember
+		}
+
+		if localMember.State == utils.LEFT || newMember.State == utils.LEFT {
+			// If the local member still thinks a node is there, but a node with more recent history knows a node left, log that the node left
+			if localMember.State != utils.LEFT {
+				fmt.Printf("SETTING NODE %s AS LEFT", localMember.Ip)
+			}
+			localMember.State = utils.LEFT
 			return localMember
 		}
 
@@ -71,8 +84,9 @@ func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Me
 		return localMember
 	} else if localMember.CreationTimestamp < newMember.CreationTimestamp { // If the local version is lower than the new version, return that the new member needs to be added to the local version history
 		// Update the local update time for the node
-		utils.MembershipUpdateTimes.Set(localMember.Ip, time.Now().UnixNano())
-		newMember.State = utils.ALIVE
+		if newMember.State == utils.ALIVE {
+			utils.MembershipUpdateTimes.Set(localMember.Ip, time.Now().UnixNano())
+		}
 		// Return that the incoming node is a new node version
 		return newMember
 	}
