@@ -37,12 +37,14 @@ var MembershipUpdateTimes cmap.ConcurrentMap[string, int64]
 var Ip string
 var MessageDropRate float32 = 0.5
 
-// Returns most up to date member and if any update occurs and if any update needs to be made (members have different heartbeats)
-func CurrentMember(LocalMember Member, NewMember Member) Member {
+// Returns most up to date member and if any update occurs and if any update needs to be made (if members have different heartbeats)
+func CurrentMember(LocalMember Member, NewMember Member) (Member, bool) {
 	if LocalMember.HeartbeatCounter < NewMember.HeartbeatCounter {
-		return NewMember
+		return NewMember, false
+	} else if LocalMember.HeartbeatCounter > NewMember.HeartbeatCounter {
+		return LocalMember, false
 	}
-	return LocalMember
+	return nil, true
 }
 
 // Returns max between two ints
