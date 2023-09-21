@@ -37,7 +37,7 @@ func PingServer(ServerIpAddr string) {
 	}
 	defer conn.Close()
 
-	if node, ok := utils.MembershipMap.Get(utils.Ip); ok {
+	if node, ok := utils.MembershipMap.Get(utils.Ip); ok && node.State != utils.LEFT {
 		node.HeartbeatCounter += 1
 		node.State = utils.ALIVE
 		utils.MembershipMap.Set(utils.Ip, node)

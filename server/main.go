@@ -53,6 +53,7 @@ func main() {
 		} else if strings.Contains(command, "leave") {
 			if member, ok := utils.MembershipMap.Get(utils.Ip); ok {
 				member.State = utils.LEFT
+				utils.MembershipMap.Set(utils.Ip, member)
 				// gossip.SendMembershipList()
 				time.Sleep(time.Second)
 			}
