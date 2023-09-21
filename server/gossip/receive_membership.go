@@ -29,7 +29,7 @@ func Merge(NewMemberInfo cmap.ConcurrentMap[string, utils.Member]) {
 
 			// Call update membership to get most up to date information on node
 			upToDateMember := UpdateMembership(localMemberVersion, newMemberVersion)
-			
+
 			// Set current membership list to most updated node membership
 			utils.MembershipMap.Set(newMemberIp, upToDateMember)
 		} else { // If its a new node not currently in the membership list
@@ -49,8 +49,8 @@ func Merge(NewMemberInfo cmap.ConcurrentMap[string, utils.Member]) {
 func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Member {
 	// If both members are the same version of a node
 	if localMember.CreationTimestamp == newMember.CreationTimestamp {
-		if localMember.State == FAILED || newMember.State == FAILED {
-			localMember.State == FAILED
+		if localMember.State == utils.DOWN || newMember.State == utils.DOWN {
+			localMember.State = utils.DOWN
 			return localMember
 		}
 
