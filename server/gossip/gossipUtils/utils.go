@@ -11,6 +11,7 @@ const (
 	ALIVE     = 0
 	SUSPECTED = 1
 	DOWN      = 2
+	LEFT      = 3
 )
 
 type Member struct {
@@ -86,12 +87,12 @@ func RandomKIpAddrs() []string {
 	for i := 0; i < GOSSIP_K; i++ {
 		idx := rand.Intn(max-min+1) + min
 
-		node, exists := MembershipMap.Get(keys[idx]) 
+		node, exists := MembershipMap.Get(keys[idx])
 		if !exists {
 			panic("Race condition in random k selection")
 		}
-		
-		if keys[idx] == Ip || node.State == DOWN {
+
+		if keys[idx] == Ip || node.State == DOWN || node.State == LEFT {
 			i--
 		} else {
 			rv = append(rv, keys[idx])

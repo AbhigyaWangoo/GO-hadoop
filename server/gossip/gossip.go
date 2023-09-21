@@ -74,6 +74,10 @@ func PruneNodeMembers() {
 
 			// If the time elasped since last updated is greater than 6 (Tfail + Tcleanup), mark node as DOWN
 			if node, ok := utils.MembershipMap.Get(nodeIp); ok {
+				// If node has left the network, don't do any additional pruning
+				if node.State == utils.LEFT {
+					continue
+				}
 				if time.Now().UnixNano()-lastUpdateTime >= utils.Tfail+utils.Tcleanup {
 					if node.State != utils.DOWN {
 						fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 79\n", nodeIp) // todo send this to file
