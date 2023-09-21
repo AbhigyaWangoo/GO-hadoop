@@ -39,6 +39,8 @@ func Merge(NewMemberInfo cmap.ConcurrentMap[string, utils.Member]) {
 			// Update the local membership list's version history and update time
 			utils.MembershipMap.Set(newMemberIp, newMemberVersion)
 			utils.MembershipUpdateTimes.Set(newMemberIp, time.Now().UnixNano())
+			mssg := fmt.Sprintf("NODE WITH IP %s JUST JOINED\n", newMemberIp)
+			utils.LogFile.WriteString(mssg)
 		}
 
 		if member, ok := utils.MembershipMap.Get(newMemberIp); ok {
@@ -60,7 +62,8 @@ func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Me
 		if localMember.State == utils.LEFT || newMember.State == utils.LEFT {
 			// If the local member still thinks a node is there, but a node with more recent history knows a node left, log that the node left
 			if localMember.State != utils.LEFT {
-				fmt.Printf("SETTING NODE %s AS LEFT", localMember.Ip)
+				mssg := fmt.Sprintf("SETTING NODE %s AS LEFT\n", localMember.Ip)
+				utils.LogFile.WriteString(mssg)
 			}
 			localMember.State = utils.LEFT
 			return localMember
@@ -74,7 +77,7 @@ func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Me
 			// If the newest isn't the local member, update the local member
 			if localMember != upToDateMember && upToDateMember.State == utils.ALIVE {
 				// Set that the node has been updated at the most recent local time
-				fmt.Printf("Local Member: %d, New Member: %d\n", localMember.HeartbeatCounter, newMember.HeartbeatCounter)
+				// fmt.Printf("Local Member: %d, New Member: %d\n", localMember.HeartbeatCounter, newMember.HeartbeatCounter)
 				utils.MembershipUpdateTimes.Set(localMember.Ip, time.Now().UnixNano())
 			}
 			localMember.HeartbeatCounter = upToDateMember.HeartbeatCounter
