@@ -1,7 +1,11 @@
 package gossiputils
 
 import (
+	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"os"
+	"strings"
 	"time"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
@@ -37,6 +41,7 @@ var MembershipMap cmap.ConcurrentMap[string, Member]
 var MembershipUpdateTimes cmap.ConcurrentMap[string, int64]
 var Ip string
 var MessageDropRate float32 = -1
+var LogFile = GetLogFilePointer()
 
 // Returns most up to date member and if any update occurs and if any update needs to be made (if members have different heartbeats)
 func CurrentMember(LocalMember Member, NewMember Member) (Member, bool) {
@@ -100,4 +105,23 @@ func RandomKIpAddrs() []string {
 	}
 
 	return rv
+}
+
+func GetMachineNumber() string {
+	os.Chdir("../../cs425mps")
+	fileData, err := ioutil.ReadFile("logs/machine.txt")
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return ""
+	}
+
+	num := strings.TrimSpace(string(fileData))
+	return num
+}
+
+func GetLogFilePointer() *os.File {
+	machineNumber := GetMachineNumber()
+	logFilePath := fmt.Sprintf("logs/machine.%s.log", machineNumber)
+	logFile, _ := os.OpenFile(logFilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	return logFile
 }
