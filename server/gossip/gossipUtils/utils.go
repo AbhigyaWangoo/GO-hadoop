@@ -36,7 +36,7 @@ const Tcleanup int64 = 1 * 1e9 // 1 second * 10^9 nanoseconds
 var MembershipMap cmap.ConcurrentMap[string, Member]
 var MembershipUpdateTimes cmap.ConcurrentMap[string, int64]
 var Ip string
-var MessageDropRate float32 = 0
+var MessageDropRate float32 = -1
 
 // Returns most up to date member and if any update occurs and if any update needs to be made (if members have different heartbeats)
 func CurrentMember(LocalMember Member, NewMember Member) (Member, bool) {

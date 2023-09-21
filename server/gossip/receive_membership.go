@@ -50,7 +50,6 @@ func Merge(NewMemberInfo cmap.ConcurrentMap[string, utils.Member]) {
 
 // Returns updated member and if updated member needs to be added to list. Member creation timestamp created on originating machine
 func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Member {
-
 	// If both members are the same version of a node
 	if localMember.CreationTimestamp == newMember.CreationTimestamp {
 		if localMember.State == utils.DOWN || newMember.State == utils.DOWN {
@@ -72,13 +71,14 @@ func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Me
 		if sameHeartbeatCount {
 			localMember.State = utils.Max(localMember.State, newMember.State)
 		} else {
-			localMember.HeartbeatCounter = upToDateMember.HeartbeatCounter
-			localMember.State = upToDateMember.State
 			// If the newest isn't the local member, update the local member
 			if localMember != upToDateMember && upToDateMember.State == utils.ALIVE {
 				// Set that the node has been updated at the most recent local time
+				fmt.Printf("Local Member: %d, New Member: %d\n", localMember.HeartbeatCounter, newMember.HeartbeatCounter)
 				utils.MembershipUpdateTimes.Set(localMember.Ip, time.Now().UnixNano())
 			}
+			localMember.HeartbeatCounter = upToDateMember.HeartbeatCounter
+			localMember.State = upToDateMember.State
 		}
 		// Return the updated local member and that a new node doesn't needed to be added to the version history
 		return localMember
