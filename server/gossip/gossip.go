@@ -30,11 +30,11 @@ func InitializeGossip() {
 	utils.MembershipMap.Set(utils.Ip, newMember)
 	utils.MembershipUpdateTimes.Set(utils.Ip, timestamp)
 
-	for info := range utils.MembershipMap.Iter() {
-		if member, ok := utils.MembershipMap.Get(info.Key); ok {
-			fmt.Println("Member string: ", MemberPrint(member))
-		}
-	}
+	// for info := range utils.MembershipMap.Iter() {
+	// 	if member, ok := utils.MembershipMap.Get(info.Key); ok {
+	// 		fmt.Println("Member string: ", MemberPrint(member))
+	// 	}
+	// }
 
 	if utils.Ip != utils.INTRODUCER_IP {
 		PingServer(utils.INTRODUCER_IP)
@@ -94,7 +94,14 @@ func PruneNodeMembers() {
 				}
 				utils.MembershipMap.Set(nodeIp, node)
 			}
+		}
+	}
+}
 
+func PrintMembership() {
+	for info := range utils.MembershipMap.IterBuffered() {
+		if member, ok := utils.MembershipMap.Get(info.Key); ok {
+			fmt.Println("Member string: ", MemberPrint(member))
 		}
 	}
 }

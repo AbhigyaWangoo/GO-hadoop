@@ -1,6 +1,15 @@
 package main
 
-import "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip"
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"os"
+	"strings"
+
+	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip"
+	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
+)
 
 // import (
 // 	distributedGrepServer "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/distributedGrepServer"
@@ -25,7 +34,23 @@ func main() {
 	// 		}
 	// 	}
 	// }
-	gossip.InitializeGossip()
+	go gossip.InitializeGossip()
+
+	for {
+		reader := bufio.NewReader(os.Stdin)
+		command, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if strings.Contains(command, "list_mem") {
+			gossip.PrintMembership()
+		} else if strings.Contains(command, "list_self") {
+			if selfMember, ok := utils.MembershipMap.Get(utils.Ip); ok {
+				fmt.Printf("%d\n", selfMember.CreationTimestamp)
+			}
+		}
+	}
 }
 
 // Run grep server in a seperate thread/proccess
