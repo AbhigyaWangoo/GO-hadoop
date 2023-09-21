@@ -44,7 +44,7 @@ func CurrentMember(LocalMember Member, NewMember Member) (Member, bool) {
 	} else if LocalMember.HeartbeatCounter > NewMember.HeartbeatCounter {
 		return LocalMember, false
 	}
-	return nil, true
+	return Member{}, true
 }
 
 // Returns max between two ints
