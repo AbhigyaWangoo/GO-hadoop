@@ -35,6 +35,7 @@ const Tcleanup int64 = 1 * 1e9 // 1 second * 10^9 nanoseconds
 var MembershipMap cmap.ConcurrentMap[string, Member]
 var MembershipUpdateTimes cmap.ConcurrentMap[string, int64]
 var Ip string
+var MessageDropRate float32 = 0.5
 
 // Returns most up to date member and if any update occurs and if any update needs to be made (members have different heartbeats)
 func CurrentMember(LocalMember Member, NewMember Member) Member {
@@ -50,6 +51,19 @@ func Max(a int, b int) int {
 		return b
 	}
 	return a
+}
+
+func RandomNumInclusive() float32 {
+	// Seed the random number generator with the current time
+	rand.Seed(time.Now().UnixNano())
+
+	// Generate a random integer between 0 and 1000 (inclusive on both sides)
+	randomInt := rand.Intn(1001)
+
+	// Scale the random integer to a floating-point number between 0.0 and 1.0
+	randomFloat := float64(randomInt) / 1000.0
+
+	return float32(randomFloat)
 }
 
 func RandomKIpAddrs() []string {
