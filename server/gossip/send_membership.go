@@ -62,24 +62,14 @@ func PingServer(ServerIpAddr string) {
 func SendMembershipList() {
 	// IN A WHILE LOOP, CONSTANTLY SEND YOUR MEMBERSHIP LIST TO K RANDOM ADDRESSES IN THE SUBNET. Need to increment hearbeats every time we send data
 
-	dropcount := 0.0
-	totalcount := 0.0
 
 	for {
 		// 1. Select k ip addrs, and send mlist to each
 		ipAddrs := utils.RandomKIpAddrs()
 		
 		for ipAddr := range ipAddrs {
-			totalcount++
 			if ipAddrs[ipAddr] != utils.Ip {
-				randomNum := utils.RandomNumInclusive()
-				
-				if (randomNum > utils.MessageDropRate) {
-					PingServer(ipAddrs[ipAddr])
-				} else {
-					fmt.Printf("Dropped packet, packets dropped so far: %f\n", dropcount/totalcount)
-					dropcount++
-				}
+				PingServer(ipAddrs[ipAddr])
 			}
 		}
 

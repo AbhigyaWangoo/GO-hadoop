@@ -114,12 +114,21 @@ func ListenForLists() {
 
 	fmt.Println("gossip client is listening on", serverAddr)
 
+	// totalcount := 0.0
+	// dropcount := 0.0
+
 	buffer := make([]byte, utils.MLIST_SIZE)
 	for {
 		// Read data from the UDP connection
 		n, _, err := udpConn.ReadFromUDP(buffer)
+		randomNum := utils.RandomNumInclusive()
+		// totalcount++
 		if err != nil {
 			fmt.Println("Error reading from UDP connection:", err)
+			continue 
+		} else if randomNum <= utils.MessageDropRate {
+			// dropcount++
+			// fmt.Println("Inducing fake packet drop, drop rate:", dropcount / totalcount)
 			continue
 		}
 
@@ -130,11 +139,6 @@ func ListenForLists() {
 			fmt.Println("Inbound data was not a membership list: ", errDeseriealize)
 		} else {
 			Merge(newlist)
-
-			// for member := range utils.MembershipList {
-			// 	fmt.Println("Member string: ", MemberPrint(utils.MembershipList[member]))
-			// }
-			// fmt.Println("Member length: ", len(utils.MembershipList))
 		}
 	}
 }
