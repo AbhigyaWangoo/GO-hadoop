@@ -3,10 +3,11 @@ package gossiputils
 import (
 	"fmt"
 	"io/ioutil"
-	"math/rand"
+	"math/big"
+
+	"crypto/rand"
 	"os"
 	"strings"
-	"time"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 )
@@ -40,7 +41,7 @@ const Tcleanup int64 = 1 * 1e9 // 1 second * 10^9 nanoseconds
 var MembershipMap cmap.ConcurrentMap[string, Member]
 var MembershipUpdateTimes cmap.ConcurrentMap[string, int64]
 var Ip string
-var MessageDropRate float32 = -1
+var MessageDropRate float32 = 0.0
 var LogFile = GetLogFilePointer()
 
 // Returns most up to date member and if any update occurs and if any update needs to be made (if members have different heartbeats)
@@ -63,19 +64,17 @@ func Max(a int, b int) int {
 
 func RandomNumInclusive() float32 {
 	// Seed the random number generator with the current time
-	rand.Seed(time.Now().UnixNano())
+	// rand.Seed(time.Now().UnixNano())
 
 	// Generate a random integer between 0 and 1000 (inclusive on both sides)
-	randomInt := rand.Intn(1001)
+	randomInt, _ := rand.Int(rand.Reader, big.NewInt(1001))
 
 	// Scale the random integer to a floating-point number between 0.0 and 1.0
-	randomFloat := float64(randomInt) / 1000.0
-
+	randomFloat := float64(randomInt.Int64()) / 1000.0
 	return float32(randomFloat)
 }
 
 func RandomKIpAddrs() []string {
-	rand.Seed(time.Now().UnixNano())
 
 	keys := MembershipMap.Keys()
 	// keys := make([]string, 0, len(MembershipList.Items()))
@@ -90,7 +89,10 @@ func RandomKIpAddrs() []string {
 	// Generate k random IP addrs from membership list
 	rv := make([]string, GOSSIP_K)
 	for i := 0; i < GOSSIP_K; i++ {
-		idx := rand.Intn(max-min+1) + min
+		var val int64 = int64(max - min + 1)
+		randomNum, _ := rand.Int(rand.Reader, big.NewInt(val))
+		idx := randomNum.Int64() + int64(min)
+		// idx := rand.Intn(max-min+1) + min
 
 		node, exists := MembershipMap.Get(keys[idx])
 		if !exists {
