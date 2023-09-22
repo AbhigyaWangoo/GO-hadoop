@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"sync"
 
 	"crypto/rand"
 	"os"
@@ -30,7 +31,8 @@ type Member struct {
 const INTRODUCER_IP string = "172.22.158.162"
 const GOSSIP_PORT string = "9998"
 const MLIST_SIZE int = 20480
-const ENABLE_SUSPICION bool = true
+const ENABLE_SUSPICION_MSG = "enable"
+const DISABLE_SUSPICION_MSG = "disable"
 
 const GOSSIP_K int = 2
 const GOSSIP_SEND_T int64 = 2
@@ -42,7 +44,11 @@ var MembershipMap cmap.ConcurrentMap[string, Member]
 var MembershipUpdateTimes cmap.ConcurrentMap[string, int64]
 var Ip string
 var MessageDropRate float32 = 0.0
+var ENABLE_SUSPICION bool = true
+var SendingSuspicionMessages = false
 var LogFile = GetLogFilePointer()
+
+var GossipMutex sync.Mutex
 
 // Returns most up to date member and if any update occurs and if any update needs to be made (if members have different heartbeats)
 func CurrentMember(LocalMember Member, NewMember Member) (Member, bool) {

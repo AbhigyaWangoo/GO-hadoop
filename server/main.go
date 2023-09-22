@@ -82,5 +82,14 @@ func main() {
 	}
 }
 
+func setSendingSuspicionFlip(enable bool) {
+	utils.GossipMutex.Lock()
+	utils.SendingSuspicionMessages = true
+	utils.ENABLE_SUSPICION = enable
+	utils.GossipMutex.Unlock()
+
+	time.Sleep(2) // sleep for 2 seconds to allow messages to propagate in network
+}
+
 // Run grep server in a seperate thread/proccess
 // Initialize sender and reciever threads as well as thread counting nodes
