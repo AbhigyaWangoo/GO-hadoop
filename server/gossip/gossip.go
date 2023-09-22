@@ -30,14 +30,8 @@ func InitializeGossip() {
 	utils.MembershipMap.Set(utils.Ip, newMember)
 	utils.MembershipUpdateTimes.Set(utils.Ip, timestamp)
 
-	// for info := range utils.MembershipMap.Iter() {
-	// 	if member, ok := utils.MembershipMap.Get(info.Key); ok {
-	// 		fmt.Println("Member string: ", MemberPrint(member))
-	// 	}
-	// }
-
 	if utils.Ip != utils.INTRODUCER_IP {
-		PingServer(utils.INTRODUCER_IP)
+		PingServer(utils.INTRODUCER_IP, "")
 	}
 
 	go SendMembershipList()
@@ -78,11 +72,12 @@ func PruneNodeMembers() {
 				if node.State == utils.LEFT {
 					continue
 				}
+				utils.GossipMutex.Lock()
 				if time.Now().UnixNano()-lastUpdateTime >= utils.Tfail+utils.Tcleanup {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
-						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 79\n", nodeIp) 
+						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 79\n", nodeIp)
 					}
 					node.State = utils.DOWN
 				} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
@@ -96,8 +91,9 @@ func PruneNodeMembers() {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
-						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 85\n", nodeIp) 
+						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 85\n", nodeIp)
 					}
+					utils.GossipMutex.Unlock()
 					node.State = utils.DOWN
 				} else {
 					node.State = utils.ALIVE
