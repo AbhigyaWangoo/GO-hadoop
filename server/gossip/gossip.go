@@ -82,21 +82,21 @@ func PruneNodeMembers() {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
-						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 79\n", nodeIp) // todo send this to file
+						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 79\n", nodeIp) 
 					}
 					node.State = utils.DOWN
 				} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
 					if node.State != utils.SUSPECTED {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS SUSPICIOUS\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
-						// fmt.Printf("SETTING NODE WITH IP %s AS SUS ON LINE 82\n", nodeIp) // todo send this to file
+						// fmt.Printf("SETTING NODE WITH IP %s AS SUS ON LINE 82\n", nodeIp) // todo make this print out suspected node and timestamp
 					}
 					node.State = utils.SUSPECTED
 				} else if !utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
-						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 85\n", nodeIp) // todo send this to file
+						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 85\n", nodeIp) 
 					}
 					node.State = utils.DOWN
 				} else {
