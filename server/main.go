@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -58,6 +59,25 @@ func main() {
 				time.Sleep(time.Second)
 			}
 			os.Exit(0)
+		} else if strings.Contains(command, "enable suspicion") {
+			// TODO implement
+		} else if strings.Contains(command, "disable suspicion") {
+			// TODO implement
+		} else {
+			error_msg := `
+			Command not understood. Available commands are as follows:
+				list_mem # list the membership list
+				list_self # list this node's entry
+				leave # leave the network
+				<percentage from 0.0 -> 1.0> # induce a network drop rate 
+			`
+			float, err_parse := strconv.ParseFloat(command, 32)
+			if err_parse != nil {
+				fmt.Println(error_msg)
+			} else {
+				utils.MessageDropRate = float32(float)
+			}
+
 		}
 	}
 }
