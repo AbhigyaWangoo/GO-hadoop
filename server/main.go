@@ -13,29 +13,29 @@ import (
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 )
 
-// import (
-// 	distributedGrepServer "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/distributedGrepServer"
-// )
+// Send suspicion flip message to all machines
+func setSendingSuspicionFlip(enable bool) {
+	// utils.GossipMutex.Lock()
+	utils.SendingSuspicionMessages = true
+	utils.ENABLE_SUSPICION = enable
+	// utils.GossipMutex.Unlock()
 
-// func main() {
-// 	distributedGrepServer.InitializeServer()
-// }
+	// Send enable messages to all nodes
+	for info := range utils.MembershipMap.IterBuffered() {
+		nodeIp, _ := info.Key, info.Val
+
+		if enable { // 172.22.158.162
+			gossip.PingServer(nodeIp, utils.ENABLE_SUSPICION_MSG)
+		} else {
+			gossip.PingServer(nodeIp, utils.DISABLE_SUSPICION_MSG)
+		}
+	}
+
+	// time.Sleep(2) // sleep for 2 seconds to allow messages to propagate in network
+}
 
 func main() {
-	// addrs, err := net.InterfaceAddrs()
-	// if err != nil {
-	// 	fmt.Println("Error:", err)
-	// 	return
-	// }
 
-	// for _, addr := range addrs {
-	// 	if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-	// 		if ipnet.IP.To4() != nil {
-	// 			fmt.Println("Local IP address:", ipnet.IP.String())
-	// 			return
-	// 		}
-	// 	}
-	// }
 	go gossip.InitializeGossip()
 
 	for {
@@ -59,10 +59,10 @@ func main() {
 				time.Sleep(time.Second)
 			}
 			os.Exit(0)
-		} else if strings.Contains(command, "enable suspicion") {
+		} else if strings.Contains(command, "es") {
 			// TODO implement
 			setSendingSuspicionFlip(true)
-		} else if strings.Contains(command, "disable suspicion") {
+		} else if strings.Contains(command, "ds") {
 			// TODO implement
 			setSendingSuspicionFlip(false)
 		} else {
@@ -82,27 +82,6 @@ func main() {
 
 		}
 	}
-}
-
-// Send suspicion flip message to all machines
-func setSendingSuspicionFlip(enable bool) {
-	utils.GossipMutex.Lock()
-	utils.SendingSuspicionMessages = true
-	utils.ENABLE_SUSPICION = enable
-	utils.GossipMutex.Unlock()
-
-	// Send enable messages to all nodes
-	for info := range utils.MembershipMap.IterBuffered() {
-		nodeIp, _ := info.Key, info.Val
-
-		if enable {
-			gossip.PingServer(nodeIp, utils.ENABLE_SUSPICION_MSG)
-		} else {
-			gossip.PingServer(nodeIp, utils.DISABLE_SUSPICION_MSG)
-		}
-	}
-
-	// time.Sleep(2) // sleep for 2 seconds to allow messages to propagate in network
 }
 
 // Run grep server in a seperate thread/proccess

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
@@ -43,9 +44,9 @@ func Merge(NewMemberInfo cmap.ConcurrentMap[string, utils.Member]) {
 			utils.LogFile.WriteString(mssg)
 		}
 
-		if member, ok := utils.MembershipMap.Get(newMemberIp); ok {
-			fmt.Printf("Heartbeat on ip: %s is %d\n", newMemberIp, member.HeartbeatCounter)
-		}
+		// if member, ok := utils.MembershipMap.Get(newMemberIp); ok {
+		// 	fmt.Printf("Heartbeat on ip: %s is %d\n", newMemberIp, member.HeartbeatCounter)
+		// }
 	}
 
 }
@@ -134,21 +135,20 @@ func ListenForLists() {
 
 		data := buffer[:n]
 
-		utils.GossipMutex.Lock()
-		if string(data) == utils.ENABLE_SUSPICION_MSG {
+		// utils.GossipMutex.Lock()
+		if strings.Compare(string(data), utils.ENABLE_SUSPICION_MSG) == 0  {
 			utils.ENABLE_SUSPICION = true
-			fmt.Println("Enabling suspicion")
-		} else if string(data) == utils.DISABLE_SUSPICION_MSG { 
+			// utils.GossipMutex.Unlock()
+		} else if strings.Compare(string(data), utils.DISABLE_SUSPICION_MSG) == 0 { 
 			utils.ENABLE_SUSPICION = false
-			fmt.Println("Disable suspicion")
-		}
-		utils.GossipMutex.Unlock()
-
-		newlist, errDeseriealize := DeserializeStruct(data)
-		if errDeseriealize != nil {
-			fmt.Println("Inbound data was not a membership list: ", errDeseriealize)
+			// utils.GossipMutex.Unlock()
 		} else {
-			Merge(newlist)
+			newlist, errDeseriealize := DeserializeStruct(data)
+			if errDeseriealize != nil {
+				fmt.Println("Inbound data was not a membership list: ", errDeseriealize)
+			} else {
+				Merge(newlist)
+			}
 		}
 	}
 }
