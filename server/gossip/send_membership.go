@@ -42,19 +42,11 @@ func PingServer(ServerIpAddr string, suspicionMessage string) {
 		node.State = utils.ALIVE
 		utils.MembershipMap.Set(utils.Ip, node)
 	}
-
-	var message []byte
-	if len(suspicionMessage) == 0 {
-		// Data to send
-		msg, errDeseriealize := SerializeStruct(utils.MembershipMap)
-		if errDeseriealize != nil {
-			panic(err)
-		}
-
-		message = msg	
-	} else {
-		// Send suspicion message instead
-		message = []byte(suspicionMessage)
+	
+	// Data to send
+	message, errDeseriealize := SerializeStruct(utils.MembershipMap)
+	if errDeseriealize != nil {
+		panic(err)
 	}
 
 	// Send the data
@@ -69,7 +61,6 @@ func PingServer(ServerIpAddr string, suspicionMessage string) {
 
 func SendMembershipList() {
 	// IN A WHILE LOOP, CONSTANTLY SEND YOUR MEMBERSHIP LIST TO K RANDOM ADDRESSES IN THE SUBNET. Need to increment hearbeats every time we send data
-
 
 	for {
 		// 1. Select k ip addrs, and send mlist to each
