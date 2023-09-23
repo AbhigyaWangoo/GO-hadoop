@@ -72,8 +72,10 @@ func main() {
 				list_self # list this node's entry
 				leave # leave the network
 				<percentage from 0.0 -> 1.0> # induce a network drop rate 
+				ds # Disable suspicion
+				es # Disable suspicion
 			`
-			float, err_parse := strconv.ParseFloat(command, 32)
+			float, err_parse := strconv.ParseFloat(command[:len(command)-1], 32)
 			if err_parse != nil {
 				fmt.Println(error_msg)
 			} else {
