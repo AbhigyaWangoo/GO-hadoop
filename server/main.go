@@ -16,7 +16,6 @@ import (
 // Send suspicion flip message to all machines
 func setSendingSuspicionFlip(enable bool) {
 	// utils.GossipMutex.Lock()
-	utils.SendingSuspicionMessages = true
 	utils.ENABLE_SUSPICION = enable
 	// utils.GossipMutex.Unlock()
 
@@ -60,10 +59,8 @@ func main() {
 			}
 			os.Exit(0)
 		} else if strings.Contains(command, "es") {
-			// TODO implement
 			setSendingSuspicionFlip(true)
 		} else if strings.Contains(command, "ds") {
-			// TODO implement
 			setSendingSuspicionFlip(false)
 		} else {
 			error_msg := `
