@@ -77,7 +77,7 @@ func PruneNodeMembers() {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
-						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 79\n", nodeIp)
+						fmt.Printf("SETTING NODE WITH IP %s AS DOWN AT TIME %d\n", nodeIp, time.Now().UnixNano())
 					}
 					node.State = utils.DOWN
 				} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
