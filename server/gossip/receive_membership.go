@@ -134,6 +134,16 @@ func ListenForLists() {
 
 		data := buffer[:n]
 
+		utils.GossipMutex.Lock()
+		if string(data) == utils.ENABLE_SUSPICION_MSG {
+			utils.ENABLE_SUSPICION = true
+			fmt.Println("Enabling suspicion")
+		} else if string(data) == utils.DISABLE_SUSPICION_MSG { 
+			utils.ENABLE_SUSPICION = false
+			fmt.Println("Disable suspicion")
+		}
+		utils.GossipMutex.Unlock()
+
 		newlist, errDeseriealize := DeserializeStruct(data)
 		if errDeseriealize != nil {
 			fmt.Println("Inbound data was not a membership list: ", errDeseriealize)

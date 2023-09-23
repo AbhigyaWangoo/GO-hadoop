@@ -61,8 +61,10 @@ func main() {
 			os.Exit(0)
 		} else if strings.Contains(command, "enable suspicion") {
 			// TODO implement
+			setSendingSuspicionFlip(true)
 		} else if strings.Contains(command, "disable suspicion") {
 			// TODO implement
+			setSendingSuspicionFlip(false)
 		} else {
 			error_msg := `
 			Command not understood. Available commands are as follows:
@@ -82,13 +84,25 @@ func main() {
 	}
 }
 
+// Send suspicion flip message to all machines
 func setSendingSuspicionFlip(enable bool) {
 	utils.GossipMutex.Lock()
 	utils.SendingSuspicionMessages = true
 	utils.ENABLE_SUSPICION = enable
 	utils.GossipMutex.Unlock()
 
-	time.Sleep(2) // sleep for 2 seconds to allow messages to propagate in network
+	// Send enable messages to all nodes
+	for info := range utils.MembershipMap.IterBuffered() {
+		nodeIp, _ := info.Key, info.Val
+
+		if enable {
+			gossip.PingServer(nodeIp, utils.ENABLE_SUSPICION_MSG)
+		} else {
+			gossip.PingServer(nodeIp, utils.DISABLE_SUSPICION_MSG)
+		}
+	}
+
+	// time.Sleep(2) // sleep for 2 seconds to allow messages to propagate in network
 }
 
 // Run grep server in a seperate thread/proccess
