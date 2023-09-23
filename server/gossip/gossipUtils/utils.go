@@ -28,7 +28,7 @@ type Member struct {
 	State             int
 }
 
-const INTRODUCER_IP string = "172.22.158.162"
+const INTRODUCER_IP string = "172.22.94.163"
 const GOSSIP_PORT string = "9998"
 const MLIST_SIZE int = 20480
 const ENABLE_SUSPICION_MSG = "enable"
