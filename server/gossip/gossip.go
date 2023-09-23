@@ -78,6 +78,10 @@ func PruneNodeMembers() {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
 						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 79\n", nodeIp)
+						
+						// currentTime := time.Now()
+						// unixTimestamp := currentTime.UnixNano()
+						// fmt.Println("Unix Timestamp (nanoseconds since epoch) for left node:", unixTimestamp)
 					}
 					node.State = utils.DOWN
 				} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
@@ -91,6 +95,11 @@ func PruneNodeMembers() {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
+
+						// currentTime := time.Now()
+						// unixTimestamp := currentTime.UnixNano()
+						// fmt.Println("Unix Timestamp (nanoseconds since epoch) for left node:", unixTimestamp)
+
 						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 85\n", nodeIp)
 					}
 					// utils.GossipMutex.Unlock()

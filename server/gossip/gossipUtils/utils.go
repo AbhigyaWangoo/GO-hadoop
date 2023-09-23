@@ -37,14 +37,14 @@ const DISABLE_SUSPICION_MSG = "disable"
 const GOSSIP_K int = 2
 const GOSSIP_SEND_T int64 = 2
 
-const Tfail int64 = 5 * 1e9    // 5 seconds * 10^9 nanoseconds
+const Tfail int64 = 1.5 * 1e9    // 5 seconds * 10^9 nanoseconds
 const Tcleanup int64 = 1 * 1e9 // 1 second * 10^9 nanoseconds
 
 var MembershipMap cmap.ConcurrentMap[string, Member]
 var MembershipUpdateTimes cmap.ConcurrentMap[string, int64]
 var Ip string
 var MessageDropRate float32 = 0.0
-var ENABLE_SUSPICION bool = true
+var ENABLE_SUSPICION bool = false
 var LogFile = GetLogFilePointer()
 
 var GossipMutex sync.Mutex
