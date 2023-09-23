@@ -43,20 +43,26 @@ func PingServer(ServerIpAddr string, suspicionMessage string) {
 		utils.MembershipMap.Set(utils.Ip, node)
 	}
 	
-	// Data to send
-	message, errDeseriealize := SerializeStruct(utils.MembershipMap)
-	if errDeseriealize != nil {
-		panic(err)
+	var msg []byte
+	if len(suspicionMessage) == 0 {
+		// Data to send
+		message, errDeseriealize := SerializeStruct(utils.MembershipMap)
+		if errDeseriealize != nil {
+			panic(err)
+		}
+		msg = message
+	} else {
+		msg = []byte(suspicionMessage)
 	}
 
 	// Send the data
-	_, err = conn.Write(message)
+	_, err = conn.Write(msg)
 	if err != nil {
 		fmt.Println("Error sending data:", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("Data sent to", serverAddr)
+	// fmt.Println("Data sent to", serverAddr)
 }
 
 func SendMembershipList() {
