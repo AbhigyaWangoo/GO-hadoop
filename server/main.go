@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -26,11 +27,15 @@ func SleepTillNextMinute() {
 
 func main() {
 
-	utils.ENABLE_SUSPICION = false
-	utils.MessageDropRate = 0.0
+	utils.ENABLE_SUSPICION = true
+	// .1, .15, .2, .25, .3
+	utils.MessageDropRate = 0.1
 	go gossip.InitializeGossip()
-	time.Sleep(time.Second * 10)
-	fmt.Printf("On Machine %s Bandwidth is: %d\n", utils.GetMachineNumber(), utils.BandWidth/10)
+	time.Sleep(time.Second * 3)
+	gossip.PrintMembership()
+	os.Exit(0)
+
+	// fmt.Printf("On Machine %s Bandwidth is: %d\n", utils.GetMachineNumber(), utils.BandWidth/10)
 
 	// for {
 	// 	reader := bufio.NewReader(os.Stdin)
