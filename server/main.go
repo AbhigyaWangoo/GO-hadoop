@@ -32,6 +32,7 @@ func main() {
 		fmt.Printf("Machine %s started at time: %d\n", utils.GetMachineNumber(), time.Now().UnixNano())
 		go gossip.InitializeGossip()
 		time.Sleep(time.Second * 30)
+		fmt.Printf("Machine %s ending at time: %d\n", utils.GetMachineNumber(), time.Now().UnixNano())
 		os.Exit(0)
 	} else {
 		gossip.InitializeGossip()
