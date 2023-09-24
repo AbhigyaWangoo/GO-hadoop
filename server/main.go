@@ -29,10 +29,10 @@ func SleepTillNextMinute() {
 func main() {
 	if len(os.Args) == 2 && strings.Contains(os.Args[1], "fail") {
 		SleepTillNextMinute()
-		fmt.Printf("Machine %s started at time: %d\n", utils.GetMachineNumber(), time.Now().UnixNano())
+		fmt.Printf("Machine with IP %s started at time: %d\n", utils.Ip, time.Now().UnixNano())
 		go gossip.InitializeGossip()
 		time.Sleep(time.Second * 30)
-		fmt.Printf("Machine %s ending at time: %d\n", utils.GetMachineNumber(), time.Now().UnixNano())
+		fmt.Printf("Machine with IP %s ending at time: %d\n", utils.Ip, time.Now().UnixNano())
 		os.Exit(0)
 	} else {
 		gossip.InitializeGossip()
