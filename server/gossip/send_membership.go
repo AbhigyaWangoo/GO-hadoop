@@ -61,7 +61,7 @@ func PingServer(ServerIpAddr string, suspicionMessage string) {
 		fmt.Println("Error sending data:", err)
 		os.Exit(1)
 	}
-
+	
 	// fmt.Println("Data sent to", serverAddr)
 }
 
@@ -79,6 +79,6 @@ func SendMembershipList() {
 		}
 
 		// 2. Sleep for x nanoseconds
-		time.Sleep((time.Second / 10))
+		time.Sleep((time.Second / 2))
 	}
 }

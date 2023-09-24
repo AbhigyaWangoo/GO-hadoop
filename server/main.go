@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip"
@@ -36,6 +38,22 @@ func setSendingSuspicionFlip(enable bool) {
 func main() {
 
 	go gossip.InitializeGossip()
+
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+
+		// Listen for the interrupt signal (Ctrl-C) and other termination signals
+		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+		// Block until a signal is received
+		<-sigChan
+
+		currentTime := time.Now()
+		unixTimestamp := currentTime.UnixNano()
+		fmt.Println("Execution Done: ", unixTimestamp)
+
+		os.Exit(0)
+	}()
 
 	for {
 		reader := bufio.NewReader(os.Stdin)
