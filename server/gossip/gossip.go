@@ -117,7 +117,7 @@ func PruneNodeMembers() {
 				}
 				utils.MembershipMap.Set(nodeIp, node)
 
-				if num_dead >= 2 {
+				if num_dead >= 5 {
 					currentTime := time.Now()
 					unixTimestamp := currentTime.UnixNano()
 					fmt.Println("Unix Timestamp (nanoseconds since epoch) for left node:", unixTimestamp)
