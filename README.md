@@ -4,7 +4,7 @@
 
 ### Usage
 
-In order to start the failure detector, you must first start the introducer server (currently hardcoded to ```172.22.158.162```, or ). 
+In order to start the failure detector, you must first start the introducer server (currently hardcoded to ```172.22.158.162```, or ```fa23-cs425-4902.cs.illinois.edu```). 
 
 1. To do that, ssh into that server, and navigate to the directory 
 ```
