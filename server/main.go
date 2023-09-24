@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -30,9 +31,9 @@ func main() {
 	// .1, .15, .2, .25, .3
 	utils.MessageDropRate = 0.05
 	gossip.InitializeGossip()
-	// time.Sleep(time.Second * 10)
-	// gossip.PrintMembership()
-	// os.Exit(0)
+	time.Sleep(time.Second * 15)
+	gossip.PrintMembership()
+	os.Exit(0)
 
 	// fmt.Printf("On Machine %s Bandwidth is: %d\n", utils.GetMachineNumber(), utils.BandWidth/10)
 
