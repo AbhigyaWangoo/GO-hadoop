@@ -115,7 +115,6 @@ func ListenForLists() {
 
 	fmt.Println("gossip client is listening on", serverAddr)
 
-	// totalcount := 0.0
 	// dropcount := 0.0
 
 	buffer := make([]byte, utils.MLIST_SIZE)
@@ -123,7 +122,7 @@ func ListenForLists() {
 		// Read data from the UDP connection
 		n, _, err := udpConn.ReadFromUDP(buffer)
 		randomNum := utils.RandomNumInclusive()
-		// totalcount++
+		
 		if err != nil {
 			fmt.Println("Error reading from UDP connection:", err)
 			continue 

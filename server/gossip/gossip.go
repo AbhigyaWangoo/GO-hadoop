@@ -34,6 +34,10 @@ func InitializeGossip() {
 		PingServer(utils.INTRODUCER_IP, "")
 	}
 
+	currentTime := time.Now()
+	unixTimestamp := currentTime.UnixNano()
+	fmt.Println("Sending and listening beginning: ", unixTimestamp)
+	
 	go SendMembershipList()
 	go PruneNodeMembers()
 	ListenForLists()
@@ -58,6 +62,8 @@ func GetOutboundIP() net.IP {
 // Check if nodes need to be degraded from ALIVE or DOWN statuses
 func PruneNodeMembers() {
 	for {
+
+		num_dead := 0
 		// Go through all currently stored nodes and check their lastUpdatedTimes
 		for info := range utils.MembershipUpdateTimes.IterBuffered() {
 			nodeIp, lastUpdateTime := info.Key, info.Val
@@ -77,6 +83,7 @@ func PruneNodeMembers() {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
+						num_dead += 1
 						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 79\n", nodeIp)
 						
 						// currentTime := time.Now()
@@ -95,6 +102,7 @@ func PruneNodeMembers() {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
+						num_dead += 1
 
 						// currentTime := time.Now()
 						// unixTimestamp := currentTime.UnixNano()
@@ -108,6 +116,12 @@ func PruneNodeMembers() {
 					node.State = utils.ALIVE
 				}
 				utils.MembershipMap.Set(nodeIp, node)
+
+				if num_dead >= 2 {
+					currentTime := time.Now()
+					unixTimestamp := currentTime.UnixNano()
+					fmt.Println("Unix Timestamp (nanoseconds since epoch) for left node:", unixTimestamp)
+				}
 			}
 		}
 	}
