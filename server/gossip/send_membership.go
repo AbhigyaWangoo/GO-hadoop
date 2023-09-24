@@ -80,6 +80,6 @@ func SendMembershipList() {
 		}
 
 		// 2. Sleep for x nanoseconds
-		time.Sleep((time.Second / 2))
+		time.Sleep(time.Second)
 	}
 }
