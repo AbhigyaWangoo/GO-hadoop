@@ -14,6 +14,7 @@ func SerializeStruct(data cmap.ConcurrentMap[string, utils.Member]) ([]byte, err
 	// var buf bytes.Buffer
 	// encoder := gob.NewEncoder(&buf)
 	json, errMarshal := data.MarshalJSON()
+	utils.BandWidth += len(json)
 
 	// if err := encoder.Encode(json); err != nil {
 	// return nil, err
@@ -42,7 +43,7 @@ func PingServer(ServerIpAddr string, suspicionMessage string) {
 		node.State = utils.ALIVE
 		utils.MembershipMap.Set(utils.Ip, node)
 	}
-	
+
 	var msg []byte
 	if len(suspicionMessage) == 0 {
 		// Data to send
@@ -71,7 +72,7 @@ func SendMembershipList() {
 	for {
 		// 1. Select k ip addrs, and send mlist to each
 		ipAddrs := utils.RandomKIpAddrs()
-		
+
 		for ipAddr := range ipAddrs {
 			if ipAddrs[ipAddr] != utils.Ip {
 				PingServer(ipAddrs[ipAddr], "")

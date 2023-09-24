@@ -122,11 +122,12 @@ func ListenForLists() {
 	for {
 		// Read data from the UDP connection
 		n, _, err := udpConn.ReadFromUDP(buffer)
+		utils.BandWidth += n
 		randomNum := utils.RandomNumInclusive()
 		// totalcount++
 		if err != nil {
 			fmt.Println("Error reading from UDP connection:", err)
-			continue 
+			continue
 		} else if randomNum <= utils.MessageDropRate {
 			// dropcount++
 			// fmt.Println("Inducing fake packet drop, drop rate:", dropcount / totalcount)
@@ -136,10 +137,10 @@ func ListenForLists() {
 		data := buffer[:n]
 
 		// utils.GossipMutex.Lock()
-		if strings.Compare(string(data), utils.ENABLE_SUSPICION_MSG) == 0  {
+		if strings.Compare(string(data), utils.ENABLE_SUSPICION_MSG) == 0 {
 			utils.ENABLE_SUSPICION = true
 			// utils.GossipMutex.Unlock()
-		} else if strings.Compare(string(data), utils.DISABLE_SUSPICION_MSG) == 0 { 
+		} else if strings.Compare(string(data), utils.DISABLE_SUSPICION_MSG) == 0 {
 			utils.ENABLE_SUSPICION = false
 			// utils.GossipMutex.Unlock()
 		} else {

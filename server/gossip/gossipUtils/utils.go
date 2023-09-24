@@ -47,6 +47,8 @@ var MessageDropRate float32 = 0.0
 var ENABLE_SUSPICION bool = true
 var LogFile = GetLogFilePointer()
 
+var BandWidth = 0
+
 var GossipMutex sync.Mutex
 
 // Returns most up to date member and if any update occurs and if any update needs to be made (if members have different heartbeats)
