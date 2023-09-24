@@ -32,7 +32,7 @@ func main() {
 	utils.MessageDropRate = 0.05
 	gossip.InitializeGossip()
 	time.Sleep(time.Second * 15)
-	gossip.PrintMembership()
+	go gossip.PrintMembership()
 	os.Exit(0)
 
 	// fmt.Printf("On Machine %s Bandwidth is: %d\n", utils.GetMachineNumber(), utils.BandWidth/10)
