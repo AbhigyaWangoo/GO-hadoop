@@ -91,6 +91,7 @@ func PruneNodeMembers() {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
+						fmt.Printf("SETTING NODE WITH IP %s AS DOWN AT TIME %d\n", nodeIp, time.Now().UnixNano())
 						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 85\n", nodeIp)
 					}
 					// utils.GossipMutex.Unlock()

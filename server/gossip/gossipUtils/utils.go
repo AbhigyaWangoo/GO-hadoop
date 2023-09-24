@@ -44,7 +44,7 @@ var MembershipMap cmap.ConcurrentMap[string, Member]
 var MembershipUpdateTimes cmap.ConcurrentMap[string, int64]
 var Ip string
 var MessageDropRate float32 = 0.0
-var ENABLE_SUSPICION bool = true
+var ENABLE_SUSPICION bool = false
 var LogFile = GetLogFilePointer()
 
 var BandWidth = 0
