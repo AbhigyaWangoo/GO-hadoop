@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"strings"
 	"time"
 
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -27,16 +25,12 @@ func SleepTillNextMinute() {
 }
 
 func main() {
-	if len(os.Args) == 2 && strings.Contains(os.Args[1], "fail") {
-		SleepTillNextMinute()
-		fmt.Printf("Machine with IP %s started at time: %d\n", utils.Ip, time.Now().UnixNano())
-		go gossip.InitializeGossip()
-		time.Sleep(time.Second * 30)
-		fmt.Printf("Machine with IP %s ending at time: %d\n", utils.Ip, time.Now().UnixNano())
-		os.Exit(0)
-	} else {
-		gossip.InitializeGossip()
-	}
+
+	utils.ENABLE_SUSPICION = false
+	utils.MessageDropRate = 0.0
+	go gossip.InitializeGossip()
+	time.Sleep(time.Second * 10)
+	fmt.Printf("On Machine %s Bandwidth is: %d\n", utils.GetMachineNumber(), utils.BandWidth/10)
 
 	// for {
 	// 	reader := bufio.NewReader(os.Stdin)
