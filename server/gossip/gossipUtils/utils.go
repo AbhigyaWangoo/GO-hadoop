@@ -29,7 +29,7 @@ type Member struct {
 }
 
 const INTRODUCER_IP string = "172.22.158.162"
-const GOSSIP_PORT string = "9998"
+const GOSSIP_PORT string = "6969"
 const MLIST_SIZE int = 20480
 const ENABLE_SUSPICION_MSG = "enable"
 const DISABLE_SUSPICION_MSG = "disable"
