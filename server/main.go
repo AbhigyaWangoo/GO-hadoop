@@ -31,7 +31,7 @@ func main() {
 	// .1, .15, .2, .25, .3
 	utils.MessageDropRate = 0.1
 	go gossip.InitializeGossip()
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 10)
 	gossip.PrintMembership()
 	os.Exit(0)
 
