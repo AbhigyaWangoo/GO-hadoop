@@ -10,6 +10,7 @@ import (
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 )
 
+// Our main entry point to begin gossiping
 func InitializeGossip() {
 	utils.Ip = GetOutboundIP().String()
 	timestamp := time.Now().UnixNano()
@@ -22,21 +23,16 @@ func InitializeGossip() {
 		State:             utils.ALIVE,
 	}
 
-	// We can take older versions out, need to worry about false positives
 	// Index by hostname
 	utils.MembershipMap = cmap.New[utils.Member]()
-	utils.MembershipUpdateTimes = cmap.New[int64]() // TODO is int64 ok for nanoseconds?
+	utils.MembershipUpdateTimes = cmap.New[int64]()
 
 	utils.MembershipMap.Set(utils.Ip, newMember)
 	utils.MembershipUpdateTimes.Set(utils.Ip, timestamp)
 
-	if utils.Ip != utils.INTRODUCER_IP {
+	if utils.Ip != utils.INTRODUCER_IP { // if we're not the introducer, we've gotta ping the introducer
 		PingServer(utils.INTRODUCER_IP, "")
 	}
-
-	currentTime := time.Now()
-	unixTimestamp := currentTime.UnixNano()
-	fmt.Println("Sending and listening beginning: ", unixTimestamp)
 	
 	go SendMembershipList()
 	go PruneNodeMembers()
@@ -85,19 +81,21 @@ func PruneNodeMembers() {
 						utils.LogFile.WriteString(mssg)
 						num_dead += 1
 						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 79\n", nodeIp)
-						
-						// currentTime := time.Now()
-						// unixTimestamp := currentTime.UnixNano()
 						// fmt.Println("Unix Timestamp (nanoseconds since epoch) for left node:", unixTimestamp)
+						
 					}
 					node.State = utils.DOWN
-				} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
-					if node.State != utils.SUSPECTED {
-						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS SUSPICIOUS\n", nodeIp)
-						utils.LogFile.WriteString(mssg)
-						// fmt.Printf("SETTING NODE WITH IP %s AS SUS ON LINE 82\n", nodeIp) // todo make this print out suspected node and timestamp
-					}
-					node.State = utils.SUSPECTED
+					} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
+						if node.State != utils.SUSPECTED {
+							mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS SUSPICIOUS\n", nodeIp)
+							utils.LogFile.WriteString(mssg)
+							
+							currentTime := time.Now()
+							unixTimestamp := currentTime.UnixNano()
+
+							fmt.Printf("SETTING NODE WITH IP %s AS SUSPICIOUS AT TIME %d\n", nodeIp, unixTimestamp)
+						}
+						node.State = utils.SUSPECTED
 				} else if !utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)

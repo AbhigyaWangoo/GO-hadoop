@@ -11,13 +11,7 @@ import (
 )
 
 func SerializeStruct(data cmap.ConcurrentMap[string, utils.Member]) ([]byte, error) {
-	// var buf bytes.Buffer
-	// encoder := gob.NewEncoder(&buf)
 	json, errMarshal := data.MarshalJSON()
-
-	// if err := encoder.Encode(json); err != nil {
-	// return nil, err
-	// }
 
 	return json, errMarshal
 }
@@ -61,12 +55,10 @@ func PingServer(ServerIpAddr string, suspicionMessage string) {
 		fmt.Println("Error sending data:", err)
 		os.Exit(1)
 	}
-	
-	// fmt.Println("Data sent to", serverAddr)
 }
 
 func SendMembershipList() {
-	// IN A WHILE LOOP, CONSTANTLY SEND YOUR MEMBERSHIP LIST TO K RANDOM ADDRESSES IN THE SUBNET. Need to increment hearbeats every time we send data
+	// In a loop, constantly sending membership to K random addresses in mlist. We also increment heartbeat every time data is sent.
 
 	for {
 		// 1. Select k ip addrs, and send mlist to each

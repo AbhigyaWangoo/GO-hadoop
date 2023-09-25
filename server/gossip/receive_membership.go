@@ -43,10 +43,6 @@ func Merge(NewMemberInfo cmap.ConcurrentMap[string, utils.Member]) {
 			mssg := fmt.Sprintf("NODE WITH IP %s JUST JOINED\n", newMemberIp)
 			utils.LogFile.WriteString(mssg)
 		}
-
-		// if member, ok := utils.MembershipMap.Get(newMemberIp); ok {
-		// 	fmt.Printf("Heartbeat on ip: %s is %d\n", newMemberIp, member.HeartbeatCounter)
-		// }
 	}
 
 }
@@ -78,7 +74,6 @@ func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Me
 			// If the newest isn't the local member, update the local member
 			if localMember != upToDateMember && upToDateMember.State == utils.ALIVE {
 				// Set that the node has been updated at the most recent local time
-				// fmt.Printf("Local Member: %d, New Member: %d\n", localMember.HeartbeatCounter, newMember.HeartbeatCounter)
 				utils.MembershipUpdateTimes.Set(localMember.Ip, time.Now().UnixNano())
 			}
 			localMember.HeartbeatCounter = upToDateMember.HeartbeatCounter
@@ -98,7 +93,7 @@ func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Me
 	return localMember
 }
 
-// This function keeps a udp socket open
+// This function keeps a udp socket open for membership lists
 func ListenForLists() {
 	serverAddr, resolveErr := net.ResolveUDPAddr("udp", ":"+utils.GOSSIP_PORT)
 	if resolveErr != nil {
@@ -115,8 +110,6 @@ func ListenForLists() {
 
 	fmt.Println("gossip client is listening on", serverAddr)
 
-	// dropcount := 0.0
-
 	buffer := make([]byte, utils.MLIST_SIZE)
 	for {
 		// Read data from the UDP connection
@@ -127,20 +120,15 @@ func ListenForLists() {
 			fmt.Println("Error reading from UDP connection:", err)
 			continue 
 		} else if randomNum <= utils.MessageDropRate {
-			// dropcount++
-			// fmt.Println("Inducing fake packet drop, drop rate:", dropcount / totalcount)
 			continue
 		}
 
 		data := buffer[:n]
 
-		// utils.GossipMutex.Lock()
 		if strings.Compare(string(data), utils.ENABLE_SUSPICION_MSG) == 0  {
 			utils.ENABLE_SUSPICION = true
-			// utils.GossipMutex.Unlock()
 		} else if strings.Compare(string(data), utils.DISABLE_SUSPICION_MSG) == 0 { 
 			utils.ENABLE_SUSPICION = false
-			// utils.GossipMutex.Unlock()
 		} else {
 			newlist, errDeseriealize := DeserializeStruct(data)
 			if errDeseriealize != nil {
