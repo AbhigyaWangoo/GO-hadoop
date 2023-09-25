@@ -43,7 +43,7 @@ const Tcleanup int64 = 1 * 1e9 // 1 second * 10^9 nanoseconds
 var MembershipMap cmap.ConcurrentMap[string, Member]
 var MembershipUpdateTimes cmap.ConcurrentMap[string, int64]
 var Ip string
-var MessageDropRate float32 = 0.1
+var MessageDropRate float32 = 0.0
 var ENABLE_SUSPICION bool = false
 var LogFile = GetLogFilePointer()
 
@@ -68,9 +68,6 @@ func Max(a int, b int) int {
 }
 
 func RandomNumInclusive() float32 {
-	// Seed the random number generator with the current time
-	// rand.Seed(time.Now().UnixNano())
-
 	// Generate a random integer between 0 and 1000 (inclusive on both sides)
 	randomInt, _ := rand.Int(rand.Reader, big.NewInt(1001))
 
@@ -80,9 +77,7 @@ func RandomNumInclusive() float32 {
 }
 
 func RandomKIpAddrs() []string {
-
 	keys := MembershipMap.Keys()
-	// keys := make([]string, 0, len(MembershipList.Items()))
 
 	if len(keys) < GOSSIP_K {
 		return keys
@@ -97,14 +92,13 @@ func RandomKIpAddrs() []string {
 		var val int64 = int64(max - min + 1)
 		randomNum, _ := rand.Int(rand.Reader, big.NewInt(val))
 		idx := randomNum.Int64() + int64(min)
-		// idx := rand.Intn(max-min+1) + min
 
 		node, exists := MembershipMap.Get(keys[idx])
 		if !exists {
 			panic("Race condition in random k selection")
 		}
 
-		if keys[idx] == Ip || node.State == DOWN || node.State == LEFT {
+		if keys[idx] == Ip || node.State == DOWN || node.State == LEFT { // skip a certain selection if it's down, has left, or is the current node
 			i--
 		} else {
 			rv = append(rv, keys[idx])
@@ -114,6 +108,7 @@ func RandomKIpAddrs() []string {
 	return rv
 }
 
+// For mp1 distributed grep setup
 func GetMachineNumber() string {
 	os.Chdir("../../cs425mps")
 	fileData, err := ioutil.ReadFile("logs/machine.txt")
@@ -126,6 +121,7 @@ func GetMachineNumber() string {
 	return num
 }
 
+// get current pointer in logfile
 func GetLogFilePointer() *os.File {
 	machineNumber := GetMachineNumber()
 	logFilePath := fmt.Sprintf("logs/machine.%s.log", machineNumber)

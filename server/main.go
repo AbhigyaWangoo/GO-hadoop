@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip"
@@ -17,46 +15,26 @@ import (
 
 // Send suspicion flip message to all machines
 func setSendingSuspicionFlip(enable bool) {
-	// utils.GossipMutex.Lock()
 	utils.ENABLE_SUSPICION = enable
-	// utils.GossipMutex.Unlock()
 
 	// Send enable messages to all nodes
 	for info := range utils.MembershipMap.IterBuffered() {
 		nodeIp, _ := info.Key, info.Val
 
-		if enable { // 172.22.158.162
+		if enable { // if enabling, suspicion, send a certain string. else, send a differnt one
 			gossip.PingServer(nodeIp, utils.ENABLE_SUSPICION_MSG)
 		} else {
 			gossip.PingServer(nodeIp, utils.DISABLE_SUSPICION_MSG)
 		}
 	}
-
-	// time.Sleep(2) // sleep for 2 seconds to allow messages to propagate in network
 }
 
 func main() {
 
 	go gossip.InitializeGossip()
 
-	go func() {
-		sigChan := make(chan os.Signal, 1)
-
-		// Listen for the interrupt signal (Ctrl-C) and other termination signals
-		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
-		// Block until a signal is received
-		<-sigChan
-
-		currentTime := time.Now()
-		unixTimestamp := currentTime.UnixNano()
-		fmt.Println("Execution Done: ", unixTimestamp)
-
-		os.Exit(0)
-	}()
-
 	for {
-		reader := bufio.NewReader(os.Stdin)
+		reader := bufio.NewReader(os.Stdin) // Our reader to handle userinputted commands
 		command, err := reader.ReadString('\n')
 		if err != nil {
 			log.Fatal(err)
@@ -72,7 +50,6 @@ func main() {
 			if member, ok := utils.MembershipMap.Get(utils.Ip); ok {
 				member.State = utils.LEFT
 				utils.MembershipMap.Set(utils.Ip, member)
-				// gossip.SendMembershipList()
 				time.Sleep(time.Second)
 			}
 			os.Exit(0)
@@ -100,6 +77,3 @@ func main() {
 		}
 	}
 }
-
-// Run grep server in a seperate thread/proccess
-// Initialize sender and reciever threads as well as thread counting nodes
