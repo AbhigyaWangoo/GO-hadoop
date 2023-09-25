@@ -51,11 +51,13 @@ func Merge(NewMemberInfo cmap.ConcurrentMap[string, utils.Member]) {
 func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Member {
 	// If both members are the same version of a node
 	if localMember.CreationTimestamp == newMember.CreationTimestamp {
+		// If either version is marked down, return the node as down
 		if localMember.State == utils.DOWN || newMember.State == utils.DOWN {
 			localMember.State = utils.DOWN
 			return localMember
 		}
 
+		// If either version is marked left, return the node as left
 		if localMember.State == utils.LEFT || newMember.State == utils.LEFT {
 			// If the local member still thinks a node is there, but a node with more recent history knows a node left, log that the node left
 			if localMember.State != utils.LEFT {
@@ -69,7 +71,7 @@ func UpdateMembership(localMember utils.Member, newMember utils.Member) utils.Me
 		// Find the current most up to date member by heartbeats
 		upToDateMember, sameHeartbeatCount := utils.CurrentMember(localMember, newMember)
 		if sameHeartbeatCount {
-			localMember.State = utils.Max(localMember.State, newMember.State)
+			localMember.State = utils.Max(localMember.State, newMember.State) // If they have the same heartbeat count, set the state as whatever is the most prominent (ALIVE < SUS < DOWN)
 		} else {
 			// If the newest isn't the local member, update the local member
 			if localMember != upToDateMember && upToDateMember.State == utils.ALIVE {
@@ -115,19 +117,19 @@ func ListenForLists() {
 		// Read data from the UDP connection
 		n, _, err := udpConn.ReadFromUDP(buffer)
 		randomNum := utils.RandomNumInclusive()
-		
+
 		if err != nil {
 			fmt.Println("Error reading from UDP connection:", err)
-			continue 
+			continue
 		} else if randomNum <= utils.MessageDropRate {
 			continue
 		}
 
 		data := buffer[:n]
 
-		if strings.Compare(string(data), utils.ENABLE_SUSPICION_MSG) == 0  {
+		if strings.Compare(string(data), utils.ENABLE_SUSPICION_MSG) == 0 {
 			utils.ENABLE_SUSPICION = true
-		} else if strings.Compare(string(data), utils.DISABLE_SUSPICION_MSG) == 0 { 
+		} else if strings.Compare(string(data), utils.DISABLE_SUSPICION_MSG) == 0 {
 			utils.ENABLE_SUSPICION = false
 		} else {
 			newlist, errDeseriealize := DeserializeStruct(data)

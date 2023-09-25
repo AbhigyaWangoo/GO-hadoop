@@ -33,7 +33,7 @@ func InitializeGossip() {
 	if utils.Ip != utils.INTRODUCER_IP { // if we're not the introducer, we've gotta ping the introducer
 		PingServer(utils.INTRODUCER_IP, "")
 	}
-	
+
 	go SendMembershipList()
 	go PruneNodeMembers()
 	ListenForLists()
@@ -67,30 +67,31 @@ func PruneNodeMembers() {
 				continue
 			}
 
-			// If the time elasped since last updated is greater than 6 (Tfail + Tcleanup), mark node as DOWN
 			if node, ok := utils.MembershipMap.Get(nodeIp); ok {
 				// If node has left the network, don't do any additional pruning
 				if node.State == utils.LEFT {
 					continue
 				}
+				// If the time elasped since last updated is greater than 6 (Tfail + Tcleanup), mark node as DOWN
 				if time.Now().UnixNano()-lastUpdateTime >= utils.Tfail+utils.Tcleanup {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
 					}
 					node.State = utils.DOWN
-					} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
-						if node.State != utils.SUSPECTED {
-							mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS SUSPICIOUS\n", nodeIp)
-							utils.LogFile.WriteString(mssg)
-							
-							currentTime := time.Now()
-							unixTimestamp := currentTime.UnixNano()
+				} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than Tfail, mark node as SUSPECTED
+					// If the node is not already suspicious, log it as so
+					if node.State != utils.SUSPECTED {
+						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS SUSPICIOUS\n", nodeIp)
+						utils.LogFile.WriteString(mssg)
 
-							fmt.Printf("SETTING NODE WITH IP %s AS SUSPICIOUS AT TIME %d\n", nodeIp, unixTimestamp)
-						}
-						node.State = utils.SUSPECTED
-				} else if !utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail {
+						currentTime := time.Now()
+						unixTimestamp := currentTime.UnixNano()
+
+						fmt.Printf("SETTING NODE WITH IP %s AS SUSPICIOUS AT TIME %d\n", nodeIp, unixTimestamp)
+					}
+					node.State = utils.SUSPECTED
+				} else if !utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If suspicion is disabled, mark the node as down as soon as time > Tfail
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
