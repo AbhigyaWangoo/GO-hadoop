@@ -59,7 +59,6 @@ func GetOutboundIP() net.IP {
 func PruneNodeMembers() {
 	for {
 
-		num_dead := 0
 		// Go through all currently stored nodes and check their lastUpdatedTimes
 		for info := range utils.MembershipUpdateTimes.IterBuffered() {
 			nodeIp, lastUpdateTime := info.Key, info.Val
@@ -74,15 +73,10 @@ func PruneNodeMembers() {
 				if node.State == utils.LEFT {
 					continue
 				}
-				// utils.GossipMutex.Lock()
 				if time.Now().UnixNano()-lastUpdateTime >= utils.Tfail+utils.Tcleanup {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
-						num_dead += 1
-						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 79\n", nodeIp)
-						// fmt.Println("Unix Timestamp (nanoseconds since epoch) for left node:", unixTimestamp)
-						
 					}
 					node.State = utils.DOWN
 					} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than 5 (Tfail), mark node as SUSPECTED
@@ -100,26 +94,12 @@ func PruneNodeMembers() {
 					if node.State != utils.DOWN {
 						mssg := fmt.Sprintf("SETTING NODE WITH IP %s AS DOWN\n", nodeIp)
 						utils.LogFile.WriteString(mssg)
-						num_dead += 1
-
-						// currentTime := time.Now()
-						// unixTimestamp := currentTime.UnixNano()
-						// fmt.Println("Unix Timestamp (nanoseconds since epoch) for left node:", unixTimestamp)
-
-						// fmt.Printf("SETTING NODE WITH IP %s AS DOWN ON LINE 85\n", nodeIp)
 					}
-					// utils.GossipMutex.Unlock()
 					node.State = utils.DOWN
 				} else {
 					node.State = utils.ALIVE
 				}
 				utils.MembershipMap.Set(nodeIp, node)
-
-				if num_dead >= 5 {
-					currentTime := time.Now()
-					unixTimestamp := currentTime.UnixNano()
-					fmt.Println("Unix Timestamp (nanoseconds since epoch) for left node:", unixTimestamp)
-				}
 			}
 		}
 	}
@@ -132,9 +112,3 @@ func PrintMembership() {
 		}
 	}
 }
-
-// The new flow is as following:
-// 1. A node when coming online, creates a membership list with just it's data and sends that to the introducer
-// 2. The introducer node treats the connection just like any other node. With the merge, the introducer is now aware of the new node.
-// 3. Start the listening for lists to listen for udp connections from the socket in a thread
-// 4. start a thread that every t seconds sends its membership list to k machines.
