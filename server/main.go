@@ -29,10 +29,7 @@ func setSendingSuspicionFlip(enable bool) {
 	}
 }
 
-func main() {
-
-	go gossip.InitializeGossip()
-
+func RunGossipCLI() {
 	for {
 		reader := bufio.NewReader(os.Stdin) // Our reader to handle userinputted commands
 		command, err := reader.ReadString('\n')
@@ -76,4 +73,10 @@ func main() {
 
 		}
 	}
+}
+
+func main() {
+	go gossip.InitializeGossip()
+
+	RunGossipCLI()
 }
