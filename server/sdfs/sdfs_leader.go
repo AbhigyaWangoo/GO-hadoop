@@ -32,3 +32,6 @@ func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
 }
 
 // Master functions
+func RouteToSubMasters(IncomingAck utils.Task) {
+	// Route an incoming ack that makes a change to the membership list to the submasters.(Bully git issue)
+}
