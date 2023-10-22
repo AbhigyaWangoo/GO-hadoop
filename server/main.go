@@ -11,6 +11,7 @@ import (
 
 	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
+	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
 	sdfs_client "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
 )
 
@@ -125,6 +126,7 @@ func RunCLI() {
 
 func main() {
 	go gossip.InitializeGossip()
+	go sdfs.InitializeSdfsProcess()
 
 	RunCLI()
 }
