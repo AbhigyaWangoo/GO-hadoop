@@ -20,12 +20,21 @@ const (
 	LEFT      = 3
 )
 
+type SdfsNodeType int
+
+const (
+	LEADER     SdfsNodeType = 0
+	SUB_LEADER SdfsNodeType = 1
+	FOLLOWER   SdfsNodeType = 2
+)
+
 type Member struct {
 	Ip                string
 	Port              string
 	CreationTimestamp int64
 	HeartbeatCounter  int
 	State             int
+	Type              SdfsNodeType
 }
 
 const INTRODUCER_IP string = "172.22.158.162"

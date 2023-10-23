@@ -60,3 +60,8 @@ func InitiateLsCommand(sdfs_filename string) {
 func InitiateStoreCommand() {
 
 }
+
+func GetMaster() string {
+	// Get master IP from Gossip Mmebership Map
+	return "not impl"
+}
