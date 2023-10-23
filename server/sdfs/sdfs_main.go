@@ -6,6 +6,7 @@ import (
 	"net"
 
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
+	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 )
 
 func InitializeSdfsProcess() {
@@ -49,6 +50,12 @@ func HandleConnection(conn net.Conn) {
 	}
 
 	// if task.isack && we're a master node, spawn a seperate master.handleAck
+	if task.IsAck {
+		machineType := MachineType()
+		if machineType == gossiputils.LEADER  {
+			// 
+		} 
+	}
 
 	if task.ConnectionOperation == utils.DELETE {
 		HandleDeleteConnection(task)
