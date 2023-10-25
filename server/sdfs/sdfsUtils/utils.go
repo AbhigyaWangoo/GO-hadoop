@@ -22,7 +22,7 @@ type Task struct {
 	ConnectionOperation BlockOperation // READ, WRITE, GET_2D, OR DELETE from sdfs utils
 	FileName            string
 	BlockIndex          int
-	DataSize            int
+	DataSize            int // TODO change me to uint32
 	IsAck               bool
 }
 
@@ -96,4 +96,24 @@ func CeilDivide(a, b int64) int64 {
 	}
 
 	return quotient
+}
+
+func GetFileName(sdfs_filename string, blockidx string) string {
+	return fmt.Sprintf("%s_%s", blockidx, sdfs_filename)
+}
+
+func GetFilePtr(sdfs_filename string, blockidx string, flags int) (*os.File, error) {
+	// Specify the file path
+	filePath := GetFileName(sdfs_filename, blockidx)
+
+	// Open the file with read-write permissions and create it if it doesn't exist
+	file, err := os.OpenFile(filePath, flags, 0666)
+	if err != nil {
+		// Handle the error if the file cannot be opened
+		if os.IsNotExist(err) {
+			fmt.Println("File does not exist.")
+		}
+	}
+
+	return file, err
 }
