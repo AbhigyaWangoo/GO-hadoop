@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"sync"
 )
 
 type BlockOperation int
@@ -35,6 +36,8 @@ const FILESYSTEM_ROOT string = "sdfs/sdfsFileSystemRoot/"
 const BLOCK_SIZE int = 128 * MB
 const REPLICATION_FACTOR int = 4
 
+var MuLocalFs sync.Mutex
+var CondLocalFs = sync.NewCond(&MuLocalFs)
 var MASTER_IP string = "172.22.158.162"
 
 // Opens a tcp connection to the provided ip address and port, and returns the connection object
@@ -119,7 +122,7 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (*os.File, err
 	return file, err
 }
 
-// This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and 
+// This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and
 // buffered write to (a connection if fromLocal is true, the filepointer if fromLocal is false)
 func BufferedReadAndWrite(conn net.Conn, fp *os.File, size int, fromLocal bool) error {
 	var bytes_read int = 0
@@ -136,7 +139,7 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size int, fromLocal bool) 
 
 		var nRead int = 0
 		var readErr error = nil
-		
+
 		if fromLocal {
 			nRead, readErr = fp.Read(dataBuffer)
 		} else {
@@ -154,10 +157,9 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size int, fromLocal bool) 
 			return readErr // Error while reading data
 		}
 
-
-		var nWritten int = 0 
+		var nWritten int = 0
 		var writeErr error = nil
-		
+
 		if fromLocal {
 			nWritten, writeErr = conn.Write(dataBuffer[:nRead])
 		} else {
@@ -191,6 +193,6 @@ func SendAck(task Task) error {
 	task.IsAck = true
 
 	// send ack to connection
-
+	
 	return nil
 }
