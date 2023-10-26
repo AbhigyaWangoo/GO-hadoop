@@ -17,10 +17,10 @@ const (
 )
 
 type Task struct {
-	DataTargetIp        string
-	AckTargetIp         string
+	DataTargetIp        [16]byte
+	AckTargetIp         [16]byte
 	ConnectionOperation BlockOperation // READ, WRITE, GET_2D, OR DELETE from sdfs utils
-	FileName            string
+	FileName            [1024]byte
 	BlockIndex          int
 	DataSize            int
 	IsAck               bool
