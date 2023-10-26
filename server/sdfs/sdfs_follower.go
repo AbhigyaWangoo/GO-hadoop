@@ -8,7 +8,7 @@ import (
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
-var FileSet map[int]bool
+var FileSet map[string]bool
 
 func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	// TODO: given the filename.blockidx, this function needs to buffered read a Task.DataSize amount of data from the
@@ -27,13 +27,24 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	}
 	defer fp.Close()
 
+	localFilename := utils.GetFileName(Task.FileName, fmt.Sprint(Task.BlockIndex))
+
+	utils.MuLocalFs.Lock()
+	for FileSet[localFilename] {
+		utils.CondLocalFs.Wait()
+	}
+
+	FileSet[localFilename] = true
 	bufferedErr := utils.BufferedReadAndWrite(conn, fp, Task.DataSize, false)
 	if bufferedErr != nil {
 		fmt.Println("Error:", bufferedErr)
 		return bufferedErr
 	} // WORKS UP TO HERE
-	// SendAck(Task)
-
+		
+	FileSet[localFilename] = false
+	utils.MuLocalFs.Unlock()
+	
+	utils.CondLocalFs.Signal()
 	fmt.Println("Recieved a request to write to this node")
 	return nil
 }
