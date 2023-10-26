@@ -2,7 +2,6 @@ package sdfs
 
 import (
 	"fmt"
-	"io"
 	"net"
 	"os"
 
@@ -28,7 +27,7 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	}
 	defer fp.Close()
 
-	bufferedErr := BufferedReadAndWriteToLocalFs(conn, fp, Task.DataSize)
+	bufferedErr := utils.BufferedReadAndWrite(conn, fp, Task.DataSize, false)
 	if bufferedErr != nil {
 		fmt.Println("Error:", bufferedErr)
 		return bufferedErr
@@ -66,52 +65,4 @@ func HandleGetConnection(Task utils.Task) {
 	// SendAck(Task)
 
 	fmt.Println("Recieved a request to get some block from this node")
-}
-
-// TODO: given the filename.blockidx, this function needs to buffered read a Task.DataSize amount of data from the
-// connection, all as one block (buffered read, ofc) and write it to the file sdfs/data/filename.blockidx.
-// Additionally, if another thread is currently reading/writing to a block, this should block until
-// that operation is done. When this thread does end up in the middle of a write, it must mark that particular file as being written to
-// in the FileSet map.
-func BufferedReadAndWriteToLocalFs(conn net.Conn, fp *os.File, size int) error {
-	var bytes_read int = 0
-	var total_bytes_read int = 0
-	bufferSize := 4 * utils.KB
-	dataBuffer := make([]byte, bufferSize)
-
-	fmt.Println("Entering buffered readwrite")
-
-	for {
-		if bytes_read == 0 && total_bytes_read == size {
-			break
-		}
-
-		nRead, readErr := conn.Read(dataBuffer)
-		// fmt.Printf("data: %s, num read: %d\n", fmt.Sprint(dataBuffer[:nRead]), nRead)
-		if readErr != nil {
-			if readErr == io.EOF {
-				if total_bytes_read < size {
-					return io.ErrUnexpectedEOF
-				}
-				break // Connection closed by the other end
-			}
-			return readErr // Error while reading data
-		}
-
-		nWritten, writeErr := fp.Write(dataBuffer[:nRead])
-		// fmt.Printf("num written: %d\n", nWritten)
-		if nWritten < nRead {
-			return io.ErrShortWrite
-		} else if nWritten > nRead || writeErr != nil { 
-			return writeErr
-		} 
-
-		bytes_read += nRead
-		total_bytes_read += nRead
-
-		// fmt.Println("P: ", nWritten)
-		// fmt.Println("P: ", total_bytes_read)
-	}
-
-	return nil
 }

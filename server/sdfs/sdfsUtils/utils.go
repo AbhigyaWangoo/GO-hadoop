@@ -2,6 +2,7 @@ package sdfsutils
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
 )
@@ -116,4 +117,80 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (*os.File, err
 	}
 
 	return file, err
+}
+
+// This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and 
+// buffered write to (a connection if fromLocal is true, the filepointer if fromLocal is false)
+func BufferedReadAndWrite(conn net.Conn, fp *os.File, size int, fromLocal bool) error {
+	var bytes_read int = 0
+	var total_bytes_read int = 0
+	bufferSize := 4 * KB
+	dataBuffer := make([]byte, bufferSize)
+
+	fmt.Println("Entering buffered readwrite")
+
+	for {
+		if bytes_read == 0 && total_bytes_read == size {
+			break
+		}
+
+		var nRead int = 0
+		var readErr error = nil
+		
+		if fromLocal {
+			nRead, readErr = fp.Read(dataBuffer)
+		} else {
+			nRead, readErr = conn.Read(dataBuffer)
+		}
+
+		// fmt.Printf("data: %s, num read: %d\n", string(dataBuffer[:nRead]), nRead)
+		if readErr != nil {
+			if readErr == io.EOF {
+				if total_bytes_read < size {
+					return io.ErrUnexpectedEOF
+				}
+				break // Connection closed by the other end
+			}
+			return readErr // Error while reading data
+		}
+
+
+		var nWritten int = 0 
+		var writeErr error = nil
+		
+		if fromLocal {
+			nWritten, writeErr = conn.Write(dataBuffer[:nRead])
+		} else {
+			nWritten, writeErr = fp.Write(dataBuffer[:nRead])
+		}
+
+		// fmt.Printf("num written: %d\n", nWritten)
+		if nWritten < nRead {
+			return io.ErrShortWrite
+		} else if nWritten > nRead || writeErr != nil {
+			return writeErr
+		}
+
+		bytes_read += nRead
+		total_bytes_read += nRead
+
+		// fmt.Println("P: ", nWritten)
+		// fmt.Println("P: ", total_bytes_read)
+	}
+
+	return nil
+}
+
+func SendAck(task Task) error {
+	conn, tcpOpenError := OpenTCPConnection(task.AckTargetIp, SDFS_PORT)
+	if tcpOpenError != nil {
+		return nil
+	}
+	defer conn.Close()
+
+	task.IsAck = true
+
+	// send ack to connection
+
+	return nil
 }
