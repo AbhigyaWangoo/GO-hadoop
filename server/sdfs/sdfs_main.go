@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"net"
 
-	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
+
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
+	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
 func InitializeSdfsProcess() {
 
 	// Initialize set of which files are being written/read from. This is to avoid concurrent access of file pointers.
-	FileSet = make(map[int]bool)
+	FileSet = make(map[string]bool)
 
 	tcpConn, listenError := utils.ListenOnTCPConnection(utils.SDFS_PORT)
 	if listenError != nil {
@@ -49,21 +50,21 @@ func HandleConnection(conn net.Conn) {
 	// 	return
 	// }
 	task := utils.Task{
-        DataTargetIp:        "192.168.0.1",
-        AckTargetIp:         "192.168.0.2",
-        ConnectionOperation: utils.WRITE, // Assuming BlockOperation is a string alias
-        FileName:            "1_mb_put.txt",
-        BlockIndex:          0,
-        DataSize:            1048576,
-        IsAck:               false,
-    }
+		DataTargetIp:        "192.168.0.1",
+		AckTargetIp:         "192.168.0.2",
+		ConnectionOperation: utils.WRITE, // Assuming BlockOperation is a string alias
+		FileName:            "1_mb_put.txt",
+		BlockIndex:          0,
+		DataSize:            1048576,
+		IsAck:               false,
+	}
 
 	// if task.isack && we're a master node, spawn a seperate master.handleAck
 	if task.IsAck {
 		machineType := MachineType()
-		if machineType == gossiputils.LEADER  {
-			// 
-		} 
+		if machineType == gossiputils.LEADER {
+			//
+		}
 	}
 
 	if task.ConnectionOperation == utils.DELETE {
