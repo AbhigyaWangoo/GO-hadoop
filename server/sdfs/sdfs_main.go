@@ -1,7 +1,7 @@
 package sdfs
 
 import (
-	"encoding/gob"
+	// "encoding/gob"
 	"fmt"
 	"net"
 
@@ -39,15 +39,24 @@ func InitializeSdfsProcess() {
 
 func HandleConnection(conn net.Conn) {
 	// Create a decoder for the connection
-	decoder := gob.NewDecoder(conn)
+	// decoder := gob.NewDecoder(conn)
 
 	// Decode the FollowerTask instance
-	var task utils.Task
-	err := decoder.Decode(&task)
-	if err != nil {
-		fmt.Println("Error decoding:", err)
-		return
-	}
+	// var task utils.Task
+	// err := decoder.Decode(&task)
+	// if err != nil {
+	// 	fmt.Println("Error decoding:", err)
+	// 	return
+	// }
+	task := utils.Task{
+        DataTargetIp:        "192.168.0.1",
+        AckTargetIp:         "192.168.0.2",
+        ConnectionOperation: utils.WRITE, // Assuming BlockOperation is a string alias
+        FileName:            "1_mb_put.txt",
+        BlockIndex:          0,
+        DataSize:            1048576,
+        IsAck:               false,
+    }
 
 	// if task.isack && we're a master node, spawn a seperate master.handleAck
 	if task.IsAck {
