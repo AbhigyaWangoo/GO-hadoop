@@ -1,6 +1,15 @@
 package sdfs
 
-import "fmt"
+import (
+	"crypto/rand"
+	"encoding/json"
+	"fmt"
+	"math/big"
+	"unsafe"
+
+	gossipUtils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
+	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
+)
 
 func RequestBlockMappings(FileName string) [][]string {
 	// 1. Create a task with the GET_2D block operation, and send to current master. If timeout/ doesn't work, send to 1st submaster, second, and so on.
@@ -15,9 +24,54 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	fmt.Printf("localfilename: %s sdfs: %s\n", LocalFilename, SdfsFilename)
 
 	// IF CONNECTION CLOSES WHILE WRITING, WE NEED TO REPICK AN IP ADDR. Can have a seperate function to handle this on failure cases.
+	// Ask master when its ok to start writing
+	masterConnection, err := utils.OpenTCPConnection(utils.MASTER_IP, utils.SDFS_PORT)
+	if err != nil {
+		fmt.Errorf("error opening master connection: ", err)
+	}
+	var sentinalIp [16]byte
+	copy(sentinalIp[:], "-1")
+
+	var sdfsFilename [1024]byte
+	copy(sdfsFilename[:], []byte(SdfsFilename))
+
+	checkCanPut := utils.Task{
+		DataTargetIp:        sentinalIp,
+		AckTargetIp:         sentinalIp,
+		ConnectionOperation: utils.WRITE,
+		FileName:            sdfsFilename,
+		BlockIndex:          -1,
+		DataSize:            -1,
+		IsAck:               false,
+	}
+
+	marshaledData, err := json.Marshal(checkCanPut)
+	if err != nil {
+		fmt.Errorf("error marshaling data: ", err)
+	}
+	masterConnection.Write(marshaledData)
+	buffer := make([]byte, unsafe.Sizeof(checkCanPut))
+	masterConnection.Read(buffer) // Don't need to check what was read, if something is read at all it's an ack
 
 	// 1. Create 2d array of ip addressses
 	// 		Call InitializeBlockLocationsEntry(), which should init an empty array for a filename.
+
+	fileSize := utils.GetFileSize("test/" + LocalFilename)
+
+	n, m := utils.CeilDivide(fileSize, int64(utils.BLOCK_SIZE)), utils.REPLICATION_FACTOR
+
+	// locationsToWrite := InitializeBlockLocationsEntry(SdfsFilename, fileInfo.Size())
+
+	for current_block := int64(0); current_block < n; current_block++ {
+		allMemberIps := gossipUtils.MembershipMap.Keys()
+		remainingIps := make([]string, len(allMemberIps))
+		copy(remainingIps, allMemberIps)
+		for current_replica := 0; current_replica < m; current_replica++ {
+			ipToSendBlock, remainingIps := PopRandomElementInArray(remainingIps)
+			
+		}
+	}
+
 	// 2. For i = 0; i < num_blocks; i ++
 	// 		2.a. Construct a List of FollowerTasks, with the ack target as the master and DataTargetIp as empty
 	// 		2.b. Open Connections to all ips in 2darr[i], and write tasks to all ips.
@@ -64,4 +118,16 @@ func InitiateStoreCommand() {
 func GetMaster() string {
 	// Get master IP from Gossip Mmebership Map
 	return "not impl"
+}
+
+func PopRandomElementInArray(array []string) (string, []string) {
+	// Get a random index using crypto/rand
+	max := big.NewInt(int64(len(array)))
+	randomIndexBig, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		panic(err)
+	}
+	randomIndex := randomIndexBig.Int64()
+
+	return array[randomIndex], append(array[:randomIndex], array[randomIndex+1:]...)
 }
