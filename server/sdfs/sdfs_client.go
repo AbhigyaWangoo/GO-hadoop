@@ -1,10 +1,8 @@
 package sdfs
 
 import (
-	"crypto/rand"
 	"fmt"
 	"log"
-	"math/big"
 	"os"
 	"unsafe"
 
@@ -49,11 +47,6 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	// 		Call InitializeBlockLocationsEntry(), which should init an empty array for a filename.
 
 	pathToLocalFile := "test/" + LocalFilename
-	file, err := os.Open(pathToLocalFile)
-	if err != nil {
-		log.Fatalf("error opening master connection: ", err)
-	}
-	defer file.Close()
 
 	fileSize := utils.GetFileSize(pathToLocalFile)
 
@@ -63,33 +56,48 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 
 	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
 		allMemberIps := gossipUtils.MembershipMap.Keys()
-		remainingIps := make([]string, len(allMemberIps))
+		remainingIps := utils.CreateConcurrentStringSlice(allMemberIps)
+		// remainingIps := make([]string, len(allMemberIps))
 		startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
-		copy(remainingIps, allMemberIps)
 		for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
-			ipToSendBlock, tRemainingIps := PopRandomElementInArray(remainingIps)
-			remainingIps = tRemainingIps
-			conn, err := utils.OpenTCPConnection(ipToSendBlock, utils.SDFS_PORT)
-			if err != nil {
-				log.Fatalf("error opening master connection: ", err)
-			}
-			defer conn.Close()
-			blockWritingTask := utils.Task{
-				DataTargetIp:        utils.New16Byte(""),
-				AckTargetIp:         utils.New16Byte(utils.MASTER_IP),
-				ConnectionOperation: utils.WRITE,
-				FileName:            utils.New1024Byte(SdfsFilename),
-				BlockIndex:          int(currentBlock),
-				DataSize:            int(lengthToWrite),
-				IsAck:               false,
-			}
-			conn.Write(blockWritingTask.Marshal()) // Potential issue if error
+			go func() {
+				file, err := os.Open(pathToLocalFile)
+				if err != nil {
+					log.Fatalf("error opening local file: ", err)
+				}
+				defer file.Close()
+				for {
+					if remainingIps.Size() == 0 {
+						break
+					}
+					if ip, ok := remainingIps.PopRandomElement().(string); ok {
+						conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
+						if err != nil {
+							log.Fatalf("error opening follower connection: ", err)
+							continue
+						}
+						defer conn.Close()
+						blockWritingTask := utils.Task{
+							DataTargetIp:        utils.New16Byte(""),
+							AckTargetIp:         utils.New16Byte(utils.MASTER_IP),
+							ConnectionOperation: utils.WRITE,
+							FileName:            utils.New1024Byte(SdfsFilename),
+							BlockIndex:          int(currentBlock),
+							DataSize:            int(lengthToWrite),
+							IsAck:               false,
+						}
+						conn.Write(blockWritingTask.Marshal()) // Potential issue if error
 
-			file.Seek(0, int(startIdx))
-			err = utils.BufferedReadAndWrite(conn, file, int(lengthToWrite), true)
-			if err != nil { // If failure to write full block, redo loop
-				currentReplica--
-			}
+						file.Seek(0, int(startIdx))
+						err = utils.BufferedReadAndWrite(conn, file, int(lengthToWrite), true)
+						if err != nil { // If failure to write full block, redo loop
+							log.Fatalf("connection broke early, rewrite block")
+							continue
+						}
+						break
+					}
+				}
+			}()
 		}
 	}
 
@@ -141,14 +149,21 @@ func GetMaster() string {
 	return "not impl"
 }
 
-func PopRandomElementInArray(array []string) (string, []string) {
-	// Get a random index using crypto/rand
-	max := big.NewInt(int64(len(array)))
-	randomIndexBig, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		panic(err)
-	}
-	randomIndex := randomIndexBig.Int64()
+// func PopRandomElementInArray(array *utils.ConcurrentSlice) string {
+// 	// Get a random index using crypto/rand
+// 	max := big.NewInt(int64(array.Size()))
+// 	randomIndexBig, err := rand.Int(rand.Reader, max)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	randomIndex := randomIndexBig.Int64()
 
-	return array[randomIndex], append(array[:randomIndex], array[randomIndex+1:]...)
-}
+// 	str, ok := array.Pop(int(randomIndex)).(string)
+// 	if ok {
+// 		return str
+// 	} else {
+// 		log.Fatalf("The interface does not contain a string")
+// 	}
+// 	return ""
+// 	// [randomIndex], append(array[:randomIndex], array[randomIndex+1:]...)
+// }
