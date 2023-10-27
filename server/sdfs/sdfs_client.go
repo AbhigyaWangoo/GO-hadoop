@@ -2,9 +2,10 @@ package sdfs
 
 import (
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
+	"log"
 	"math/big"
+	"os"
 	"unsafe"
 
 	gossipUtils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -29,46 +30,66 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	if err != nil {
 		fmt.Errorf("error opening master connection: ", err)
 	}
-	var sentinalIp [16]byte
-	copy(sentinalIp[:], "-1")
-
-	var sdfsFilename [1024]byte
-	copy(sdfsFilename[:], []byte(SdfsFilename))
 
 	checkCanPut := utils.Task{
-		DataTargetIp:        sentinalIp,
-		AckTargetIp:         sentinalIp,
+		DataTargetIp:        utils.New16Byte("-1"),
+		AckTargetIp:         utils.New16Byte("-1"),
 		ConnectionOperation: utils.WRITE,
-		FileName:            sdfsFilename,
+		FileName:            utils.New1024Byte(SdfsFilename),
 		BlockIndex:          -1,
 		DataSize:            -1,
 		IsAck:               false,
 	}
 
-	marshaledData, err := json.Marshal(checkCanPut)
-	if err != nil {
-		fmt.Errorf("error marshaling data: ", err)
-	}
-	masterConnection.Write(marshaledData)
+	masterConnection.Write(checkCanPut.Marshal())
 	buffer := make([]byte, unsafe.Sizeof(checkCanPut))
 	masterConnection.Read(buffer) // Don't need to check what was read, if something is read at all it's an ack
 
 	// 1. Create 2d array of ip addressses
 	// 		Call InitializeBlockLocationsEntry(), which should init an empty array for a filename.
 
-	fileSize := utils.GetFileSize("test/" + LocalFilename)
+	pathToLocalFile := "test/" + LocalFilename
+	file, err := os.Open(pathToLocalFile)
+	if err != nil {
+		log.Fatalf("error opening master connection: ", err)
+	}
+	defer file.Close()
 
-	n, m := utils.CeilDivide(fileSize, int64(utils.BLOCK_SIZE)), utils.REPLICATION_FACTOR
+	fileSize := utils.GetFileSize(pathToLocalFile)
+
+	numberBlocks, numberReplicas := utils.CeilDivide(fileSize, int64(utils.BLOCK_SIZE)), utils.REPLICATION_FACTOR
 
 	// locationsToWrite := InitializeBlockLocationsEntry(SdfsFilename, fileInfo.Size())
 
-	for current_block := int64(0); current_block < n; current_block++ {
+	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
 		allMemberIps := gossipUtils.MembershipMap.Keys()
 		remainingIps := make([]string, len(allMemberIps))
+		startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
 		copy(remainingIps, allMemberIps)
-		for current_replica := 0; current_replica < m; current_replica++ {
-			ipToSendBlock, remainingIps := PopRandomElementInArray(remainingIps)
-			
+		for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
+			ipToSendBlock, tRemainingIps := PopRandomElementInArray(remainingIps)
+			remainingIps = tRemainingIps
+			conn, err := utils.OpenTCPConnection(ipToSendBlock, utils.SDFS_PORT)
+			if err != nil {
+				log.Fatalf("error opening master connection: ", err)
+			}
+			defer conn.Close()
+			blockWritingTask := utils.Task{
+				DataTargetIp:        utils.New16Byte(""),
+				AckTargetIp:         utils.New16Byte(utils.MASTER_IP),
+				ConnectionOperation: utils.WRITE,
+				FileName:            utils.New1024Byte(SdfsFilename),
+				BlockIndex:          int(currentBlock),
+				DataSize:            int(lengthToWrite),
+				IsAck:               false,
+			}
+			conn.Write(blockWritingTask.Marshal()) // Potential issue if error
+
+			file.Seek(0, int(startIdx))
+			err = utils.BufferedReadAndWrite(conn, file, int(lengthToWrite), true)
+			if err != nil { // If failure to write full block, redo loop
+				currentReplica--
+			}
 		}
 	}
 

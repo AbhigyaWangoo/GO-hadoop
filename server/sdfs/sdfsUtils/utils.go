@@ -1,10 +1,13 @@
 package sdfsutils
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -184,7 +187,7 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size int, fromLocal bool) 
 }
 
 func SendAck(task Task) error {
-	conn, tcpOpenError := OpenTCPConnection(task.AckTargetIp, SDFS_PORT)
+	conn, tcpOpenError := OpenTCPConnection(BytesToString(task.AckTargetIp), SDFS_PORT)
 	if tcpOpenError != nil {
 		return nil
 	}
@@ -193,6 +196,46 @@ func SendAck(task Task) error {
 	task.IsAck = true
 
 	// send ack to connection
-	
+
 	return nil
+}
+
+func New16Byte(data string) [16]byte {
+	var byteArr [16]byte
+	copy(byteArr[:], []byte(data))
+	return byteArr
+}
+
+func New1024Byte(data string) [1024]byte {
+	var byteArr [1024]byte
+	copy(byteArr[:], []byte(data))
+	return byteArr
+}
+
+func BytesToString(data interface{}) string {
+	if byteArr, ok := data.([]byte); ok {
+		return strings.TrimRight(string(byteArr), "\x00")
+	}
+	return ""
+}
+
+func GetBlockPosition(blockNumber int64, fileSize int64) (int64, int64) {
+	currentByteIdx := blockNumber * int64(BLOCK_SIZE)
+	blockSize := GetMinInt64(fileSize-currentByteIdx, int64(BLOCK_SIZE))
+	return currentByteIdx, blockSize
+}
+
+func GetMinInt64(a int64, b int64) int64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func (task Task) Marshal() []byte {
+	marshaledTask, err := json.Marshal(task)
+	if err != nil {
+		log.Fatalf("error marshaling data: ", err)
+	}
+	return marshaledTask
 }
