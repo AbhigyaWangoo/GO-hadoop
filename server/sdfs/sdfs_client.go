@@ -1,6 +1,14 @@
 package sdfs
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"os"
+	"unsafe"
+
+	gossipUtils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
+	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
+)
 
 func RequestBlockMappings(FileName string) [][]string {
 	// 1. Create a task with the GET_2D block operation, and send to current master. If timeout/ doesn't work, send to 1st submaster, second, and so on.
@@ -15,9 +23,84 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	fmt.Printf("localfilename: %s sdfs: %s\n", LocalFilename, SdfsFilename)
 
 	// IF CONNECTION CLOSES WHILE WRITING, WE NEED TO REPICK AN IP ADDR. Can have a seperate function to handle this on failure cases.
+	// Ask master when its ok to start writing
+	masterConnection, err := utils.OpenTCPConnection(utils.LEADER_IP, utils.SDFS_PORT)
+	if err != nil {
+		fmt.Errorf("error opening master connection: ", err)
+	}
+
+	checkCanPut := utils.Task{
+		DataTargetIp:        utils.New16Byte("-1"),
+		AckTargetIp:         utils.New16Byte("-1"),
+		ConnectionOperation: utils.WRITE,
+		FileName:            utils.New1024Byte(SdfsFilename),
+		BlockIndex:          -1,
+		DataSize:            -1,
+		IsAck:               false,
+	}
+
+	masterConnection.Write(checkCanPut.Marshal())
+	buffer := make([]byte, unsafe.Sizeof(checkCanPut))
+	masterConnection.Read(buffer) // Don't need to check what was read, if something is read at all it's an ack
 
 	// 1. Create 2d array of ip addressses
 	// 		Call InitializeBlockLocationsEntry(), which should init an empty array for a filename.
+
+	pathToLocalFile := "test/" + LocalFilename
+
+	fileSize := utils.GetFileSize(pathToLocalFile)
+
+	numberBlocks, numberReplicas := utils.CeilDivide(fileSize, int64(utils.BLOCK_SIZE)), utils.REPLICATION_FACTOR
+
+	// locationsToWrite := InitializeBlockLocationsEntry(SdfsFilename, fileInfo.Size())
+
+	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
+		allMemberIps := gossipUtils.MembershipMap.Keys()
+		remainingIps := utils.CreateConcurrentStringSlice(allMemberIps)
+		// remainingIps := make([]string, len(allMemberIps))
+		startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
+		for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
+			go func() {
+				file, err := os.Open(pathToLocalFile)
+				if err != nil {
+					log.Fatalf("error opening local file: ", err)
+				}
+				defer file.Close()
+				for {
+					if remainingIps.Size() == 0 {
+						break
+					}
+					if ip, ok := remainingIps.PopRandomElement().(string); ok {
+						conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
+						if err != nil {
+							log.Fatalf("error opening follower connection: ", err)
+							continue
+						}
+						defer conn.Close()
+						blockWritingTask := utils.Task{
+							DataTargetIp:        utils.New16Byte(""),
+							AckTargetIp:         utils.New16Byte(utils.LEADER_IP),
+							ConnectionOperation: utils.WRITE,
+							FileName:            utils.New1024Byte(SdfsFilename),
+							BlockIndex:          int(currentBlock),
+							DataSize:            int(lengthToWrite),
+							IsAck:               false,
+						}
+						conn.Write(blockWritingTask.Marshal()) // Potential issue if error
+
+						file.Seek(0, int(startIdx))
+						err = utils.BufferedReadAndWrite(conn, file, int(lengthToWrite), true)
+						if err != nil { // If failure to write full block, redo loop
+							log.Fatalf("connection broke early, rewrite block")
+							continue
+						}
+						break
+					}
+				}
+			}()
+		}
+	}
+
 	// 2. For i = 0; i < num_blocks; i ++
 	// 		2.a. Construct a List of FollowerTasks, with the ack target as the master and DataTargetIp as empty
 	// 		2.b. Open Connections to all ips in 2darr[i], and write tasks to all ips.
@@ -65,3 +148,22 @@ func GetMaster() string {
 	// Get master IP from Gossip Mmebership Map
 	return "not impl"
 }
+
+// func PopRandomElementInArray(array *utils.ConcurrentSlice) string {
+// 	// Get a random index using crypto/rand
+// 	max := big.NewInt(int64(array.Size()))
+// 	randomIndexBig, err := rand.Int(rand.Reader, max)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	randomIndex := randomIndexBig.Int64()
+
+// 	str, ok := array.Pop(int(randomIndex)).(string)
+// 	if ok {
+// 		return str
+// 	} else {
+// 		log.Fatalf("The interface does not contain a string")
+// 	}
+// 	return ""
+// 	// [randomIndex], append(array[:randomIndex], array[randomIndex+1:]...)
+// }
