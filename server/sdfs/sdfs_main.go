@@ -50,9 +50,10 @@ func HandleConnection(conn net.Conn) {
 	// }
 	task := utils.Task{
 		DataTargetIp:        utils.New16Byte("192.168.0.1"),
-		AckTargetIp:         utils.New16Byte("192.168.0.2"),
+		AckTargetIp:         utils.New16Byte(utils.LEADER_IP),
 		ConnectionOperation: utils.WRITE, // Assuming BlockOperation is a string alias
 		FileName:            utils.New1024Byte("1_mb_put.txt"),
+		FileNameLength:      12,
 		BlockIndex:          0,
 		DataSize:            1048576,
 		IsAck:               false,

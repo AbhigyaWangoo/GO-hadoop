@@ -24,7 +24,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 
 	// IF CONNECTION CLOSES WHILE WRITING, WE NEED TO REPICK AN IP ADDR. Can have a seperate function to handle this on failure cases.
 	// Ask master when its ok to start writing
-	masterConnection, err := utils.OpenTCPConnection(utils.MASTER_IP, utils.SDFS_PORT)
+	masterConnection, err := utils.OpenTCPConnection(utils.LEADER_IP, utils.SDFS_PORT)
 	if err != nil {
 		fmt.Errorf("error opening master connection: ", err)
 	}
@@ -79,7 +79,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						defer conn.Close()
 						blockWritingTask := utils.Task{
 							DataTargetIp:        utils.New16Byte(""),
-							AckTargetIp:         utils.New16Byte(utils.MASTER_IP),
+							AckTargetIp:         utils.New16Byte(utils.LEADER_IP),
 							ConnectionOperation: utils.WRITE,
 							FileName:            utils.New1024Byte(SdfsFilename),
 							BlockIndex:          int(currentBlock),
