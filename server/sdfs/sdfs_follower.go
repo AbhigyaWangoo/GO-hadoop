@@ -21,13 +21,13 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	fmt.Println("Entering put connection")
 	defer conn.Close()
 
-	fp, err := utils.GetFilePtr(Task.FileName, fmt.Sprint(Task.BlockIndex), os.O_WRONLY|os.O_CREATE)
+	fp, err := utils.GetFilePtr(string(Task.FileName[:]), fmt.Sprint(Task.BlockIndex), os.O_WRONLY|os.O_CREATE)
 	if err != nil {
 		return err
 	}
 	defer fp.Close()
 
-	localFilename := utils.GetFileName(Task.FileName, fmt.Sprint(Task.BlockIndex))
+	localFilename := utils.GetFileName(string(Task.FileName[:]), fmt.Sprint(Task.BlockIndex))
 
 	utils.MuLocalFs.Lock()
 	for FileSet[localFilename] {
@@ -40,10 +40,10 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 		fmt.Println("Error:", bufferedErr)
 		return bufferedErr
 	} // WORKS UP TO HERE
-		
+
 	FileSet[localFilename] = false
 	utils.MuLocalFs.Unlock()
-	
+
 	utils.CondLocalFs.Signal()
 	fmt.Println("Recieved a request to write to this node")
 	return nil
