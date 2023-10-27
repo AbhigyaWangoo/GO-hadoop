@@ -2,9 +2,12 @@ package sdfs
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os"
+	"strconv"
 
+	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
@@ -21,13 +24,14 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	fmt.Println("Entering put connection")
 	defer conn.Close()
 
-	fp, err := utils.GetFilePtr(string(Task.FileName[:]), fmt.Sprint(Task.BlockIndex), os.O_WRONLY|os.O_CREATE)
+	fp, err := utils.GetFilePtr(string(Task.FileName[:Task.FileNameLength]), strconv.Itoa(Task.BlockIndex), os.O_WRONLY|os.O_CREATE)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 	defer fp.Close()
+	fmt.Println("Put File")
 
-	localFilename := utils.GetFileName(string(Task.FileName[:]), fmt.Sprint(Task.BlockIndex))
+	localFilename := utils.GetFileName(string(Task.FileName[:Task.FileNameLength]), fmt.Sprint(Task.BlockIndex))
 
 	utils.MuLocalFs.Lock()
 	for FileSet[localFilename] {
@@ -43,9 +47,20 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 
 	FileSet[localFilename] = false
 	utils.MuLocalFs.Unlock()
-
 	utils.CondLocalFs.Signal()
+
 	fmt.Println("Recieved a request to write to this node")
+
+	leaderIp := string(Task.AckTargetIp[:])
+
+	val, ok := gossiputils.MembershipMap.Get(leaderIp)
+	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
+		utils.SendTask(Task, utils.BytesToString(Task.AckTargetIp), true)
+	} else {
+		newLeader := utils.GetLeader()
+		utils.SendTask(Task, newLeader, true)
+	}
+
 	return nil
 }
 
