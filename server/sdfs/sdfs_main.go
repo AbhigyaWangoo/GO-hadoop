@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 
-
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
@@ -50,10 +49,11 @@ func HandleConnection(conn net.Conn) {
 	// 	return
 	// }
 	task := utils.Task{
-		DataTargetIp:        "192.168.0.1",
-		AckTargetIp:         "192.168.0.2",
+		DataTargetIp:        utils.New16Byte("192.168.0.1"),
+		AckTargetIp:         utils.New16Byte(utils.LEADER_IP),
 		ConnectionOperation: utils.WRITE, // Assuming BlockOperation is a string alias
-		FileName:            "1_mb_put.txt",
+		FileName:            utils.New1024Byte("1_mb_put.txt"),
+		FileNameLength:      12,
 		BlockIndex:          0,
 		DataSize:            1048576,
 		IsAck:               false,
