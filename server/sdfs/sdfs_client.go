@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"unsafe"
 
 	gossipUtils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
@@ -24,24 +23,24 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 
 	// IF CONNECTION CLOSES WHILE WRITING, WE NEED TO REPICK AN IP ADDR. Can have a seperate function to handle this on failure cases.
 	// Ask master when its ok to start writing
-	masterConnection, err := utils.OpenTCPConnection(utils.LEADER_IP, utils.SDFS_PORT)
-	if err != nil {
-		fmt.Errorf("error opening master connection: ", err)
-	}
+	// masterConnection, err := utils.OpenTCPConnection(utils.LEADER_IP, utils.SDFS_PORT)
+	// if err != nil {
+	// 	fmt.Errorf("error opening master connection: ", err)
+	// }
 
-	checkCanPut := utils.Task{
-		DataTargetIp:        utils.New16Byte("-1"),
-		AckTargetIp:         utils.New16Byte("-1"),
-		ConnectionOperation: utils.WRITE,
-		FileName:            utils.New1024Byte(SdfsFilename),
-		BlockIndex:          -1,
-		DataSize:            -1,
-		IsAck:               false,
-	}
+	// checkCanPut := utils.Task{
+	// 	DataTargetIp:        utils.New16Byte("-1"),
+	// 	AckTargetIp:         utils.New16Byte("-1"),
+	// 	ConnectionOperation: utils.WRITE,
+	// 	FileName:            utils.New1024Byte(SdfsFilename),
+	// 	BlockIndex:          -1,
+	// 	DataSize:            -1,
+	// 	IsAck:               false,
+	// }
 
-	masterConnection.Write(checkCanPut.Marshal())
-	buffer := make([]byte, unsafe.Sizeof(checkCanPut))
-	masterConnection.Read(buffer) // Don't need to check what was read, if something is read at all it's an ack
+	// masterConnection.Write(checkCanPut.Marshal())
+	// buffer := make([]byte, unsafe.Sizeof(checkCanPut))
+	// masterConnection.Read(buffer) // Don't need to check what was read, if something is read at all it's an ack
 
 	// 1. Create 2d array of ip addressses
 	// 		Call InitializeBlockLocationsEntry(), which should init an empty array for a filename.
@@ -60,7 +59,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 		// remainingIps := make([]string, len(allMemberIps))
 		startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
 		for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
-			go func() {
+			go func(currentBlock int64) {
 				file, err := os.Open(pathToLocalFile)
 				if err != nil {
 					log.Fatalf("error opening local file: ", err)
@@ -97,7 +96,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						break
 					}
 				}
-			}()
+			}(currentBlock)
 		}
 	}
 
