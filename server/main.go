@@ -26,8 +26,8 @@ const (
 	LIST_MEM  CLICommand = "list_mem"
 	LIST_SELF CLICommand = "list_self"
 	LEAVE     CLICommand = "leave"
-	EN_SUS    CLICommand = "es"
-	D_SUS     CLICommand = "ds"
+	EN_SUS    CLICommand = "enable_sus"
+	D_SUS     CLICommand = "disable_sus"
 )
 
 // Send suspicion flip message to all machines
@@ -126,7 +126,7 @@ func RunCLI() {
 
 func main() {
 	go gossip.InitializeGossip()
-	sdfs.InitializeSdfsProcess()
+	go sdfs.InitializeSdfsProcess()
 
-	// RunCLI()
+	RunCLI()
 }
