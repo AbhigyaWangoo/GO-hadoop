@@ -50,6 +50,7 @@ func RunCLI() {
 	for {
 		reader := bufio.NewReader(os.Stdin) // Our reader to handle userinputted commands
 		command, err := reader.ReadString('\n')
+		fmt.Println(command)
 		if err != nil {
 			log.Fatal(err)
 		}
