@@ -26,7 +26,7 @@ const (
 	LIST_MEM  CLICommand = "list_mem"
 	LIST_SELF CLICommand = "list_self"
 	LEAVE     CLICommand = "leave"
-	EN_SUS    CLICommand = "es"
+	EN_SUS    CLICommand = "enable_sus"
 	D_SUS     CLICommand = "ds"
 )
 
@@ -50,6 +50,7 @@ func RunCLI() {
 	for {
 		reader := bufio.NewReader(os.Stdin) // Our reader to handle userinputted commands
 		command, err := reader.ReadString('\n')
+		fmt.Println(command)
 		if err != nil {
 			log.Fatal(err)
 		}
