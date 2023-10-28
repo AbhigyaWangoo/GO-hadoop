@@ -45,9 +45,12 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	// 1. Create 2d array of ip addressses
 	// 		Call InitializeBlockLocationsEntry(), which should init an empty array for a filename.
 
-	pathToLocalFile := "test/" + LocalFilename
+	// pathToLocalFile := "test/" + LocalFilename
 
-	fileSize := utils.GetFileSize(pathToLocalFile)
+	dir, _ := os.Getwd()
+	log.Printf(dir)
+
+	fileSize := utils.GetFileSize(LocalFilename)
 
 	numberBlocks, numberReplicas := utils.CeilDivide(fileSize, int64(utils.BLOCK_SIZE)), utils.REPLICATION_FACTOR
 
@@ -58,17 +61,22 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 			allMemberIps := gossipUtils.MembershipMap.Keys()
 			remainingIps := utils.CreateConcurrentStringSlice(allMemberIps)
 			startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
-			file, err := os.Open(pathToLocalFile)
+			file, err := os.Open(LocalFilename)
 			if err != nil {
 				log.Fatalf("error opening local file: ", err)
 			}
 			defer file.Close()
 			for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
 				for {
+					log.Printf("TEST")
 					if remainingIps.Size() == 0 {
 						break
 					}
 					if ip, ok := remainingIps.PopRandomElement().(string); ok {
+						log.Printf("ip")
+						if ip == gossipUtils.Ip {
+							continue
+						}
 						conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
 						if err != nil {
 							log.Fatalf("error opening follower connection: ", err)
@@ -84,6 +92,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							DataSize:            int(lengthToWrite),
 							IsAck:               false,
 						}
+						log.Printf(string(blockWritingTask.Marshal()))
 						conn.Write(blockWritingTask.Marshal()) // Potential issue if error
 
 						file.Seek(0, int(startIdx))
@@ -146,6 +155,10 @@ func GetMaster() string {
 	// Get master IP from Gossip Mmebership Map
 	return "not impl"
 }
+
+// func GetSubmasters() []string {
+// 	gossipUtils.MembershipMap.Keys()
+// }
 
 // func PopRandomElementInArray(array *utils.ConcurrentSlice) string {
 // 	// Get a random index using crypto/rand
