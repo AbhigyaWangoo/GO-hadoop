@@ -126,7 +126,7 @@ func RunCLI() {
 
 func main() {
 	go gossip.InitializeGossip()
-	sdfs.InitializeSdfsProcess()
+	go sdfs.InitializeSdfsProcess()
 
-	// RunCLI()
+	RunCLI()
 }
