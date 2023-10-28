@@ -2,6 +2,7 @@ package sdfsutils
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
 	"sync"
 )
@@ -57,15 +58,22 @@ func (s *ConcurrentSlice) Size() int {
 }
 
 func (s *ConcurrentSlice) PopRandomElement() interface{} {
+	fmt.Printf("TEST\n")
 	s.Lock()
-	defer s.Unlock()
-	max := big.NewInt(int64(s.Size()))
+	fmt.Printf("TEST2\n")
+
+	max := big.NewInt(int64(len(s.slice)))
 	randomIndexBig, err := rand.Int(rand.Reader, max)
+	fmt.Printf("TEST3\n")
 	if err != nil {
 		panic(err)
 	}
 	randomIndex := randomIndexBig.Int64()
+	fmt.Printf("%d\n", randomIndex)
+	fmt.Printf("TEST4\n")
 
+	s.Unlock()
+	fmt.Printf("TEST5\n")
 	return s.pop(int(randomIndex))
 }
 
