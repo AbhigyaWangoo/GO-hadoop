@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"unsafe"
 
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 )
@@ -258,4 +259,19 @@ func (task Task) Marshal() []byte {
 		log.Fatalf("error marshaling data: ", err)
 	}
 	return marshaledTask
+}
+
+func Unmarshal(conn net.Conn) *Task {
+	var task *Task
+	buffer := make([]byte, unsafe.Sizeof(task))
+	_, err := io.ReadFull(conn, buffer)
+	if err != nil {
+		fmt.Println("Error reading:", err)
+	}
+
+	err = json.Unmarshal(buffer, task)
+	if err != nil {
+		log.Fatalf("error marshaling data: ", err)
+	}
+	return task
 }
