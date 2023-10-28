@@ -54,17 +54,16 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	// locationsToWrite := InitializeBlockLocationsEntry(SdfsFilename, fileInfo.Size())
 
 	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
-		allMemberIps := gossipUtils.MembershipMap.Keys()
-		remainingIps := utils.CreateConcurrentStringSlice(allMemberIps)
-		// remainingIps := make([]string, len(allMemberIps))
-		startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
-		for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
-			go func(currentBlock int64) {
-				file, err := os.Open(pathToLocalFile)
-				if err != nil {
-					log.Fatalf("error opening local file: ", err)
-				}
-				defer file.Close()
+		go func(currentBlock int64) {
+			allMemberIps := gossipUtils.MembershipMap.Keys()
+			remainingIps := utils.CreateConcurrentStringSlice(allMemberIps)
+			startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
+			file, err := os.Open(pathToLocalFile)
+			if err != nil {
+				log.Fatalf("error opening local file: ", err)
+			}
+			defer file.Close()
+			for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
 				for {
 					if remainingIps.Size() == 0 {
 						break
@@ -96,8 +95,8 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						break
 					}
 				}
-			}(currentBlock)
-		}
+			}
+		}(currentBlock)
 	}
 
 	// 2. For i = 0; i < num_blocks; i ++
