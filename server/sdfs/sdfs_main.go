@@ -29,7 +29,7 @@ func InitializeSdfsProcess() {
 		// conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 
 		if err != nil {
-			fmt.Println("Error reading:", err)
+			fmt.Println("Error accepting tcp connection:", err)
 			continue
 		}
 

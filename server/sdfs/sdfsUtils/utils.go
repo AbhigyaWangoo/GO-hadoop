@@ -65,13 +65,8 @@ func OpenTCPConnection(IpAddr string, Port string) (net.Conn, error) {
 }
 
 func ListenOnTCPConnection(Port string) (net.Listener, error) {
-	serverAddr, resolveErr := net.ResolveTCPAddr("tcp", "localhost:"+Port)
-	if resolveErr != nil {
-		fmt.Println("Error resolving address:", resolveErr)
-		os.Exit(1)
-	}
 
-	tcpConn, listenErr := net.ListenTCP("tcp", serverAddr)
+	tcpConn, listenErr := net.Listen("tcp", ":"+Port)
 	if listenErr != nil {
 		fmt.Println("Error listening:", listenErr)
 		os.Exit(1)
