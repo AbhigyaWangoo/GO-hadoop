@@ -29,7 +29,6 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 		log.Fatal(err)
 	}
 	defer fp.Close()
-	fmt.Println("Put File")
 
 	localFilename := utils.GetFileName(string(Task.FileName[:Task.FileNameLength]), fmt.Sprint(Task.BlockIndex))
 
@@ -43,38 +42,48 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	if bufferedErr != nil {
 		fmt.Println("Error:", bufferedErr)
 		return bufferedErr
-	} // WORKS UP TO HERE
+	} 
 
 	FileSet[localFilename] = false
 	utils.MuLocalFs.Unlock()
 	utils.CondLocalFs.Signal()
 
 	fmt.Println("Recieved a request to write to this node")
-
-	leaderIp := string(Task.AckTargetIp[:])
-
-	val, ok := gossiputils.MembershipMap.Get(leaderIp)
-	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
-		utils.SendTask(Task, utils.BytesToString(Task.AckTargetIp), true)
-	} else {
-		newLeader := utils.GetLeader()
-		utils.SendTask(Task, newLeader, true)
-	}
+	SendAckToMaster(Task)
 
 	return nil
 }
 
-func HandleDeleteConnection(Task utils.Task) {
+func HandleDeleteConnection(Task utils.Task) error {
 	// TODO: given the filename.blockidx, this function needs to delete the provided file from sdfs/data/filename.blockidx. Once
 	// that block is successfully deleted, this function should alert the Task.AckTargetIp that this operation was successfully
 	// completed in addition to terminating the connection. Additionally, if another thread is currently reading/writing to a block, this should block until
 	// that operation is done. When the thread does end up in the middle of a buffered read, it must mark that particular file as being read from to
 	// in the map.
 
+	localFilename := utils.GetFileName(string(Task.FileName[:Task.FileNameLength]), fmt.Sprint(Task.BlockIndex))
+	
+	utils.MuLocalFs.Lock()
+	for FileSet[localFilename] {
+		utils.CondLocalFs.Wait()
+	}
+	FileSet[localFilename] = true
+
 	// On a failure case, like block dne, do not send the ack.
+	if err := os.Remove(localFilename); err != nil {
+        fmt.Println("Unable to process delete request: ", err)
+		return err
+    }
+
+	FileSet[localFilename] = false
+	utils.MuLocalFs.Unlock()
+	utils.CondLocalFs.Signal()
+
+	SendAckToMaster(Task)
 
 	// Used for delete command
 	fmt.Println("Recieved a request to delete some block on this node")
+	return nil
 }
 
 func HandleGetConnection(Task utils.Task) {
@@ -91,4 +100,18 @@ func HandleGetConnection(Task utils.Task) {
 	// SendAck(Task)
 
 	fmt.Println("Recieved a request to get some block from this node")
+}
+
+
+func SendAckToMaster(Task utils.Task) {
+	leaderIp := string(Task.AckTargetIp[:])
+
+	val, ok := gossiputils.MembershipMap.Get(leaderIp)
+	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
+		utils.SendTask(Task, utils.BytesToString(Task.AckTargetIp), true)
+	} else {
+		newLeader := utils.GetLeader()
+		utils.SendTask(Task, newLeader, true)
+	}
+
 }
