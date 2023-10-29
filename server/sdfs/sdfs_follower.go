@@ -24,13 +24,17 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	fmt.Println("Entering put connection")
 	defer conn.Close()
 
-	fp, err := utils.GetFilePtr(string(Task.FileName[:Task.FileNameLength]), strconv.Itoa(Task.BlockIndex), os.O_CREATE|os.O_WRONLY)
+	var FileName string = string(Task.FileName[:Task.FileNameLength])
+	
+	fmt.Println("Filename: ", FileName)
+
+	fp, err := utils.GetFilePtr(FileName, strconv.Itoa(Task.BlockIndex), os.O_CREATE|os.O_WRONLY)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer fp.Close()
 
-	localFilename := utils.GetFileName(string(Task.FileName[:Task.FileNameLength]), fmt.Sprint(Task.BlockIndex))
+	localFilename := utils.GetFileName(FileName, fmt.Sprint(Task.BlockIndex))
 
 	utils.MuLocalFs.Lock()
 	for FileSet[localFilename] {
