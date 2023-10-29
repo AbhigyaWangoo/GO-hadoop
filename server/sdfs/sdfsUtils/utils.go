@@ -135,21 +135,23 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size int, fromLocal bool) 
 	fmt.Println("Entering buffered readwrite")
 
 	for {
-		if bytes_read == 0 {
-			fmt.Println("Read no bytes")
-			break
-		} else if total_bytes_read == size {
+		if total_bytes_read == size {
 			fmt.Println("Read all bytes")
 			break
 		}
 
 		var nRead int = 0
 		var readErr error = nil
-
+		
 		if fromLocal {
 			nRead, readErr = fp.Read(dataBuffer)
 		} else {
 			nRead, readErr = conn.Read(dataBuffer)
+		}
+		
+		if nRead == 0 {
+			fmt.Println("Read no bytes")
+			break
 		}
 
 		// fmt.Printf("data: %s, num read: %d\n", string(dataBuffer[:nRead]), nRead)
