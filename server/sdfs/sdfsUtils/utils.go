@@ -263,18 +263,23 @@ func (task Task) Marshal() []byte {
 
 func Unmarshal(conn net.Conn) *Task {
 	reader := bufio.NewReader(conn)
-	buffer, err := reader.ReadString('\n')
+	buffer, err := reader.ReadBytes('\n')
 	if err != nil {
 		log.Fatalf("Error reading:", err)
 	}
+
+	log.Printf("%d\n", len(buffer))
+	buffer = buffer[:len(buffer)-1]
+	log.Printf("%d\n", len(buffer))
+	log.Printf("Buffer: ", buffer)
 	var task *Task
 	if err != nil {
 		log.Fatalf("Error reading:", err)
 	}
 
-	err = json.Unmarshal([]byte(buffer), task)
+	err = json.Unmarshal(buffer, &task)
 	if err != nil {
-		log.Fatalf("error marshaling data: ", err)
+		log.Fatalf("error unmarshaling data: ", err)
 	}
 	return task
 }
