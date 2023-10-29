@@ -42,7 +42,7 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	if bufferedErr != nil {
 		fmt.Println("Error:", bufferedErr)
 		return bufferedErr
-	} 
+	}
 
 	FileSet[localFilename] = false
 	utils.MuLocalFs.Unlock()
@@ -62,7 +62,7 @@ func HandleDeleteConnection(Task utils.Task) error {
 	// in the map.
 
 	localFilename := utils.GetFileName(string(Task.FileName[:Task.FileNameLength]), fmt.Sprint(Task.BlockIndex))
-	
+
 	utils.MuLocalFs.Lock()
 	for FileSet[localFilename] {
 		utils.CondLocalFs.Wait()
@@ -71,9 +71,9 @@ func HandleDeleteConnection(Task utils.Task) error {
 
 	// On a failure case, like block dne, do not send the ack.
 	if err := os.Remove(localFilename); err != nil {
-        fmt.Println("Unable to process delete request: ", err)
+		fmt.Println("Unable to process delete request: ", err)
 		return err
-    }
+	}
 
 	FileSet[localFilename] = false
 	utils.MuLocalFs.Unlock()
@@ -101,7 +101,6 @@ func HandleGetConnection(Task utils.Task) {
 
 	fmt.Println("Recieved a request to get some block from this node")
 }
-
 
 func SendAckToMaster(Task utils.Task) {
 	leaderIp := string(Task.AckTargetIp[:])

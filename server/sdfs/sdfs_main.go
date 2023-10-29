@@ -1,7 +1,6 @@
 package sdfs
 
 import (
-	"encoding/gob"
 	"fmt"
 	"net"
 
@@ -38,19 +37,15 @@ func InitializeSdfsProcess() {
 }
 
 func HandleConnection(conn net.Conn) {
-	
+
 	fmt.Println("Recieved new connection!")
-	
+
 	// Create a decoder for the connection
-	decoder := gob.NewDecoder(conn)
+	// decoder := gob.NewDecoder(conn)
 
 	// Decode the FollowerTask instance
-	var task utils.Task
-	err := decoder.Decode(&task)
-	if err != nil {
-		fmt.Println("Error decoding:", err)
-		return
-	}
+	task := utils.Unmarshal(conn)
+
 	// task := utils.Task{
 	// 	DataTargetIp:        utils.New16Byte("192.168.0.1"),
 	// 	AckTargetIp:         utils.New16Byte(utils.LEADER_IP),
@@ -71,11 +66,11 @@ func HandleConnection(conn net.Conn) {
 	}
 
 	if task.ConnectionOperation == utils.DELETE {
-		HandleDeleteConnection(task)
+		HandleDeleteConnection(*task)
 	} else if task.ConnectionOperation == utils.WRITE {
-		HandlePutConnection(task, conn)
+		HandlePutConnection(*task, conn)
 	} else if task.ConnectionOperation == utils.READ {
-		HandleGetConnection(task)
+		HandleGetConnection(*task)
 	} else {
 		fmt.Printf("Error: inbound task from ip %s has no specific type", conn.RemoteAddr().String())
 	}
