@@ -92,8 +92,10 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							DataSize:            int(lengthToWrite),
 							IsAck:               false,
 						}
-						log.Printf(string(blockWritingTask.Marshal()))
+						// log.Printf(string(blockWritingTask.Marshal()))
+						// log.Printf(unsafe.Sizeof(blockWritingTask.Marshal()))
 						conn.Write(blockWritingTask.Marshal()) // Potential issue if error
+						conn.Write([]byte{'\n'})
 
 						file.Seek(0, int(startIdx))
 						err = utils.BufferedReadAndWrite(conn, file, int(lengthToWrite), true)

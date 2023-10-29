@@ -1,6 +1,7 @@
 package sdfsutils
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,7 +10,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"unsafe"
 
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 )
@@ -262,14 +262,17 @@ func (task Task) Marshal() []byte {
 }
 
 func Unmarshal(conn net.Conn) *Task {
-	var task *Task
-	buffer := make([]byte, unsafe.Sizeof(task))
-	_, err := io.ReadFull(conn, buffer)
+	reader := bufio.NewReader(conn)
+	buffer, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Error reading:", err)
+		log.Fatalf("Error reading:", err)
+	}
+	var task *Task
+	if err != nil {
+		log.Fatalf("Error reading:", err)
 	}
 
-	err = json.Unmarshal(buffer, task)
+	err = json.Unmarshal([]byte(buffer), task)
 	if err != nil {
 		log.Fatalf("error marshaling data: ", err)
 	}
