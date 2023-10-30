@@ -68,7 +68,7 @@ func HandleDeleteConnection(Task utils.Task) error {
 	// that operation is done. When the thread does end up in the middle of a buffered read, it must mark that particular file as being read from to
 	// in the map.
 
-	localFilename := utils.GetFileName(string(Task.FileName[:Task.FileNameLength]), fmt.Sprint(Task.BlockIndex))
+	localFilename := utils.GetFileName(utils.BytesToString(Task.FileName), fmt.Sprint(Task.BlockIndex))
 
 	utils.MuLocalFs.Lock()
 	for FileSet[localFilename] {
@@ -111,9 +111,9 @@ func HandleGetConnection(Task utils.Task) {
 
 func SendAckToMaster(Task utils.Task) {
 	leaderIp := string(Task.AckTargetIp[:])
-	
+
 	fmt.Printf("detected Leader ip: %s\n", leaderIp)
-	
+
 	val, ok := gossiputils.MembershipMap.Get(leaderIp)
 	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
 		fmt.Printf("sending Leader ip\n")

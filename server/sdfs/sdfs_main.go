@@ -47,7 +47,7 @@ func HandleConnection(conn net.Conn) {
 	if task.IsAck {
 		machineType := MachineType()
 		if machineType == gossiputils.LEADER {
-			fmt.Printf("Recieved ack for %s\n", task.FileName[:task.FileNameLength])
+			fmt.Printf("Recieved ack for %s\n", utils.BytesToString(task.FileName))
 			return
 		}
 	}
