@@ -26,7 +26,7 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 
 	var FileName string = string(Task.FileName[:Task.FileNameLength])
 	
-	fmt.Println("Filename: ", FileName)
+	fmt.Printf("Filename: %s\n", FileName)
 
 	fp, err := utils.GetFilePtr(FileName, strconv.Itoa(Task.BlockIndex), os.O_CREATE|os.O_WRONLY)
 	if err != nil {
@@ -52,9 +52,7 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	utils.MuLocalFs.Unlock()
 	utils.CondLocalFs.Signal()
 
-	fmt.Println("Recieved a request to write to this node")
-	SendAckToMaster(Task)
-
+	// SendAckToMaster(Task)
 	return nil
 }
 
@@ -108,10 +106,13 @@ func HandleGetConnection(Task utils.Task) {
 
 func SendAckToMaster(Task utils.Task) {
 	leaderIp := string(Task.AckTargetIp[:])
-
+	
+	fmt.Printf("detected Leader ip: %s\n", leaderIp)
+	
 	val, ok := gossiputils.MembershipMap.Get(leaderIp)
 	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
-		utils.SendTask(Task, utils.BytesToString(Task.AckTargetIp), true)
+		fmt.Printf("sending Leader ip\n")
+		utils.SendTask(Task, string(Task.AckTargetIp[:]), true)
 	} else {
 		newLeader := utils.GetLeader()
 		utils.SendTask(Task, newLeader, true)

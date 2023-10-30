@@ -89,7 +89,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							ConnectionOperation: utils.WRITE,
 							FileName:            utils.New1024Byte(SdfsFilename),
 							BlockIndex:          int(currentBlock),
-							DataSize:            int(lengthToWrite),
+							DataSize:            uint32(lengthToWrite),
 							IsAck:               false,
 						}
 						// log.Printf(string(blockWritingTask.Marshal()))
@@ -98,7 +98,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						conn.Write([]byte{'\n'})
 
 						file.Seek(0, int(startIdx))
-						err = utils.BufferedReadAndWrite(conn, file, int(lengthToWrite), true)
+						err = utils.BufferedReadAndWrite(conn, file, uint32(lengthToWrite), true)
 						if err != nil { // If failure to write full block, redo loop
 							log.Fatalf("connection broke early, rewrite block")
 							continue

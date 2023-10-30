@@ -1,7 +1,6 @@
 package sdfsutils
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,7 +30,7 @@ type Task struct {
 	FileName            [1024]byte
 	FileNameLength      int
 	BlockIndex          int
-	DataSize            int // TODO change me to uint32
+	DataSize            uint32 // TODO change me to uint32
 	IsAck               bool
 }
 
@@ -126,13 +125,12 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (*os.File, err
 
 // This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and
 // buffered write to (a connection if fromLocal is true, the filepointer if fromLocal is false)
-func BufferedReadAndWrite(conn net.Conn, fp *os.File, size int, fromLocal bool) error {
-	var bytes_read int = 0
-	var total_bytes_read int = 0
+func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal bool) error {
+	var total_bytes_read uint32 = 0
 	bufferSize := 4 * KB
 	dataBuffer := make([]byte, bufferSize)
 
-	fmt.Println("Entering buffered readwrite")
+	fmt.Println("Entering buffered readwrite. File size: ", size)
 
 	for {
 		if total_bytes_read == size {
@@ -142,19 +140,18 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size int, fromLocal bool) 
 
 		var nRead int = 0
 		var readErr error = nil
-		
+
 		if fromLocal {
 			nRead, readErr = fp.Read(dataBuffer)
 		} else {
 			nRead, readErr = conn.Read(dataBuffer)
 		}
-		
+
 		if nRead == 0 {
 			fmt.Println("Read no bytes")
 			break
 		}
 
-		// fmt.Printf("data: %s, num read: %d\n", string(dataBuffer[:nRead]), nRead)
 		if readErr != nil {
 			if readErr == io.EOF {
 				if total_bytes_read < size {
@@ -174,18 +171,13 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size int, fromLocal bool) 
 			nWritten, writeErr = fp.Write(dataBuffer[:nRead])
 		}
 
-		// fmt.Printf("num written: %d\n", nWritten)
 		if nWritten < nRead {
 			return io.ErrShortWrite
 		} else if nWritten > nRead || writeErr != nil {
 			return writeErr
 		}
 
-		bytes_read += nRead
-		total_bytes_read += nRead
-
-		// fmt.Println("P: ", nWritten)
-		// fmt.Println("P: ", total_bytes_read)
+		total_bytes_read += uint32(nRead)
 	}
 
 	return nil
@@ -268,24 +260,13 @@ func (task Task) Marshal() []byte {
 }
 
 func Unmarshal(conn net.Conn) *Task {
-	reader := bufio.NewReader(conn)
-	buffer, err := reader.ReadBytes('\n')
+	var task Task
+	decoder := json.NewDecoder(conn)
+	err := decoder.Decode(&task)
+
 	if err != nil {
 		log.Fatalf("Error reading:", err)
 	}
 
-	log.Printf("%d\n", len(buffer))
-	buffer = buffer[:len(buffer)-1]
-	log.Printf("%d\n", len(buffer))
-	log.Printf("Buffer: ", buffer)
-	var task *Task
-	if err != nil {
-		log.Fatalf("Error reading:", err)
-	}
-
-	err = json.Unmarshal(buffer, &task)
-	if err != nil {
-		log.Fatalf("error unmarshaling data: ", err)
-	}
-	return task
+	return &task
 }
