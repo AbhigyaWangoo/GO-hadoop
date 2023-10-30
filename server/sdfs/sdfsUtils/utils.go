@@ -1,6 +1,7 @@
 package sdfsutils
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -129,11 +130,19 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (*os.File, err
 func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal bool) (uint32, error) {
 	var total_bytes_processed uint32 = 0
 	var bufferSize uint32 = 0
+	
+	var w *bufio.Writer
+	var r *bufio.Reader
+
 	if fromLocal {
-		bufferSize = uint32(size * 3 / 4)
+		w = bufio.NewWriter(conn)
+		r = bufio.NewReader(fp)
 	} else {
-		bufferSize = uint32(5 * KB)
+		w = bufio.NewWriter(fp)
+		r = bufio.NewReader(conn)
 	}
+
+	bufferSize = uint32(5 * KB)
 	dataBuffer := make([]byte, bufferSize)
 
 	fmt.Println("Entering buffered readwrite. File size: ", size)
@@ -147,18 +156,14 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 		var nRead int = 0
 		var readErr error = nil
 
-		var bytesToRead uint32
-		if size-total_bytes_processed > uint32(bufferSize) {
-			bytesToRead = uint32(bufferSize)
-		} else {
-			bytesToRead = size - total_bytes_processed
-		}
+		// var bytesToRead uint32
+		// if size-total_bytes_processed > uint32(bufferSize) {
+			// bytesToRead = uint32(bufferSize)
+		// } else {
+			// bytesToRead = size - total_bytes_processed
+		// }
 
-		if fromLocal {
-			nRead, readErr = fp.Read(dataBuffer[:bytesToRead])
-		} else {
-			nRead, readErr = conn.Read(dataBuffer[:bytesToRead])
-		}
+		nRead, readErr = r.Read(dataBuffer)
 
 		if nRead == 0 && total_bytes_processed == size {
 			fmt.Println("Read no bytes")
@@ -179,11 +184,12 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 		var nWritten int = 0
 		var writeErr error = nil
 
-		if fromLocal {
-			nWritten, writeErr = conn.Write(dataBuffer[:nRead])
-		} else {
-			nWritten, writeErr = fp.Write(dataBuffer[:nRead])
+		for curbyte := 0; curbyte < nRead; curbyte++{
+			writeErr = w.WriteByte(dataBuffer[curbyte])
+			nWritten++
 		}
+		
+		w.Flush()
 
 		if nWritten < nRead {
 			return total_bytes_processed, io.ErrShortWrite
