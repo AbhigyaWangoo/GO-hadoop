@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"unsafe"
 
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 )
@@ -125,9 +126,14 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (*os.File, err
 
 // This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and
 // buffered write to (a connection if fromLocal is true, the filepointer if fromLocal is false)
-func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal bool) error {
+func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal bool) (uint32, error) {
 	var total_bytes_processed uint32 = 0
-	bufferSize := 4 * KB
+	var bufferSize uint32 = 0
+	if fromLocal {
+		bufferSize = uint32(size * 3 / 4)
+	} else {
+		bufferSize = uint32(5 * KB)
+	}
 	dataBuffer := make([]byte, bufferSize)
 
 	fmt.Println("Entering buffered readwrite. File size: ", size)
@@ -141,10 +147,17 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 		var nRead int = 0
 		var readErr error = nil
 
-		if fromLocal {
-			nRead, readErr = fp.Read(dataBuffer)
+		var bytesToRead uint32
+		if size-total_bytes_processed > uint32(bufferSize) {
+			bytesToRead = uint32(bufferSize)
 		} else {
-			nRead, readErr = conn.Read(dataBuffer)
+			bytesToRead = size - total_bytes_processed
+		}
+
+		if fromLocal {
+			nRead, readErr = fp.Read(dataBuffer[:bytesToRead])
+		} else {
+			nRead, readErr = conn.Read(dataBuffer[:bytesToRead])
 		}
 
 		if nRead == 0 && total_bytes_processed == size {
@@ -156,11 +169,11 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 			if readErr == io.EOF {
 				if total_bytes_processed < size {
 					fmt.Println("bytes processed with EOF: ", total_bytes_processed)
-					return io.ErrUnexpectedEOF
+					return total_bytes_processed, io.ErrUnexpectedEOF
 				}
 				break // Connection closed by the other end
 			}
-			return readErr // Error while reading data
+			return total_bytes_processed, readErr // Error while reading data
 		}
 
 		var nWritten int = 0
@@ -173,21 +186,19 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 		}
 
 		if nWritten < nRead {
-			return io.ErrShortWrite
+			return total_bytes_processed, io.ErrShortWrite
 		} else if nWritten > nRead || writeErr != nil {
-			return writeErr
+			return total_bytes_processed, writeErr
 		}
 
-		if nWritten != 4 * KB {
-			fmt.Println("wrote not 4 kb: ", nRead)
+		if uint32(nWritten) != bufferSize {
+			fmt.Println("wrote not buffer size: ", nRead)
 		}
 
 		total_bytes_processed += uint32(nWritten)
 	}
 
-	fmt.Println("total bytes processed: ", total_bytes_processed)
-
-	return nil
+	return total_bytes_processed, nil
 }
 
 func SendTask(task Task, ipAddr string, ack bool) error {
@@ -274,6 +285,8 @@ func Unmarshal(conn net.Conn) *Task {
 	if err != nil {
 		log.Fatalf("Error reading:", err)
 	}
+
+	log.Printf("tasklen: %d\n", unsafe.Sizeof(task))
 
 	return &task
 }
