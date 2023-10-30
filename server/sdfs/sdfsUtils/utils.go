@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"unsafe"
@@ -25,12 +26,17 @@ const (
 	GET_2D BlockOperation = 3
 )
 
+const (
+	DELETE_OP string = "d"
+	WRITE_OP  string = "w"
+)
+
 type Task struct {
 	DataTargetIp        [16]byte
 	AckTargetIp         [16]byte
 	ConnectionOperation BlockOperation // READ, WRITE, GET_2D, OR DELETE from sdfs utils
 	FileName            [1024]byte
-	FileNameLength      int
+	OriginalFileSize    int
 	BlockIndex          int
 	DataSize            uint32 // TODO change me to uint32
 	IsAck               bool
@@ -44,6 +50,7 @@ const FILESYSTEM_ROOT string = "server/sdfs/sdfsFileSystemRoot/"
 const BLOCK_SIZE int = 128 * MB
 const REPLICATION_FACTOR int = 4
 const MAX_INT64 = 9223372036854775807
+const NUM_LEADERS = 4
 
 var MuLocalFs sync.Mutex
 var CondLocalFs = sync.NewCond(&MuLocalFs)
@@ -234,6 +241,30 @@ func GetLeader() string {
 	}
 
 	return oldestMemberIp
+}
+
+func GetKLeaders() []string {
+	allKeys := gossiputils.MembershipMap.Keys()
+	allMembers := make([]gossiputils.Member, 0)
+	for _, key := range allKeys {
+		member, _ := gossiputils.MembershipMap.Get(key)
+		allMembers = append(allMembers, member)
+	}
+	sort.Slice(allMembers, func(i, j int) bool {
+		return allMembers[i].CreationTimestamp < allMembers[j].CreationTimestamp
+	})
+
+	var kLeaders []string
+	numLeaders := NUM_LEADERS
+	for _, member := range allMembers {
+		if numLeaders == 0 {
+			break
+		}
+		kLeaders = append(kLeaders, member.Ip)
+		numLeaders--
+	}
+
+	return kLeaders
 }
 
 func New16Byte(data string) [16]byte {
