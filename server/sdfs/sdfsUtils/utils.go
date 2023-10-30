@@ -126,14 +126,14 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (*os.File, err
 // This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and
 // buffered write to (a connection if fromLocal is true, the filepointer if fromLocal is false)
 func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal bool) error {
-	var total_bytes_read uint32 = 0
+	var total_bytes_processed uint32 = 0
 	bufferSize := 4 * KB
 	dataBuffer := make([]byte, bufferSize)
 
 	fmt.Println("Entering buffered readwrite. File size: ", size)
 
 	for {
-		if total_bytes_read == size {
+		if total_bytes_processed == size {
 			fmt.Println("Read all bytes")
 			break
 		}
@@ -147,14 +147,15 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 			nRead, readErr = conn.Read(dataBuffer)
 		}
 
-		if nRead == 0 {
+		if nRead == 0 && total_bytes_processed == size {
 			fmt.Println("Read no bytes")
 			break
 		}
 
 		if readErr != nil {
 			if readErr == io.EOF {
-				if total_bytes_read < size {
+				if total_bytes_processed < size {
+					fmt.Println("bytes processed with EOF: ", total_bytes_processed)
 					return io.ErrUnexpectedEOF
 				}
 				break // Connection closed by the other end
@@ -177,8 +178,14 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 			return writeErr
 		}
 
-		total_bytes_read += uint32(nRead)
+		if nWritten != 4 * KB {
+			fmt.Println("wrote not 4 kb: ", nRead)
+		}
+
+		total_bytes_processed += uint32(nWritten)
 	}
+
+	fmt.Println("total bytes processed: ", total_bytes_processed)
 
 	return nil
 }

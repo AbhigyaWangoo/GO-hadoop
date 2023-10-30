@@ -88,6 +88,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							AckTargetIp:         utils.New16Byte(utils.LEADER_IP),
 							ConnectionOperation: utils.WRITE,
 							FileName:            utils.New1024Byte(SdfsFilename),
+							FileNameLength:      len(SdfsFilename),
 							BlockIndex:          int(currentBlock),
 							DataSize:            uint32(lengthToWrite),
 							IsAck:               false,
