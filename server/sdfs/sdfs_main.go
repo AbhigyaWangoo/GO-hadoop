@@ -40,28 +40,15 @@ func HandleConnection(conn net.Conn) {
 
 	fmt.Println("Recieved new connection!")
 
-	// Create a decoder for the connection
-	// decoder := gob.NewDecoder(conn)
-
 	// Decode the FollowerTask instance
 	task := utils.Unmarshal(conn)
-
-	// task := utils.Task{
-	// 	DataTargetIp:        utils.New16Byte("192.168.0.1"),
-	// 	AckTargetIp:         utils.New16Byte(utils.LEADER_IP),
-	// 	ConnectionOperation: utils.WRITE, // Assuming BlockOperation is a string alias
-	// 	FileName:            utils.New1024Byte("1_mb_put.txt"),
-	// 	FileNameLength:      12,
-	// 	BlockIndex:          0,
-	// 	DataSize:            1048576,
-	// 	IsAck:               false,
-	// }
 
 	// if task.isack && we're a master node, spawn a seperate master.handleAck
 	if task.IsAck {
 		machineType := MachineType()
 		if machineType == gossiputils.LEADER {
-			//
+			fmt.Printf("Recieved ack for %s\n", task.FileName[:task.FileNameLength])
+			return
 		}
 	}
 
