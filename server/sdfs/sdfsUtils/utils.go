@@ -129,23 +129,23 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (*os.File, err
 // buffered write to (a connection if fromLocal is true, the filepointer if fromLocal is false)
 func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal bool) (uint32, error) {
 	var total_bytes_processed uint32 = 0
-	var bufferSize uint32 = 0
-	
 	var w *bufio.Writer
 	var r *bufio.Reader
+	var bufferSize uint32
 
 	if fromLocal {
 		w = bufio.NewWriter(conn)
 		r = bufio.NewReader(fp)
+		bufferSize = size * 3 / 4
 	} else {
 		w = bufio.NewWriter(fp)
 		r = bufio.NewReader(conn)
+		bufferSize = uint32(5 * KB)
 	}
 
-	bufferSize = uint32(5 * KB)
 	dataBuffer := make([]byte, bufferSize)
 
-	fmt.Println("Entering buffered readwrite. File size: ", size)
+	fmt.Println("Entering buffered readwrite. buffer size: ", bufferSize)
 
 	for {
 		if total_bytes_processed == size {
@@ -155,13 +155,6 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 
 		var nRead int = 0
 		var readErr error = nil
-
-		// var bytesToRead uint32
-		// if size-total_bytes_processed > uint32(bufferSize) {
-			// bytesToRead = uint32(bufferSize)
-		// } else {
-			// bytesToRead = size - total_bytes_processed
-		// }
 
 		nRead, readErr = r.Read(dataBuffer)
 
@@ -184,11 +177,11 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 		var nWritten int = 0
 		var writeErr error = nil
 
-		for curbyte := 0; curbyte < nRead; curbyte++{
+		for curbyte := 0; curbyte < nRead; curbyte++ {
 			writeErr = w.WriteByte(dataBuffer[curbyte])
 			nWritten++
 		}
-		
+
 		w.Flush()
 
 		if nWritten < nRead {
