@@ -302,7 +302,7 @@ func GetMinInt64(a int64, b int64) int64 {
 func (task Task) Marshal() []byte {
 	marshaledTask, err := json.Marshal(task)
 	if err != nil {
-		log.Fatalf("error marshaling data: ", err)
+		log.Fatalf("error marshaling task: %v\n", err)
 	}
 	return marshaledTask
 }
@@ -313,7 +313,7 @@ func Unmarshal(conn net.Conn) *Task {
 	err := decoder.Decode(&task)
 
 	if err != nil {
-		log.Fatalf("Error reading:", err)
+		log.Fatalf("Error unmarshalling task: %v\n", err)
 	}
 
 	return &task
