@@ -63,7 +63,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 			startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
 			file, err := os.Open(LocalFilename)
 			if err != nil {
-				log.Fatalf("error opening local file: ", err)
+				log.Fatalf("error opening local file: %v\n", err)
 			}
 			defer file.Close()
 			for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
@@ -79,7 +79,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						}
 						conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
 						if err != nil {
-							log.Fatalf("error opening follower connection: ", err)
+							log.Fatalf("error opening follower connection: %v\n", err)
 							continue
 						}
 						defer conn.Close()
