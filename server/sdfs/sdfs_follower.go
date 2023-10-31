@@ -59,7 +59,7 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	utils.MuLocalFs.Unlock()
 	utils.CondLocalFs.Signal()
 
-	// SendAckToMaster(Task)
+	SendAckToMaster(Task)
 	return nil
 }
 
@@ -70,7 +70,7 @@ func HandleDeleteConnection(Task utils.Task) error {
 	// that operation is done. When the thread does end up in the middle of a buffered read, it must mark that particular file as being read from to
 	// in the map.
 
-	localFilename := utils.GetFileName(utils.BytesToString(Task.FileName), fmt.Sprint(Task.BlockIndex))
+	localFilename := utils.GetFileName(utils.BytesToString(Task.FileName[:Task.FileNameLength]), fmt.Sprint(Task.BlockIndex))
 
 	utils.MuLocalFs.Lock()
 	for FileSet[localFilename] {
