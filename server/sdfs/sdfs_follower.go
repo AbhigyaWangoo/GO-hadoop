@@ -24,7 +24,7 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	fmt.Println("Entering put connection")
 	defer conn.Close()
 
-	var FileName string = utils.BytesToString(Task.FileName)
+	var FileName string = (utils.BytesToString(Task.FileName))[:Task.FileNameLength]
 
 	fmt.Println("Filename: ", FileName)
 

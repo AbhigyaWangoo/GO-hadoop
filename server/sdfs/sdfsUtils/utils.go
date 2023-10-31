@@ -37,6 +37,7 @@ type Task struct {
 	ConnectionOperation BlockOperation // READ, WRITE, GET_2D, OR DELETE from sdfs utils
 	FileName            [1024]byte
 	OriginalFileSize    int
+	FileNameLength      int
 	BlockIndex          int
 	DataSize            uint32 // TODO change me to uint32
 	IsAck               bool
