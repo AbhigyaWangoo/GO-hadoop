@@ -24,7 +24,7 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	fmt.Println("Entering put connection")
 	defer conn.Close()
 
-	var FileName string = (utils.BytesToString(Task.FileName))[:Task.FileNameLength]
+	var FileName string = utils.BytesToString(Task.FileName[:Task.FileNameLength])
 
 	fmt.Println("Filename: ", FileName)
 
@@ -36,26 +36,28 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 
 	localFilename := utils.GetFileName(FileName, fmt.Sprint(Task.BlockIndex))
 
-	// utils.MuLocalFs.Lock()
-	// for FileSet[localFilename] {
-	// 	utils.CondLocalFs.Wait()
-	// }
+	utils.MuLocalFs.Lock()
+	for FileSet[localFilename] {
+		utils.CondLocalFs.Wait()
+	}
 
 	FileSet[localFilename] = true
 	nread, bufferedErr := utils.BufferedReadAndWrite(conn, fp, Task.DataSize, false)
 	if bufferedErr != nil {
 		fmt.Println("Error:", bufferedErr)
 		FileSet[localFilename] = false
-		// utils.MuLocalFs.Unlock()
-		// utils.CondLocalFs.Signal()
+		
+		utils.MuLocalFs.Unlock()
+		utils.CondLocalFs.Signal()
+		
 		return bufferedErr
 	}
 
 	log.Println("Nread: ", nread)
 
 	FileSet[localFilename] = false
-	// utils.MuLocalFs.Unlock()
-	// utils.CondLocalFs.Signal()
+	utils.MuLocalFs.Unlock()
+	utils.CondLocalFs.Signal()
 
 	// SendAckToMaster(Task)
 	return nil
