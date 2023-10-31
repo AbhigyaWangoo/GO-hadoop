@@ -2,6 +2,8 @@ package sdfs
 
 import (
 	"errors"
+	"log"
+	"net"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -75,6 +77,23 @@ func HandleAck(IncomingAck utils.Task) error {
 	// 		2.b. Navigate to entry in fname:2darr mapping given the IncomingAck.filename and IncomingAck.blockidx, and src IP from IncomingAck.DataTargetIp, and delete IP. Replace deleted IP with DELETE_OP constant.
 
 	return nil
+}
+
+func Get2dArr(Filename string, FileSize int64, conn net.Conn) {
+	// Reply to a connection with the 2d array for the provided filename. Hardcoded for now.
+
+	InitializeBlockLocationsEntry(Filename, FileSize) // TODO HARDCODED, CHANGE ME
+
+	arr, exists := BlockLocations.Get(Filename)
+	if !exists {
+		log.Fatalln("Block location filename dne")
+	}
+
+	marshalledArray := utils.MarshalBlockLocationArr(arr)
+	_, err := conn.Write(marshalledArray)
+	if err != nil {
+		log.Fatalf("Error writing 2d arr to conn: %v\n", err)
+	}
 }
 
 func HandleReReplication(DownIpAddr string) {
