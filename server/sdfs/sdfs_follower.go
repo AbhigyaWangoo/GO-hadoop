@@ -46,10 +46,11 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	if bufferedErr != nil {
 		fmt.Println("Error:", bufferedErr)
 		FileSet[localFilename] = false
-		
+
 		utils.MuLocalFs.Unlock()
 		utils.CondLocalFs.Signal()
-		
+
+		os.Remove(localFilename) // Remove file if it failed half way through
 		return bufferedErr
 	}
 

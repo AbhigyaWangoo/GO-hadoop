@@ -10,9 +10,9 @@ import (
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
-var BlockLocations cmap.ConcurrentMap[string, [][]string] // filename : [[ip addr, ip addr, ], ], index 2d arr by block index
-var FileToOriginator cmap.ConcurrentMap[string, []string] // filename : [ClientIpWhoCreatedFile, ClientCreationTime]
-var FileToBlocks cmap.ConcurrentMap[string, [][]string]   // IPaddr : [[blockidx, filename]]
+var BlockLocations cmap.ConcurrentMap[string, [][]string]     // filename : [[ip addr, ip addr, ], ], index 2d arr by block index
+var FileToOriginator cmap.ConcurrentMap[string, []string]     // filename : [ClientIpWhoCreatedFile, ClientCreationTime]
+var FileToBlocks cmap.ConcurrentMap[string, [][2]interface{}] // IPaddr : [[blockidx, filename]]
 
 // Initializes a new entry in BlockLocations, so the leader can begin listening for block acks.
 func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
@@ -51,6 +51,7 @@ func HandleAck(IncomingAck utils.Task) error {
 		return errors.New("ack passed to master for processing was not actually an ack")
 	}
 	fileName := utils.BytesToString(IncomingAck.FileName)
+	ackSourceIp := utils.BytesToString(IncomingAck.DataTargetIp)
 	if IncomingAck.ConnectionOperation == utils.WRITE {
 		RouteToSubMasters(IncomingAck)
 		if !BlockLocations.Has(fileName) {
@@ -60,12 +61,20 @@ func HandleAck(IncomingAck utils.Task) error {
 		blockMap, _ := BlockLocations.Get(fileName)
 		for i := 0; i < utils.REPLICATION_FACTOR; i++ {
 			if blockMap[IncomingAck.BlockIndex][i] == utils.WRITE_OP {
-				blockMap[IncomingAck.BlockIndex][i] = utils.BytesToString(IncomingAck.DataTargetIp)
+				blockMap[IncomingAck.BlockIndex][i] = ackSourceIp
 				break
 			}
 		}
 		BlockLocations.Set(fileName, blockMap)
 
+		if mapping, ok := FileToBlocks.Get(utils.BytesToString(IncomingAck.DataTargetIp)); ok {
+			mapping = append(mapping, [2]interface{}{IncomingAck.BlockIndex, ackSourceIp})
+			FileToBlocks.Set(ackSourceIp, mapping)
+		} else {
+			initialMapping := make([][2]interface{}, 1)
+			initialMapping[0] = [2]interface{}{IncomingAck.BlockIndex, ackSourceIp}
+			FileToBlocks.Set(ackSourceIp, initialMapping)
+		}
 	}
 
 	// 1. Ack for Write operation
