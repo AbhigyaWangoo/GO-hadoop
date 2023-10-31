@@ -11,7 +11,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"unsafe"
 
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 )
@@ -317,7 +316,26 @@ func Unmarshal(conn net.Conn) *Task {
 		log.Fatalf("Error reading:", err)
 	}
 
-	log.Printf("tasklen: %d\n", unsafe.Sizeof(task))
-
 	return &task
+}
+
+func MarshalBlockLocationArr(array [][]string) []byte {
+	jsonData, err := json.Marshal(array)
+	if err != nil {
+		log.Fatalf("error marshaling 2d arr: %v\n", err)
+	}
+	return jsonData
+}
+
+func UnmarshalBlockLocationArr(conn net.Conn) [][]string {
+	var locations [][]string
+
+	decoder := json.NewDecoder(conn)
+	err := decoder.Decode(&locations)
+
+	if err != nil {
+		log.Fatalf("Error unmarshalling 2d arr: %v\n", err)
+	}
+
+	return locations
 }
