@@ -77,7 +77,8 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 					}
 					if ip, ok := remainingIps.PopRandomElement().(string); ok {
 						log.Printf("ip")
-						if ip == gossipUtils.Ip {
+						member, _ := gossipUtils.MembershipMap.Get(ip)
+						if ip == gossipUtils.Ip || member.State == gossipUtils.DOWN {
 							continue
 						}
 						conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
@@ -100,7 +101,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						// log.Printf(string(blockWritingTask.Marshal()))
 						// log.Printf(unsafe.Sizeof(blockWritingTask.Marshal()))
 						conn.Write(blockWritingTask.Marshal()) // Potential issue if error
-						conn.Write([]byte{'\n'})
+						// conn.Write([]byte{'\n'})
 
 						file.Seek(0, int(startIdx))
 						_, err = utils.BufferedReadAndWrite(conn, file, uint32(lengthToWrite), true)
