@@ -13,28 +13,32 @@ import (
 
 var FileSet map[string]bool
 
-func HandlePutConnection(Task utils.Task, conn net.Conn) error {
+func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	// TODO: given the filename.blockidx, this function needs to buffered read a Task.DataSize amount of data from the
 	// connection, all as one block (buffered read, ofc) and write it to the file sdfs/data/filename.blockidx. Once that block is
 	// Successfully written, this function should alert the Task.AckTargetIp that this operation was successfully completed in addition
 	// to terminating the connection. Additionally, if another thread is currently reading/writing to a block, this should block until
 	// that operation is done. When this thread does end up in the middle of a write, it must mark that particular file as being written to
 	// in the FileSet map.
-	// Used for the PUT command
-	fmt.Println("Entering put connection")
+	// Used for the PUT, GET commands, and Re-replication
+
+	fmt.Println("Entering edit connection")
 	defer conn.Close()
 
 	var FileName string = utils.BytesToString(Task.FileName[:Task.FileNameLength])
+	var flags int
 
-	fmt.Println("Filename: ", FileName)
+	if Task.ConnectionOperation == utils.WRITE {
+		flags = os.O_CREATE|os.O_WRONLY
+	} else if Task.ConnectionOperation == utils.READ {
+		flags = os.O_CREATE|os.O_RDONLY
+	}
 
-	fp, err := utils.GetFilePtr(FileName, strconv.Itoa(Task.BlockIndex), os.O_CREATE|os.O_WRONLY)
+	localFilename, fp, err := utils.GetFilePtr(FileName, strconv.Itoa(Task.BlockIndex), flags)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer fp.Close()
-
-	localFilename := utils.GetFileName(FileName, fmt.Sprint(Task.BlockIndex))
 
 	utils.MuLocalFs.Lock()
 	for FileSet[localFilename] {
@@ -42,7 +46,8 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	}
 
 	FileSet[localFilename] = true
-	nread, bufferedErr := utils.BufferedReadAndWrite(conn, fp, Task.DataSize, false)
+	fromLocal := Task.ConnectionOperation == utils.READ
+	nread, bufferedErr := utils.BufferedReadAndWrite(conn, fp, Task.DataSize, fromLocal)
 	if bufferedErr != nil {
 		fmt.Println("Error:", bufferedErr)
 		FileSet[localFilename] = false
@@ -50,7 +55,10 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 		utils.MuLocalFs.Unlock()
 		utils.CondLocalFs.Signal()
 
-		os.Remove(localFilename) // Remove file if it failed half way through
+		if !fromLocal {
+			os.Remove(localFilename) // Remove file if it failed half way through
+		}
+		
 		return bufferedErr
 	}
 
@@ -61,6 +69,7 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	utils.CondLocalFs.Signal()
 
 	SendAckToMaster(Task)
+
 	return nil
 }
 
