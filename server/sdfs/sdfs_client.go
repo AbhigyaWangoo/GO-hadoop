@@ -192,7 +192,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 				continue
 			}
 
-			blockMetadata := utils.Unmarshal(replicaConn)
+			blockMetadata, _ := utils.Unmarshal(replicaConn)
 			utils.BufferedReadAndWrite(replicaConn, fp, blockMetadata.DataSize, false)
 			break
 		}
