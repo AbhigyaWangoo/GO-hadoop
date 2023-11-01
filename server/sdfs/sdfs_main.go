@@ -47,17 +47,15 @@ func HandleConnection(conn net.Conn) {
 	if task.IsAck {
 		machineType := MachineType()
 		if machineType == gossiputils.LEADER {
-			fmt.Printf("Recieved ack for %s at master\n", utils.BytesToString(task.FileName))
+			fmt.Printf("Recieved ack for %s at master\n", utils.BytesToString(task.FileName[:task.FileNameLength]))
 			return
 		}
 	}
 
 	if task.ConnectionOperation == utils.DELETE {
 		HandleDeleteConnection(*task)
-	} else if task.ConnectionOperation == utils.WRITE {
-		HandlePutConnection(*task, conn)
-	} else if task.ConnectionOperation == utils.READ {
-		HandleGetConnection(*task)
+	} else if task.ConnectionOperation == utils.WRITE || task.ConnectionOperation == utils.READ {
+		HandleStreamConnection(*task, conn)
 	} else {
 		fmt.Printf("Error: inbound task from ip %s has no specific type", conn.RemoteAddr().String())
 	}
