@@ -1,8 +1,11 @@
 package sdfs
 
 import (
+	"crypto/rand"
+	"errors"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 
 	gossipUtils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -133,6 +136,10 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 	// 		2.b. Construct a FollowerTask with the operation=READ, blockidx=i, filename=sdfs_filename, acktarget=master, datatarget="" (IMPORTANT, IF DATATARGET IS EMPTY, IT MEANS JUST SEND DATA BACK ON THE SAME CONNECTION)
 	// 		2.c. buffered read from connection (4kb at a time should work, check utils for KB variable)
 	// 		2.d. IN BUFFERED READ FUNCTION -> write buffered array to localfilename.
+	fp, err := os.OpenFile(localfilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatalf("unable to open local file, ", err)
+	}
 	task := utils.Task{
 		DataTargetIp:        utils.New16Byte("-1"),
 		AckTargetIp:         utils.New16Byte("-1"),
@@ -152,8 +159,37 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 	}
 	utils.SendTaskOnExistingConnection(task, conn)
 	blockLocationArr := utils.UnmarshalBlockLocationArr(conn)
-	for i := 0; i < len(blockLocationArr); i++ {
-		
+	for blockIdx, replicas := range blockLocationArr {
+		for {
+			randomReplicaIp, err := PopRandomElementInArray(&replicas)
+			if err != nil {
+				log.Fatalf("All replicas down ):")
+			}
+			task := utils.Task{
+				DataTargetIp:        utils.New16Byte(gossipUtils.Ip),
+				AckTargetIp:         utils.New16Byte(gossipUtils.Ip),
+				ConnectionOperation: utils.READ,
+				FileName:            utils.New1024Byte(sdfsFilename),
+				OriginalFileSize:    0,
+				BlockIndex:          blockIdx,
+				DataSize:            0,
+				IsAck:               false,
+			}
+			replicaConn, err := utils.OpenTCPConnection(randomReplicaIp, utils.SDFS_PORT)
+			if err != nil {
+				log.Printf("unable to connect to replica, ", err)
+				continue
+			}
+			err = utils.SendTaskOnExistingConnection(task, replicaConn)
+			if err != nil {
+				log.Printf("unable to send task to replica, ", err)
+				continue
+			}
+
+			blockMetadata := utils.Unmarshal(replicaConn)
+			utils.BufferedReadAndWrite(replicaConn, fp, blockMetadata.DataSize, false)
+			break
+		}
 	}
 
 	// utils.
@@ -216,21 +252,21 @@ func GetMaster() string {
 // 	gossipUtils.MembershipMap.Keys()
 // }
 
-// func PopRandomElementInArray(array *utils.ConcurrentSlice) string {
-// 	// Get a random index using crypto/rand
-// 	max := big.NewInt(int64(array.Size()))
-// 	randomIndexBig, err := rand.Int(rand.Reader, max)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	randomIndex := randomIndexBig.Int64()
+func PopRandomElementInArray(array *[]string) (string, error) {
+	// Get a random index using crypto/rand
+	if len(*array) == 0 {
+		return "", errors.New("No more elements to pop")
+	}
+	max := big.NewInt(int64(len(*array)))
+	randomIndexBig, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		panic(err)
+	}
+	randomIndex := randomIndexBig.Int64()
 
-// 	str, ok := array.Pop(int(randomIndex)).(string)
-// 	if ok {
-// 		return str
-// 	} else {
-// 		log.Fatalf("The interface does not contain a string")
-// 	}
-// 	return ""
-// 	// [randomIndex], append(array[:randomIndex], array[randomIndex+1:]...)
-// }
+	randomElement := (*array)[randomIndex]
+	*array = append((*array)[:randomIndex], (*array)[randomIndex+1:]...)
+	return randomElement, nil
+
+	// [randomIndex], append(array[:randomIndex], array[randomIndex+1:]...)
+}
