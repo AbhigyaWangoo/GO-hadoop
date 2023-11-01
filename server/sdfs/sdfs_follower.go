@@ -14,13 +14,8 @@ import (
 var FileSet map[string]bool
 
 func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
-	// TODO: given the filename.blockidx, this function needs to buffered read a Task.DataSize amount of data from the
-	// connection, all as one block (buffered read, ofc) and write it to the file sdfs/data/filename.blockidx. Once that block is
-	// Successfully written, this function should alert the Task.AckTargetIp that this operation was successfully completed in addition
-	// to terminating the connection. Additionally, if another thread is currently reading/writing to a block, this should block until
-	// that operation is done. When this thread does end up in the middle of a write, it must mark that particular file as being written to
-	// in the FileSet map.
-	// Used for the PUT, GET commands, and Re-replication
+	// TODO for rereplication, if the src in the conn object == master, then we have to open a new connection to send data over that connection. The
+	// new conection should point to datatargetip
 
 	fmt.Println("Entering edit connection")
 	defer conn.Close()
@@ -29,9 +24,9 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	var flags int
 
 	if Task.ConnectionOperation == utils.WRITE {
-		flags = os.O_CREATE|os.O_WRONLY
+		flags = os.O_CREATE | os.O_WRONLY
 	} else if Task.ConnectionOperation == utils.READ {
-		flags = os.O_CREATE|os.O_RDONLY
+		flags = os.O_CREATE | os.O_RDONLY
 	}
 
 	localFilename, fp, err := utils.GetFilePtr(FileName, strconv.Itoa(Task.BlockIndex), flags)
@@ -58,7 +53,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 		if !fromLocal {
 			os.Remove(localFilename) // Remove file if it failed half way through
 		}
-		
+
 		return bufferedErr
 	}
 
@@ -103,22 +98,6 @@ func HandleDeleteConnection(Task utils.Task) error {
 	// Used for delete command
 	fmt.Println("Recieved a request to delete some block on this node")
 	return nil
-}
-
-func HandleGetConnection(Task utils.Task) {
-	// TODO: provided with a task struct, this function should take the filename.blockidx specified by the task struct,
-	// buffered read + buffered write it to the Task.DataTargetIp provided in the form of a WRITE Task. Also, this function needs
-	// to send an ack to the Task.AckTargetIp. Additionally, if another thread is currently reading/writing to a block, this should block until
-	// that operation is done. When the thread does end up in the middle of a buffered read, it must mark that particular file as being read from to
-	// in the map.
-	// Used for Get command, and Re-replication. Master will send a put command, with itself as the ack target, the machine to
-	// replicate to as the Task.DataTargetIp
-
-	// fp := GetFilePtr(Task.FileName, Task.BlockIndex, os.O_RDONLY | os.O_CREATE)
-	// BufferedReadAndWriteToConnection(fp, Task)
-	// SendAck(Task)
-
-	fmt.Println("Recieved a request to get some block from this node")
 }
 
 func SendAckToMaster(Task utils.Task) {
