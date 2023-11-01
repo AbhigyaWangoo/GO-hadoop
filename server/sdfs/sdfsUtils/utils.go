@@ -44,7 +44,7 @@ type Task struct {
 
 const KB int = 1024
 const MB int = KB * 1024
-const SDFS_PORT string = "3541"
+const SDFS_PORT string = "9999"
 const SDFS_ACK_PORT string = "9682"
 const FILESYSTEM_ROOT string = "server/sdfs/sdfsFileSystemRoot/"
 const BLOCK_SIZE int = 128 * MB
@@ -117,7 +117,7 @@ func GetFileName(sdfs_filename string, blockidx string) string {
 	return fmt.Sprintf("%s%s_%s", FILESYSTEM_ROOT, blockidx, sdfs_filename)
 }
 
-func GetFilePtr(sdfs_filename string, blockidx string, flags int) (*os.File, error) {
+func GetFilePtr(sdfs_filename string, blockidx string, flags int) (string, *os.File, error) {
 	// Specify the file path
 	filePath := GetFileName(sdfs_filename, blockidx)
 
@@ -129,7 +129,7 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (*os.File, err
 		}
 	}
 
-	return file, err
+	return filePath, file, err
 }
 
 // This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and

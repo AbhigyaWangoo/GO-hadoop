@@ -54,10 +54,8 @@ func HandleConnection(conn net.Conn) {
 
 	if task.ConnectionOperation == utils.DELETE {
 		HandleDeleteConnection(*task)
-	} else if task.ConnectionOperation == utils.WRITE {
-		HandlePutConnection(*task, conn)
-	} else if task.ConnectionOperation == utils.READ {
-		HandleGetConnection(*task)
+	} else if task.ConnectionOperation == utils.WRITE || task.ConnectionOperation == utils.READ {
+		HandleStreamConnection(*task, conn)
 	} else {
 		fmt.Printf("Error: inbound task from ip %s has no specific type", conn.RemoteAddr().String())
 	}
