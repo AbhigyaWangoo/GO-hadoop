@@ -91,6 +91,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							AckTargetIp:         utils.New16Byte(utils.LEADER_IP),
 							ConnectionOperation: utils.WRITE,
 							FileName:            utils.New1024Byte(SdfsFilename),
+							FileNameLength:      len(SdfsFilename),
 							OriginalFileSize:    int(fileSize),
 							BlockIndex:          int(currentBlock),
 							DataSize:            uint32(lengthToWrite),
@@ -136,7 +137,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 	// 		2.b. Construct a FollowerTask with the operation=READ, blockidx=i, filename=sdfs_filename, acktarget=master, datatarget="" (IMPORTANT, IF DATATARGET IS EMPTY, IT MEANS JUST SEND DATA BACK ON THE SAME CONNECTION)
 	// 		2.c. buffered read from connection (4kb at a time should work, check utils for KB variable)
 	// 		2.d. IN BUFFERED READ FUNCTION -> write buffered array to localfilename.
-	fp, err := os.OpenFile(localfilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|os.O_APPEND, 0644)
+	fp, err := os.OpenFile(localfilename, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalf("unable to open local file, ", err)
 	}
