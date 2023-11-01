@@ -35,6 +35,7 @@ type Task struct {
 	AckTargetIp         [16]byte
 	ConnectionOperation BlockOperation // READ, WRITE, GET_2D, OR DELETE from sdfs utils
 	FileName            [1024]byte
+	FileNameLength      int
 	OriginalFileSize    int
 	BlockIndex          int
 	DataSize            uint32 // TODO change me to uint32
@@ -116,7 +117,7 @@ func GetFileName(sdfs_filename string, blockidx string) string {
 	return fmt.Sprintf("%s%s_%s", FILESYSTEM_ROOT, blockidx, sdfs_filename)
 }
 
-func GetFilePtr(sdfs_filename string, blockidx string, flags int) (*os.File, error) {
+func GetFilePtr(sdfs_filename string, blockidx string, flags int) (string, *os.File, error) {
 	// Specify the file path
 	filePath := GetFileName(sdfs_filename, blockidx)
 
@@ -128,7 +129,7 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (*os.File, err
 		}
 	}
 
-	return file, err
+	return filePath, file, err
 }
 
 // This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and
