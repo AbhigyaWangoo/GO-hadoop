@@ -339,6 +339,7 @@ func Unmarshal(conn net.Conn) (*Task, uint32) {
 
 func MarshalBlockLocationArr(array [][]string) []byte {
 	jsonData, err := json.Marshal(array)
+	log.Printf(string(jsonData))
 	if err != nil {
 		log.Fatalf("error marshaling 2d arr: %v\n", err)
 	}

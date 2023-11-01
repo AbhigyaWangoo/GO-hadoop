@@ -89,6 +89,7 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 		// 	IsAck:               false,
 		// }
 		// utils.SendTaskOnExistingConnection(task, conn)
+		log.Printf("GOTTIT")
 		Get2dArr(fileName, conn)
 		conn.Close()
 	}
@@ -113,6 +114,8 @@ func Get2dArr(Filename string, conn net.Conn) {
 	if !exists {
 		log.Fatalln("Block location filename dne")
 	}
+
+	// arr := [][]string{{"hi", "hi"}, {"hi", "hi"}}
 
 	marshalledArray := utils.MarshalBlockLocationArr(arr)
 	_, err := conn.Write(marshalledArray)
