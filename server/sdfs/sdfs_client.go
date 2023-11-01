@@ -88,7 +88,6 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							AckTargetIp:         utils.New16Byte(utils.LEADER_IP),
 							ConnectionOperation: utils.WRITE,
 							FileName:            utils.New1024Byte(SdfsFilename),
-							FileNameLength:      len(SdfsFilename),
 							OriginalFileSize:    int(fileSize),
 							BlockIndex:          int(currentBlock),
 							DataSize:            uint32(lengthToWrite),
@@ -122,8 +121,8 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 
 }
 
-func InitiateGetCommand(sdfs_filename string, localfilename string) {
-	fmt.Printf("localfilename: %s sdfs: %s\n", localfilename, sdfs_filename)
+func InitiateGetCommand(sdfsFilename string, localfilename string) {
+	fmt.Printf("localfilename: %s sdfs: %s\n", localfilename, sdfsFilename)
 
 	// IF CONNECTION CLOSES WHILE READING, WE NEED TO REPICK AN IP ADDR TO READ FROM. Can have a seperate function to handle this on failure cases.
 
@@ -134,27 +133,51 @@ func InitiateGetCommand(sdfs_filename string, localfilename string) {
 	// 		2.b. Construct a FollowerTask with the operation=READ, blockidx=i, filename=sdfs_filename, acktarget=master, datatarget="" (IMPORTANT, IF DATATARGET IS EMPTY, IT MEANS JUST SEND DATA BACK ON THE SAME CONNECTION)
 	// 		2.c. buffered read from connection (4kb at a time should work, check utils for KB variable)
 	// 		2.d. IN BUFFERED READ FUNCTION -> write buffered array to localfilename.
+	task := utils.Task{
+		DataTargetIp:        utils.New16Byte("-1"),
+		AckTargetIp:         utils.New16Byte("-1"),
+		ConnectionOperation: utils.GET_2D,
+		FileName:            utils.New1024Byte(sdfsFilename),
+		OriginalFileSize:    -1,
+		BlockIndex:          -1,
+		DataSize:            0,
+		IsAck:               false,
+	}
+
+	leaderIp := utils.GetLeader()
+	conn, err := utils.OpenTCPConnection(leaderIp, utils.SDFS_PORT)
+	defer conn.Close()
+	if err != nil {
+		log.Fatalf("unable to open connection to master: ", err)
+	}
+	utils.SendTaskOnExistingConnection(task, conn)
+	blockLocationArr := utils.UnmarshalBlockLocationArr(conn)
+	for i := 0; i < len(blockLocationArr); i++ {
+		
+	}
+
+	// utils.
+
 }
 
 func InitiateDeleteCommand(sdfs_filename string) {
 	fmt.Printf("sdfs: %s\n", sdfs_filename)
 	// IF CONNECTION CLOSES WHILE READING, its all good. We can assume memory was wiped
-	
-	fileSize := 10485760 // TODO Hardcoded, change me
-	currentBlock := 0 // TODO Hardcoded, change me
+
+	fileSize := 10485760      // TODO Hardcoded, change me
+	currentBlock := 0         // TODO Hardcoded, change me
 	lengthToWrite := 10485760 // TODO Hardcoded, change me
-	
+
 	conn, err := utils.OpenTCPConnection(utils.LEADER_IP, utils.SDFS_PORT) // TODO Hardcoded, change me
 	if err != nil {
 		log.Fatalf("Couldn't open tcp conn to leader %v\n", err)
 	}
-	
+
 	task := utils.Task{
 		DataTargetIp:        utils.New16Byte(""),
 		AckTargetIp:         utils.New16Byte(utils.LEADER_IP),
 		ConnectionOperation: utils.DELETE,
 		FileName:            utils.New1024Byte(sdfs_filename),
-		FileNameLength:      len(sdfs_filename),
 		OriginalFileSize:    int(fileSize),
 		BlockIndex:          int(currentBlock),
 		DataSize:            uint32(lengthToWrite),
@@ -166,9 +189,9 @@ func InitiateDeleteCommand(sdfs_filename string) {
 	if errMWrite != nil {
 		log.Fatalf("Couldn't write marshalled delete task %v\n", errMWrite)
 	}
-	
+
 	fmt.Println("Finished delete task")
-	
+
 	// 1. Query master for 2d array of ip addresses (2darr)
 	// 2. For i = 0; i < num_blocks; i ++
 	// 3. 		For j = 0; j < num_replicas; j++

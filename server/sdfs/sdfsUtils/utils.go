@@ -36,7 +36,6 @@ type Task struct {
 	ConnectionOperation BlockOperation // READ, WRITE, GET_2D, OR DELETE from sdfs utils
 	FileName            [1024]byte
 	OriginalFileSize    int
-	FileNameLength      int
 	BlockIndex          int
 	DataSize            uint32 // TODO change me to uint32
 	IsAck               bool
@@ -215,6 +214,18 @@ func SendTask(task Task, ipAddr string, ack bool) error {
 	defer conn.Close()
 
 	task.IsAck = ack
+	arr := task.Marshal()
+	bytes_written, err := conn.Write(arr)
+	if err != nil {
+		return err
+	} else if bytes_written != len(arr) {
+		return io.ErrShortWrite
+	}
+
+	return nil
+}
+
+func SendTaskOnExistingConnection(task Task, conn net.Conn) error {
 	arr := task.Marshal()
 	bytes_written, err := conn.Write(arr)
 	if err != nil {

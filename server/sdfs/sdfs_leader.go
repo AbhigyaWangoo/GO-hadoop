@@ -46,13 +46,14 @@ func MachineType() gossiputils.SdfsNodeType {
 	return gossiputils.LEADER
 }
 
-func HandleAck(IncomingAck utils.Task) error {
+func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 	if !IncomingAck.IsAck {
 		return errors.New("ack passed to master for processing was not actually an ack")
 	}
 	fileName := utils.BytesToString(IncomingAck.FileName)
 	ackSourceIp := utils.BytesToString(IncomingAck.DataTargetIp)
 	if IncomingAck.ConnectionOperation == utils.WRITE {
+		conn.Close()
 		RouteToSubMasters(IncomingAck)
 		if !BlockLocations.Has(fileName) {
 			InitializeBlockLocationsEntry(fileName, int64(IncomingAck.OriginalFileSize))
@@ -75,6 +76,21 @@ func HandleAck(IncomingAck utils.Task) error {
 			initialMapping[0] = [2]interface{}{IncomingAck.BlockIndex, ackSourceIp}
 			FileToBlocks.Set(ackSourceIp, initialMapping)
 		}
+	} else if IncomingAck.ConnectionOperation == utils.GET_2D {
+		// fileName := utils.BytesToString(IncomingAck.FileName)
+		// task := utils.Task{
+		// 	DataTargetIp:        utils.New16Byte("-1"),
+		// 	AckTargetIp:         utils.New16Byte("-1"),
+		// 	ConnectionOperation: utils.READ,
+		// 	FileName:            IncomingAck.FileName,
+		// 	OriginalFileSize:    -1,
+		// 	BlockIndex:          -1,
+		// 	DataSize:            0,
+		// 	IsAck:               false,
+		// }
+		// utils.SendTaskOnExistingConnection(task, conn)
+		Get2dArr(fileName, conn)
+		conn.Close()
 	}
 
 	// 1. Ack for Write operation
@@ -88,10 +104,10 @@ func HandleAck(IncomingAck utils.Task) error {
 	return nil
 }
 
-func Get2dArr(Filename string, FileSize int64, conn net.Conn) {
+func Get2dArr(Filename string, conn net.Conn) {
 	// Reply to a connection with the 2d array for the provided filename. Hardcoded for now.
 
-	InitializeBlockLocationsEntry(Filename, FileSize) // TODO HARDCODED, CHANGE ME
+	// InitializeBlockLocationsEntry(Filename, FileSize) // TODO HARDCODED, CHANGE ME
 
 	arr, exists := BlockLocations.Get(Filename)
 	if !exists {
