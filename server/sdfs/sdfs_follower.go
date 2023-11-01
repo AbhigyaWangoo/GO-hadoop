@@ -24,7 +24,7 @@ func HandlePutConnection(Task utils.Task, conn net.Conn) error {
 	fmt.Println("Entering put connection")
 	defer conn.Close()
 
-	var FileName string = utils.BytesToString(Task.FileName[:Task.FileNameLength])
+	var FileName string = utils.BytesToString(Task.FileName)
 
 	fmt.Println("Filename: ", FileName)
 
@@ -71,7 +71,7 @@ func HandleDeleteConnection(Task utils.Task) error {
 	// that operation is done. When the thread does end up in the middle of a buffered read, it must mark that particular file as being read from to
 	// in the map.
 
-	localFilename := utils.GetFileName(utils.BytesToString(Task.FileName[:Task.FileNameLength]), fmt.Sprint(Task.BlockIndex))
+	localFilename := utils.GetFileName(utils.BytesToString(Task.FileName), fmt.Sprint(Task.BlockIndex))
 
 	utils.MuLocalFs.Lock()
 	for FileSet[localFilename] {
@@ -120,7 +120,8 @@ func SendAckToMaster(Task utils.Task) {
 	val, ok := gossiputils.MembershipMap.Get(leaderIp)
 	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
 		fmt.Printf("sending Leader ip\n")
-		utils.SendTask(Task, string(Task.AckTargetIp[:]), true)
+
+		utils.SendTask(Task, utils.BytesToString(Task.AckTargetIp), true)
 	} else {
 		newLeader := utils.GetLeader()
 		utils.SendTask(Task, newLeader, true)
