@@ -2,6 +2,7 @@ package sdfsutils
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -319,16 +320,21 @@ func (task Task) Marshal() []byte {
 	return marshaledTask
 }
 
-func Unmarshal(conn net.Conn) *Task {
+func Unmarshal(conn net.Conn) (*Task, uint32) {
 	var task Task
-	decoder := json.NewDecoder(conn)
+
+	var buf bytes.Buffer
+	teeReader := io.TeeReader(conn, &buf)
+
+	decoder := json.NewDecoder(teeReader)
 	err := decoder.Decode(&task)
+	bytesRead := buf.Len()
 
 	if err != nil {
 		log.Fatalf("Error unmarshalling task: %v\n", err)
 	}
 
-	return &task
+	return &task, uint32(bytesRead)
 }
 
 func MarshalBlockLocationArr(array [][]string) []byte {
