@@ -81,8 +81,8 @@ func RunCLI() {
 
 		} else if strings.Contains(command, string(GET)) {
 			parts := strings.Split(command, " ")
-			localfilename := strings.TrimSpace(parts[2])
 			sdfs_filename := strings.TrimSpace(parts[1])
+			localfilename := strings.TrimSpace(parts[2])
 
 			sdfs_client.InitiateGetCommand(localfilename, sdfs_filename)
 
