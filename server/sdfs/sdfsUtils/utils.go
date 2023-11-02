@@ -31,8 +31,8 @@ const (
 )
 
 type Task struct {
-	DataTargetIp        [16]byte
-	AckTargetIp         [16]byte
+	DataTargetIp        [19]byte
+	AckTargetIp         [19]byte
 	ConnectionOperation BlockOperation // READ, WRITE, GET_2D, OR DELETE from sdfs utils
 	FileName            [1024]byte
 	FileNameLength      int
@@ -293,8 +293,8 @@ func GetKLeaders() []string {
 	return kLeaders
 }
 
-func New16Byte(data string) [16]byte {
-	var byteArr [16]byte
+func New19Byte(data string) [19]byte {
+	var byteArr [19]byte
 	copy(byteArr[:], []byte(data))
 	return byteArr
 }

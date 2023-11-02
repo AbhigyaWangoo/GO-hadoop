@@ -44,22 +44,44 @@ func RouteToSubMasters(IncomingAck utils.Task) {
 
 // checks current machine's IP addr in gossip's MembershipMap, returns whether current machine is leader, subleader, or follower
 func MachineType() gossiputils.SdfsNodeType {
-	return gossiputils.LEADER
+	kleaders := utils.GetKLeaders()
+	leader := utils.GetLeader()
+
+	thisIp := gossiputils.Ip
+
+	if thisIp == leader {
+		return gossiputils.LEADER
+	}
+
+	for i := 0; i < len(kleaders); i++ {
+		if thisIp == kleaders[i] {
+			return gossiputils.SUB_LEADER
+		}
+	}
+
+	return gossiputils.FOLLOWER
 }
 
 func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
+	
 	if !IncomingAck.IsAck {
 		return errors.New("ack passed to master for processing was not actually an ack")
 	}
-	fileName := utils.BytesToString(IncomingAck.FileName[:])
-	// fmt.Printf("Hi: ", fileName)
-	ackSourceIp := utils.BytesToString(IncomingAck.DataTargetIp[:])
+
+	fileName := utils.BytesToString(IncomingAck.FileName[:IncomingAck.FileNameLength])
+	ackSourceIp := utils.BytesToString(IncomingAck.AckTargetIp[:19])
+	
 	if IncomingAck.ConnectionOperation == utils.WRITE {
-		utils.SendSmallAck(conn)
+		
+		fmt.Printf("Got ack for write, the ack source is >{%s}<\n", ackSourceIp)
+		fmt.Println("Got ack for write, filename is ", fileName)
+		fmt.Println("Got ack for write, File size is ", IncomingAck.OriginalFileSize)
+		
 		// RouteToSubMasters(IncomingAck)
+		
 		if !BlockLocations.Has(fileName) {
+			fmt.Println("Never seen before filename, creating block locations entry")
 			InitializeBlockLocationsEntry(fileName, int64(IncomingAck.OriginalFileSize))
-			log.Printf("WRITTTEEEE")
 		}
 
 		blockMap, _ := BlockLocations.Get(fileName)
@@ -69,48 +91,30 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 				break
 			}
 		}
-		log.Printf("WRITTTEEEE")
 		BlockLocations.Set(fileName, blockMap)
-		log.Printf(utils.BytesToString(IncomingAck.DataTargetIp[:]))
-		sourceIp := utils.BytesToString(IncomingAck.DataTargetIp[:])
-		if !FileToBlocks.Has(sourceIp) {
-			log.Printf("WRITTTEEEE")
-			initialMapping := make([][2]interface{}, 1)
-			initialMapping[0] = [2]interface{}{IncomingAck.BlockIndex, ackSourceIp}
-			FileToBlocks.Set(ackSourceIp, initialMapping)
-		} else {
-			mapping, _ := FileToBlocks.Get(sourceIp)
-			log.Printf("WRITTTEEEE")
-			mapping = append(mapping, [2]interface{}{IncomingAck.BlockIndex, ackSourceIp})
+
+		if mapping, ok := FileToBlocks.Get(ackSourceIp); ok { // IPaddr : [[blockidx, filename]]
+			mapping = append(mapping, [2]interface{}{IncomingAck.BlockIndex, fileName})
 			FileToBlocks.Set(ackSourceIp, mapping)
+		} else {
+			initialMapping := make([][2]interface{}, 1)
+			initialMapping[0] = [2]interface{}{IncomingAck.BlockIndex, fileName}
+			FileToBlocks.Set(ackSourceIp, initialMapping)
 		}
-		// if mapping, ok := FileToBlocks.Get(utils.BytesToString(IncomingAck.DataTargetIp[:])); ok {
-		// 	log.Printf("WRITTTEEEE")
-		// 	mapping = append(mapping, [2]interface{}{IncomingAck.BlockIndex, ackSourceIp})
-		// 	FileToBlocks.Set(ackSourceIp, mapping)
-		// } else {
-		// 	log.Printf("WRITTTEEEE")
-		// 	initialMapping := make([][2]interface{}, 1)
-		// 	initialMapping[0] = [2]interface{}{IncomingAck.BlockIndex, ackSourceIp}
-		// 	FileToBlocks.Set(ackSourceIp, initialMapping)
-		// }
 	} else if IncomingAck.ConnectionOperation == utils.GET_2D {
-		fmt.Printf("HELLOOOO")
-		// fileName := utils.BytesToString(IncomingAck.FileName)
-		// task := utils.Task{
-		// 	DataTargetIp:        utils.New16Byte("-1"),
-		// 	AckTargetIp:         utils.New16Byte("-1"),
-		// 	ConnectionOperation: utils.READ,
-		// 	FileName:            IncomingAck.FileName,
-		// 	OriginalFileSize:    -1,
-		// 	BlockIndex:          -1,
-		// 	DataSize:            0,
-		// 	IsAck:               false,
-		// }
-		// utils.SendTaskOnExistingConnection(task, conn)
-		// fileName = "1mb.log"
-		Get2dArr(fileName, conn)
-		// conn.Close()
+		Handle2DArrRequest(fileName, conn)
+	} else if IncomingAck.ConnectionOperation == utils.DELETE {
+		if !BlockLocations.Has(fileName) {
+			return errors.New("Never seen before filename, dropping delete operation")
+		}
+		
+		blockMap, _ := BlockLocations.Get(fileName)
+		row := blockMap[IncomingAck.BlockIndex]
+		for i := 0; i < utils.REPLICATION_FACTOR; i++ { 
+			if row[i] == ackSourceIp {
+				blockMap[IncomingAck.BlockIndex][i] = utils.DELETE_OP
+			}
+		}
 	}
 
 	// 1. Ack for Write operation
@@ -124,18 +128,8 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 	return nil
 }
 
-func Get2dArr(Filename string, conn net.Conn) {
-	// Reply to a connection with the 2d array for the provided filename. Hardcoded for now.
-
-	// InitializeBlockLocationsEntry(Filename, FileSize) // TODO HARDCODED, CHANGE ME
-
-	// a := [][]string{
-	// 	{"0", "1", "2", "3"},
-	// 	{"4", "5", "6", "7"},
-	// }
-
-	// fmt.Println("Filename: ", Filename)
-	// BlockLocations.Set("1mb.log", a)
+func Handle2DArrRequest(Filename string, conn net.Conn) {
+	// Reply to a connection with the 2d array for the provided filename. 
 	arr, exists := BlockLocations.Get(Filename)
 	if !exists {
 		log.Fatalln("Block location filename dne")
@@ -146,11 +140,8 @@ func Get2dArr(Filename string, conn net.Conn) {
 	if err != nil {
 		log.Fatalf("Error writing 2d arr to conn: %v\n", err)
 	}
-	fmt.Printf(string(marshalledArray))
 }
 
 func HandleReReplication(DownIpAddr string) {
 
 }
-
-// 1048576 - 1047287 - 3584
