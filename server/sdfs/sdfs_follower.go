@@ -65,7 +65,9 @@ func HandleStreamConnection(Task utils.Task, conn *bufio.ReadWriter) error {
 		// Close the connection with an error here somehow.
 		return bufferedErr
 	}
-	utils.SendSmallAck(conn)
+	if !fromLocal {
+		utils.SendSmallAck(conn)
+	}
 
 	log.Println("Nread: ", nread)
 
