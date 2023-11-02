@@ -273,15 +273,29 @@ func InitiateDeleteCommand(sdfs_filename string) {
 
 func InitiateLsCommand(sdfs_filename string) {
 
+	// 1. Query master for 2d array of ip addresses (2darr)
+	mappings, mappingsErr := RequestBlockMappings(sdfs_filename)
+	IpAddrs := make(map[string]bool)
+	var result []string
+	if mappingsErr != nil {
+		fmt.Printf("File did not exist and thus cannot be deleted.")
+	}
+
+	for _, slice := range mappings {
+        for _, str := range slice {
+            if !IpAddrs[str] {
+                IpAddrs[str] = true
+                result = append(result, str)
+            }
+        }
+    }
+
+	fmt.Println(result)
 }
 
 func InitiateStoreCommand() {
 
 }
-
-// func GetSubmasters() []string {
-// 	gossipUtils.MembershipMap.Keys()
-// }
 
 func PopRandomElementInArray(array *[]string) (string, error) {
 	// Get a random index using crypto/rand

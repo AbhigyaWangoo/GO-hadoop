@@ -92,6 +92,12 @@ func RunCLI() {
 
 			sdfs_client.InitiateDeleteCommand(sdfs_filename)
 
+		} else if strings.Contains(command, string(LS)) {
+			parts := strings.Split(command, " ")
+			sdfs_filename := strings.TrimSpace(parts[1])
+
+			sdfs_client.InitiateLsCommand(sdfs_filename)
+
 		} else {
 			error_msg := `
 			Command not understood. Available commands are as follows:
