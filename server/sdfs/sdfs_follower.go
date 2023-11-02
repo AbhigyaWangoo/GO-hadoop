@@ -54,7 +54,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 			os.Remove(localFilename) // Remove file if it failed half way through
 		}
 
-		// Close the connection with an error
+		// Close the connection with an error here somehow.
 		return bufferedErr
 	}
 
