@@ -47,7 +47,7 @@ const MB int = KB * 1024
 const SDFS_PORT string = "3456"
 const SDFS_ACK_PORT string = "9682"
 const FILESYSTEM_ROOT string = "server/sdfs/sdfsFileSystemRoot/"
-const BLOCK_SIZE int = 128 * MB
+const BLOCK_SIZE int = 32 * MB
 const REPLICATION_FACTOR int = 4
 const MAX_INT64 = 9223372036854775807
 const NUM_LEADERS = 4
@@ -102,10 +102,6 @@ func GetFileSize(filePath string) int64 {
 func CeilDivide(a, b int64) int64 {
 	// Perform integer division
 	quotient := a / b
-
-	fmt.Println("quotient: ", quotient)
-	fmt.Println("a: ", a)
-	fmt.Println("b: ", b)
 
 	// Check if there is a remainder
 	remainder := a % b
