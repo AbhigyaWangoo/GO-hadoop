@@ -72,8 +72,6 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 				log.Fatalf("error opening local file: %v\n", err)
 			}
 
-			defer file.Close()
-
 			for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
 
 				for {
@@ -123,12 +121,12 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						utils.ReadSmallAck(buffConn)
 
 						file.Seek(0, int(startIdx))
-						totalBytesWritten, err := utils.BufferedReadAndWrite(buffConn, file, uint32(lengthToWrite), true)
+						totalBytesWritten, writeErr := utils.BufferedReadAndWrite(buffConn, file, uint32(lengthToWrite), true)
 						fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
 						fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
-						if err != nil { // If failure to write full block, redo loop
-							log.Fatalf("connection broke early, rewrite block")
-							// conn.Close()
+
+						if writeErr != nil { // If failure to write full block, redo loop
+							fmt.Println("connection broke early, rewrite block: ", writeErr)
 							continue
 						}
 						utils.ReadSmallAck(buffConn)
@@ -137,6 +135,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 					}
 				}
 			}
+			file.Close()
 		}(currentBlock)
 	}
 
@@ -298,13 +297,13 @@ func InitiateLsCommand(sdfs_filename string) {
 	}
 
 	for _, slice := range mappings {
-        for _, str := range slice {
-            if !IpAddrs[str] {
-                IpAddrs[str] = true
-                result = append(result, str)
-            }
-        }
-    }
+		for _, str := range slice {
+			if !IpAddrs[str] {
+				IpAddrs[str] = true
+				result = append(result, str)
+			}
+		}
+	}
 
 	fmt.Println(result)
 }
