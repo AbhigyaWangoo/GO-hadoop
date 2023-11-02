@@ -63,22 +63,22 @@ func MachineType() gossiputils.SdfsNodeType {
 }
 
 func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
-	
+
 	if !IncomingAck.IsAck {
 		return errors.New("ack passed to master for processing was not actually an ack")
 	}
 
 	fileName := utils.BytesToString(IncomingAck.FileName[:IncomingAck.FileNameLength])
 	ackSourceIp := utils.BytesToString(IncomingAck.AckTargetIp[:19])
-	
+
 	if IncomingAck.ConnectionOperation == utils.WRITE {
-		
+
 		fmt.Printf("Got ack for write, the ack source is >{%s}<\n", ackSourceIp)
 		fmt.Println("Got ack for write, filename is ", fileName)
 		fmt.Println("Got ack for write, File size is ", IncomingAck.OriginalFileSize)
-		
+
 		// RouteToSubMasters(IncomingAck)
-		
+
 		if !BlockLocations.Has(fileName) {
 			fmt.Println("Never seen before filename, creating block locations entry")
 			InitializeBlockLocationsEntry(fileName, int64(IncomingAck.OriginalFileSize))
@@ -107,10 +107,10 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 		if !BlockLocations.Has(fileName) {
 			return errors.New("Never seen before filename, dropping delete operation")
 		}
-		
+
 		blockMap, _ := BlockLocations.Get(fileName)
 		row := blockMap[IncomingAck.BlockIndex]
-		for i := 0; i < utils.REPLICATION_FACTOR; i++ { 
+		for i := 0; i < utils.REPLICATION_FACTOR; i++ {
 			if row[i] == ackSourceIp {
 				blockMap[IncomingAck.BlockIndex][i] = utils.DELETE_OP
 			}
@@ -129,7 +129,7 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 }
 
 func Handle2DArrRequest(Filename string, conn net.Conn) {
-	// Reply to a connection with the 2d array for the provided filename. 
+	// Reply to a connection with the 2d array for the provided filename.
 	arr, exists := BlockLocations.Get(Filename)
 	if !exists {
 		log.Fatalln("Block location filename dne")
@@ -143,5 +143,42 @@ func Handle2DArrRequest(Filename string, conn net.Conn) {
 }
 
 func HandleReReplication(DownIpAddr string) {
+	if blocksToRereplicate, ok := FileToBlocks.Get(DownIpAddr); ok {
+		for _, blockMetadata := range blocksToRereplicate {
+			if fileName, ok := blockMetadata[1].(string); ok {
+				if blockIdx, ok := blockMetadata[0].(int); ok {
+					if blockLocations, ok := BlockLocations.Get(fileName); ok {
+						locations := blockLocations[blockIdx]
+						for _, ip := range locations {
+							if ip == DownIpAddr {
+								continue
+							}
+							conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
+							if err != nil {
+								log.Printf("unable to open connection: ", err)
+								continue
+							}
+							task := utils.Task{
+								DataTargetIp:        utils.New19Byte(ip),
+								AckTargetIp:         utils.New19Byte(gossiputils.Ip),
+								ConnectionOperation: utils.READ,
+								FileName:            utils.New1024Byte(fileName),
+								FileNameLength:      len(fileName),
+								OriginalFileSize:    -1,
+								BlockIndex:          blockIdx,
+								DataSize:            0,
+								IsAck:               false,
+							}
 
+							err = utils.SendTaskOnExistingConnection(task, conn)
+							if err != nil {
+								log.Printf("unable to send task on existing connection: ", err)
+								continue
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
