@@ -226,7 +226,7 @@ func SendTask(task Task, ipAddr string, ack bool) (*net.Conn, error) {
 		return nil, io.ErrShortWrite
 	}
 	conn.Write([]byte{'\n'})
-	
+
 	fmt.Println("Sent task to leader ip:", ipAddr)
 
 	if connTCP, ok := conn.(*net.TCPConn); ok {
@@ -349,7 +349,14 @@ func Unmarshal(conn net.Conn) (*Task, uint32) {
 	if err != nil {
 		log.Fatalf("Error unmarshalling task: %v\n", err)
 	}
-	conn.Write([]byte{0})
+	
+
+	n, err := conn.Write([]byte("HEllo"))
+	if err != nil {
+		log.Fatalf("err: ", err)
+	}
+	log.Printf("Data: ", n)
+	log.Printf("WROTEEE")
 
 	return &task, uint32(len(data))
 }
