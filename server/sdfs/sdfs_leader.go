@@ -133,7 +133,7 @@ func Handle2DArrRequest(Filename string, conn *bufio.ReadWriter) {
 	fmt.Printf("File name: ", Filename)
 	arr, exists := BlockLocations.Get(Filename)
 	if !exists {
-		log.Fatalln("Block location filename dne")
+		fmt.Println("Block location filename dne. Continuing")
 	}
 
 	marshalledArray := utils.MarshalBlockLocationArr(arr)
