@@ -50,7 +50,7 @@ func HandleConnection(conn net.Conn) {
 		machineType := MachineType()
 		if machineType == gossiputils.LEADER {
 			fmt.Printf("Recieved ack for %s at master\n", utils.BytesToString(task.FileName[:task.FileNameLength]))
-			HandleAck(*task, conn)
+			// HandleAck(*task, conn)
 			return
 		}
 	}
