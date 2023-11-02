@@ -17,6 +17,11 @@ func RequestBlockMappings(FileName string) [][]string {
 	// 2. Listen for 2d array on responding connection. Read 2d array and return it.
 
 	var task utils.Task
+	task.DataTargetIp = utils.New16Byte("127.0.0.1")
+	task.AckTargetIp = utils.New16Byte("127.0.0.1")
+	task.OriginalFileSize = 0
+	task.BlockIndex = 0
+	task.DataSize = 0
 	task.ConnectionOperation = utils.GET_2D
 	task.FileName = utils.New1024Byte(FileName)
 	task.FileNameLength = len(FileName)

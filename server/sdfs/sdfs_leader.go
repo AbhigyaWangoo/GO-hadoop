@@ -2,6 +2,7 @@ package sdfs
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net"
 
@@ -10,8 +11,8 @@ import (
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
-var BlockLocations cmap.ConcurrentMap[string, [][]string]     // filename : [[ip addr, ip addr, ], ], index 2d arr by block index
-var FileToOriginator cmap.ConcurrentMap[string, []string]     // filename : [ClientIpWhoCreatedFile, ClientCreationTime]
+var BlockLocations cmap.ConcurrentMap[string, [][]string] = cmap.New[[][]string]()     // filename : [[ip addr, ip addr, ], ], index 2d arr by block index
+var FileToOriginator cmap.ConcurrentMap[string, []string] = cmap.New[[]string]()     // filename : [ClientIpWhoCreatedFile, ClientCreationTime]
 var FileToBlocks cmap.ConcurrentMap[string, [][2]interface{}] // IPaddr : [[blockidx, filename]]
 
 // Initializes a new entry in BlockLocations, so the leader can begin listening for block acks.
@@ -50,7 +51,7 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 	if !IncomingAck.IsAck {
 		return errors.New("ack passed to master for processing was not actually an ack")
 	}
-	fileName := utils.BytesToString(IncomingAck.FileName)
+	fileName := utils.BytesToString(IncomingAck.FileName[:IncomingAck.FileNameLength])
 	ackSourceIp := utils.BytesToString(IncomingAck.DataTargetIp)
 	if IncomingAck.ConnectionOperation == utils.WRITE {
 		conn.Close()
@@ -109,6 +110,13 @@ func Get2dArr(Filename string, conn net.Conn) {
 
 	// InitializeBlockLocationsEntry(Filename, FileSize) // TODO HARDCODED, CHANGE ME
 
+	a := [][]string{
+		{"0", "1", "2", "3"},
+		{"4", "5", "6", "7"},
+	}
+
+	fmt.Println("Filename: ", Filename)
+	BlockLocations.Set("1mb.log", a)
 	arr, exists := BlockLocations.Get(Filename)
 	if !exists {
 		log.Fatalln("Block location filename dne")
@@ -124,3 +132,5 @@ func Get2dArr(Filename string, conn net.Conn) {
 func HandleReReplication(DownIpAddr string) {
 
 }
+
+// 1048576 - 1047287 - 3584
