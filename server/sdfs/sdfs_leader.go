@@ -1,10 +1,10 @@
 package sdfs
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"log"
-	"net"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -62,7 +62,7 @@ func MachineType() gossiputils.SdfsNodeType {
 	return gossiputils.FOLLOWER
 }
 
-func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
+func HandleAck(IncomingAck utils.Task, conn *bufio.ReadWriter) error {
 
 	if !IncomingAck.IsAck {
 		return errors.New("ack passed to master for processing was not actually an ack")
@@ -128,7 +128,7 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 	return nil
 }
 
-func Handle2DArrRequest(Filename string, conn net.Conn) {
+func Handle2DArrRequest(Filename string, conn *bufio.ReadWriter) {
 	// Reply to a connection with the 2d array for the provided filename.
 	fmt.Printf("File name: ", Filename)
 	arr, exists := BlockLocations.Get(Filename)
@@ -142,6 +142,7 @@ func Handle2DArrRequest(Filename string, conn net.Conn) {
 	if err != nil {
 		log.Fatalf("Error writing 2d arr to conn: %v\n", err)
 	}
+	conn.Flush()
 }
 
 func HandleReReplication(DownIpAddr string) {
@@ -166,6 +167,8 @@ func HandleReReplication(DownIpAddr string) {
 								log.Printf("unable to open connection: ", err)
 								continue
 							}
+							defer conn.Close()
+							buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 							task := utils.Task{
 								DataTargetIp:        utils.New19Byte(ip),
 								AckTargetIp:         utils.New19Byte(gossiputils.Ip),
@@ -177,7 +180,7 @@ func HandleReReplication(DownIpAddr string) {
 								IsAck:               false,
 							}
 
-							err = utils.SendTaskOnExistingConnection(task, conn)
+							err = utils.SendTaskOnExistingConnection(task, buffConn)
 							if err != nil {
 								log.Printf("unable to send task on existing connection: ", err)
 								continue

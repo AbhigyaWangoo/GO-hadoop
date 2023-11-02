@@ -1,8 +1,8 @@
 package sdfs
 
 import (
+	"bufio"
 	"fmt"
-	"net"
 
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
@@ -32,14 +32,19 @@ func InitializeSdfsProcess() {
 			continue
 		}
 
-		go HandleConnection(conn)
+		defer conn.Close()
+
+		bufferReader := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
+
+		go HandleConnection(bufferReader)
 	}
 }
 
-func HandleConnection(conn net.Conn) {
+func HandleConnection(conn *bufio.ReadWriter) {
 
 	// Decode the FollowerTask instance
 	task, _ := utils.Unmarshal(conn)
+	// defer conn.Close()
 
 	// if task.isack && we're a master node, spawn a seperate master.handleAck
 	if task.IsAck {
@@ -54,8 +59,7 @@ func HandleConnection(conn net.Conn) {
 	} else if task.ConnectionOperation == utils.WRITE || task.ConnectionOperation == utils.READ {
 		HandleStreamConnection(*task, conn)
 	} else {
-		fmt.Printf("Error: inbound task from ip %s has no specific type", conn.RemoteAddr().String())
+		// fmt.Printf("Error: inbound task from ip %s has no specific type", )
 	}
-
-	conn.Close()
+	// conn.Close()
 }
