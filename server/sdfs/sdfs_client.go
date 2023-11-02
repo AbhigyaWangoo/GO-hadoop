@@ -276,7 +276,7 @@ func InitiateDeleteCommand(sdfsFilename string) {
 }
 
 func InitiateLsCommand(sdfs_filename string) {
-
+	
 }
 
 func InitiateStoreCommand() {
