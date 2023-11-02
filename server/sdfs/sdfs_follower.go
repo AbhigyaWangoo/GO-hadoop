@@ -101,8 +101,8 @@ func HandleDeleteConnection(Task utils.Task) error {
 	return nil
 }
 
-func SendAckToMaster(Task utils.Task) {
-	leaderIp := string(Task.AckTargetIp[:])
+func SendAckToMaster(Task utils.Task) *net.Conn {
+	leaderIp := utils.GetLeader()
 
 	fmt.Printf("detected Leader ip: %s\n", leaderIp)
 
@@ -110,10 +110,13 @@ func SendAckToMaster(Task utils.Task) {
 	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
 		fmt.Printf("sending Leader ip\n")
 
-		utils.SendTask(Task, utils.BytesToString(Task.AckTargetIp), true)
+		conn, _ := utils.SendTask(Task, utils.BytesToString(Task.AckTargetIp), true)
+
+		return conn
 	} else {
 		newLeader := utils.GetLeader()
-		utils.SendTask(Task, newLeader, true)
-	}
+		conn, _ := utils.SendTask(Task, newLeader, true)
 
+		return conn
+	}
 }

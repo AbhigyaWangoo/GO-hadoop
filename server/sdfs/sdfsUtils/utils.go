@@ -45,7 +45,7 @@ type Task struct {
 
 const KB int = 1024
 const MB int = KB * 1024
-const SDFS_PORT string = "3541"
+const SDFS_PORT string = "8901"
 const SDFS_ACK_PORT string = "9682"
 const FILESYSTEM_ROOT string = "server/sdfs/sdfsFileSystemRoot/"
 const BLOCK_SIZE int = 128 * MB
@@ -208,23 +208,22 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 	return total_bytes_processed, nil
 }
 
-func SendTask(task Task, ipAddr string, ack bool) error {
+func SendTask(task Task, ipAddr string, ack bool) (*net.Conn, error) {
 	conn, tcpOpenError := OpenTCPConnection(ipAddr, SDFS_PORT)
 	if tcpOpenError != nil {
-		return nil
+		return nil, nil
 	}
-	defer conn.Close()
 
 	task.IsAck = ack
 	arr := task.Marshal()
 	bytes_written, err := conn.Write(arr)
 	if err != nil {
-		return err
+		return nil, err
 	} else if bytes_written != len(arr) {
-		return io.ErrShortWrite
+		return nil, io.ErrShortWrite
 	}
 
-	return nil
+	return &conn, nil
 }
 
 func SendTaskOnExistingConnection(task Task, conn net.Conn) error {
