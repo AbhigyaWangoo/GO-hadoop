@@ -43,7 +43,7 @@ type Task struct {
 
 const KB int = 1024
 const MB int = KB * 1024
-const SDFS_PORT string = "3456"
+const SDFS_PORT string = "6000"
 const SDFS_ACK_PORT string = "9682"
 const FILESYSTEM_ROOT string = "server/sdfs/sdfsFileSystemRoot/"
 const BLOCK_SIZE int = 32 * MB
