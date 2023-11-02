@@ -39,7 +39,7 @@ func InitializeSdfsProcess() {
 
 func HandleConnection(conn net.Conn) {
 
-	fmt.Println("Recieved new connection!")
+	fmt.Println("Recieved new connection yo!")
 
 	// Decode the FollowerTask instance
 	task, bytesRead := utils.Unmarshal(conn)
@@ -47,6 +47,7 @@ func HandleConnection(conn net.Conn) {
 
 	// if task.isack && we're a master node, spawn a seperate master.handleAck
 	if task.IsAck {
+		fmt.Println("Recieved new ack connection!")
 		machineType := MachineType()
 		if machineType == gossiputils.LEADER {
 			fmt.Printf("Recieved ack for %s at master\n", utils.BytesToString(task.FileName[:task.FileNameLength]))
