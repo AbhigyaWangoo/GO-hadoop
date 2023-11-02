@@ -86,8 +86,15 @@ func HandleDeleteConnection(Task utils.Task) error {
 
 	// On a failure case, like block dne, do not send the ack.
 	if err := os.Remove(localFilename); err != nil {
-		fmt.Println("Unable to process delete request: ", err)
-		return err
+		if !os.IsNotExist(err) {
+			fmt.Println("Error removing file:", err)
+		
+			FileSet[localFilename] = false
+			utils.MuLocalFs.Unlock()
+			utils.CondLocalFs.Signal()
+		
+			return err
+		}
 	}
 
 	FileSet[localFilename] = false
@@ -108,8 +115,6 @@ func SendAckToMaster(Task utils.Task) *net.Conn {
 	Task.AckTargetIp = utils.New19Byte(gossiputils.Ip)
 	val, ok := gossiputils.MembershipMap.Get(leaderIp)
 	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
-		fmt.Printf("sending Leader ip\n")
-
 		conn, _ := utils.SendTask(Task, leaderIp, true)
 
 		return conn

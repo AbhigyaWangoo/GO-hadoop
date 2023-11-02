@@ -38,6 +38,9 @@ func RequestBlockMappings(FileName string) [][]string {
 func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	fmt.Printf("localfilename: %s sdfs: %s\n", LocalFilename, SdfsFilename)
 
+	// IF CONNECTION CLOSES WHILE WRITING, WE NEED TO REPICK AN IP ADDR. Can have a seperate function to handle this on failure cases.
+	// Ask master when its ok to start writing
+
 	dir, _ := os.Getwd()
 	log.Println(dir)
 
@@ -48,35 +51,35 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	// locationsToWrite := InitializeBlockLocationsEntry(SdfsFilename, fileInfo.Size())
 
 	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
-		
+
 		go func(currentBlock int64) {
-			
+
 			allMemberIps := gossipUtils.MembershipMap.Keys()
 			remainingIps := utils.CreateConcurrentStringSlice(allMemberIps)
 			startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
 			file, err := os.Open(LocalFilename)
-			
+
 			if err != nil {
 				log.Fatalf("error opening local file: %v\n", err)
 			}
-			
+
 			defer file.Close()
-			
+
 			for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
-				
+
 				for {
 					if remainingIps.Size() == 0 {
 						break
 					}
-					
+
 					if ip, ok := remainingIps.PopRandomElement().(string); ok {
 						log.Printf("ip")
 						member, _ := gossipUtils.MembershipMap.Get(ip)
-						
+
 						if ip == gossipUtils.Ip || member.State == gossipUtils.DOWN {
 							continue
 						}
-						
+
 						conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
 						if err != nil {
 							log.Fatalf("error opening follower connection: %v\n", err)
