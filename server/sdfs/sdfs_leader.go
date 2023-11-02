@@ -124,3 +124,5 @@ func Get2dArr(Filename string, conn net.Conn) {
 func HandleReReplication(DownIpAddr string) {
 
 }
+
+// 1048576 - 1047287 - 3584
