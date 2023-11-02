@@ -13,7 +13,7 @@ import (
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
-func RequestBlockMappings(FileName string) [][]string {
+func RequestBlockMappings(FileName string) ([][]string, error) {
 	// 1. Create a task with the GET_2D block operation, and send to current master. If timeout/ doesn't work, send to 1st submaster, second, and so on.
 	// 2. Listen for 2d array on responding connection. Read 2d array and return it.
 
@@ -30,9 +30,13 @@ func RequestBlockMappings(FileName string) [][]string {
 	task.AckTargetIp = utils.New19Byte("127.0.0.1")
 
 	conn := SendAckToMaster(task)
-	locations := utils.UnmarshalBlockLocationArr(*conn)
+	locations, err := utils.UnmarshalBlockLocationArr(*conn)
 
-	return locations
+	if err != nil {
+		return nil, err // Returning an empty array on failure case
+	}
+
+	return locations, nil
 }
 
 func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
@@ -180,7 +184,12 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 	defer conn.Close()
 
 	utils.SendTaskOnExistingConnection(task, conn)
-	blockLocationArr := utils.UnmarshalBlockLocationArr(conn)
+	blockLocationArr, err := utils.UnmarshalBlockLocationArr(conn)
+
+	if err != nil {
+		return
+	}
+
 	for blockIdx, replicas := range blockLocationArr {
 		for {
 			randomReplicaIp, err := PopRandomElementInArray(&replicas)
@@ -221,7 +230,10 @@ func InitiateDeleteCommand(sdfs_filename string) {
 	// IF CONNECTION CLOSES WHILE READING, its all good. We can assume memory was wiped
 
 	// 1. Query master for 2d array of ip addresses (2darr)
-	mappings := RequestBlockMappings(sdfs_filename)
+	mappings, mappingsErr := RequestBlockMappings(sdfs_filename)
+	if mappingsErr != nil {
+		fmt.Printf("File did not exist and thus cannot be deleted.")
+	}
 	fmt.Println("Mappings: ", mappings)
 
 	var task utils.Task
@@ -260,7 +272,7 @@ func InitiateDeleteCommand(sdfs_filename string) {
 }
 
 func InitiateLsCommand(sdfs_filename string) {
-	
+
 }
 
 func InitiateStoreCommand() {
