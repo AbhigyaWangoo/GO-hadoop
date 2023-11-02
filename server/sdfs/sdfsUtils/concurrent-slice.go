@@ -58,23 +58,23 @@ func (s *ConcurrentSlice) Size() int {
 }
 
 func (s *ConcurrentSlice) PopRandomElement() interface{} {
-	fmt.Printf("TEST\n")
+	// fmt.Printf("TEST\n")
 	s.Lock()
 	defer s.Unlock()
-	fmt.Printf("TEST2\n")
+	// fmt.Printf("TEST2\n")
 
 	max := big.NewInt(int64(len(s.slice)))
 	randomIndexBig, err := rand.Int(rand.Reader, max)
-	fmt.Printf("TEST3\n")
+	// fmt.Printf("TEST3\n")
 	if err != nil {
 		panic(err)
 	}
 	randomIndex := randomIndexBig.Int64()
 	fmt.Printf("%d\n", randomIndex)
-	fmt.Printf("TEST4\n")
+	// fmt.Printf("TEST4\n")
 	randomElement := s.slice[randomIndex]
 	s.slice = append(s.slice[:randomIndex], s.slice[randomIndex+1:]...)
-	fmt.Printf("TEST5\n")
+	// fmt.Printf("TEST5\n")
 	return randomElement
 }
 

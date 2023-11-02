@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"net"
 	"os"
 
 	gossipUtils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -84,7 +85,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 			defer file.Close()
 			for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
 				for {
-					log.Printf("TEST")
+					// log.Printf("TEST")
 					if remainingIps.Size() == 0 {
 						break
 					}
@@ -98,6 +99,10 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						if err != nil {
 							log.Fatalf("error opening follower connection: %v\n", err)
 							continue
+						}
+						connTCP, ok := conn.(*net.TCPConn)
+						if ok {
+							connTCP.SetLinger(0) // Set Linger option to flush data immediately
 						}
 
 						blockWritingTask := utils.Task{
@@ -118,9 +123,21 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						if writeError != nil {
 							log.Fatalf("Could not write struct to connection in client put: %v\n", writeError)
 						}
-						var tmp []byte
-						_, _ = conn.Read(tmp)
-						log.Print(tmp)
+						// log.Println("HEYEUEEYEYE")
+						var tmp []byte = make([]byte, 5)
+						for {
+							n, err := conn.Read(tmp)
+							if err != nil {
+								log.Print("Error reading from connection: ", err)
+								break
+							}
+							if n > 0 {
+								// log.Print("Length: HDSF: ", len(tmp))
+								break
+							}
+							// log.Printf("HELLOOOOO")
+						}
+						log.Print("Length: HDSF: ", len(tmp))
 
 						file.Seek(0, int(startIdx))
 						totalBytesWritten, err := utils.BufferedReadAndWrite(conn, file, uint32(lengthToWrite), true)
