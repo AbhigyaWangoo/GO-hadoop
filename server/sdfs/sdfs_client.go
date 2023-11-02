@@ -41,7 +41,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	// Ask master when its ok to start writing
 
 	dir, _ := os.Getwd()
-	log.Printf(dir)
+	fmt.Println(dir)
 
 	fileSize := utils.GetFileSize(LocalFilename)
 
@@ -147,10 +147,12 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 	// 		2.b. Construct a FollowerTask with the operation=READ, blockidx=i, filename=sdfs_filename, acktarget=master, datatarget="" (IMPORTANT, IF DATATARGET IS EMPTY, IT MEANS JUST SEND DATA BACK ON THE SAME CONNECTION)
 	// 		2.c. buffered read from connection (4kb at a time should work, check utils for KB variable)
 	// 		2.d. IN BUFFERED READ FUNCTION -> write buffered array to localfilename.
+
 	fp, err := os.OpenFile(localfilename, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		log.Fatalf("unable to open local file, ", err)
+		log.Fatalln("unable to open local file, ", err)
 	}
+
 	task := utils.Task{
 		DataTargetIp:        utils.New19Byte("-1"),
 		AckTargetIp:         utils.New19Byte("-1"),
@@ -164,10 +166,11 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 
 	leaderIp := utils.GetLeader()
 	conn, err := utils.OpenTCPConnection(leaderIp, utils.SDFS_PORT)
-	defer conn.Close()
 	if err != nil {
-		log.Fatalf("unable to open connection to master: ", err)
+		log.Fatalln("unable to open connection to master: ", err)
 	}
+	defer conn.Close()
+
 	utils.SendTaskOnExistingConnection(task, conn)
 	blockLocationArr := utils.UnmarshalBlockLocationArr(conn)
 	for blockIdx, replicas := range blockLocationArr {
