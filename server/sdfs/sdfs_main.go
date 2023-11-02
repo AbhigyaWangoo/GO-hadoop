@@ -62,4 +62,5 @@ func HandleConnection(conn net.Conn) {
 	} else {
 		fmt.Printf("Error: inbound task from ip %s has no specific type", conn.RemoteAddr().String())
 	}
+	conn.Close()
 }
