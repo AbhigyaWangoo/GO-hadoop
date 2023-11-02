@@ -145,12 +145,12 @@ func BufferedReadAndWrite(conn *bufio.ReadWriter, fp *os.File, size uint32, from
 	var bufferSize uint32
 
 	if fromLocal {
-		w = bufio.NewWriter(conn)
+		w = conn.Writer
 		r = bufio.NewReader(fp)
 		bufferSize = size * 3 / 4
 	} else {
 		w = bufio.NewWriter(fp)
-		r = bufio.NewReader(conn)
+		r = conn.Reader
 		bufferSize = uint32(5 * KB)
 	}
 
@@ -159,6 +159,7 @@ func BufferedReadAndWrite(conn *bufio.ReadWriter, fp *os.File, size uint32, from
 	fmt.Println("Entering buffered readwrite. buffer size: ", bufferSize)
 
 	for {
+		// fmt.Println("TRYING TO READ")
 		if total_bytes_processed == size {
 			fmt.Println("Read all bytes")
 			break
@@ -207,6 +208,8 @@ func BufferedReadAndWrite(conn *bufio.ReadWriter, fp *os.File, size uint32, from
 
 		total_bytes_processed += uint32(nWritten)
 	}
+	fp.Sync()
+	log.Println("Processed x bytes: ", total_bytes_processed)
 
 	return total_bytes_processed, nil
 }
