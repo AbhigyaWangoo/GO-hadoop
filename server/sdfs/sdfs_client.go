@@ -50,6 +50,10 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 
 	// locationsToWrite := InitializeBlockLocationsEntry(SdfsFilename, fileInfo.Size())
 
+	fmt.Println("Num blocks:", numberBlocks)
+	fmt.Println("file size:", fileSize)
+	fmt.Println("block size:", int64(utils.BLOCK_SIZE))
+
 	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
 
 		go func(currentBlock int64) {
