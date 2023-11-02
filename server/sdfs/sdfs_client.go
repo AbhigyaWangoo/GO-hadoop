@@ -100,14 +100,16 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						}
 						// log.Printf(string(blockWritingTask.Marshal()))
 						// log.Printf(unsafe.Sizeof(blockWritingTask.Marshal()))
-						_, writeError := conn.Write(blockWritingTask.Marshal())
+						marshalledBytesWritten, writeError := conn.Write(blockWritingTask.Marshal())
+						conn.Write([]byte{'\n'})
 						if writeError != nil {
 							log.Fatalf("Could not write struct to connection in client put: %v\n", writeError)
 						}
-						
+
 						file.Seek(0, int(startIdx))
 						totalBytesWritten, err := utils.BufferedReadAndWrite(conn, file, uint32(lengthToWrite), true)
 						fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
+						fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
 						if err != nil { // If failure to write full block, redo loop
 							log.Fatalf("connection broke early, rewrite block")
 							continue
