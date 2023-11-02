@@ -221,6 +221,9 @@ func SendTask(task Task, ipAddr string, ack bool) (*net.Conn, error) {
 	} else if bytes_written != len(arr) {
 		return nil, io.ErrShortWrite
 	}
+	conn.Write([]byte{'\n'})
+	
+	fmt.Println("Sent task to leader ip:", ipAddr)
 
 	return &conn, nil
 }

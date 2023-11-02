@@ -110,7 +110,7 @@ func SendAckToMaster(Task utils.Task) *net.Conn {
 	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
 		fmt.Printf("sending Leader ip\n")
 
-		conn, _ := utils.SendTask(Task, utils.BytesToString(Task.AckTargetIp), true)
+		conn, _ := utils.SendTask(Task, leaderIp, true)
 
 		return conn
 	} else {
