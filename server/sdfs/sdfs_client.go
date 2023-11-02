@@ -50,90 +50,22 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 
 	fileSize := utils.GetFileSize(LocalFilename)
 
-	numberBlocks, numberReplicas := utils.CeilDivide(fileSize, int64(utils.BLOCK_SIZE)), utils.REPLICATION_FACTOR
+	numberBlocks := (utils.CeilDivide(fileSize, int64(utils.BLOCK_SIZE)))
 
 	// locationsToWrite := InitializeBlockLocationsEntry(SdfsFilename, fileInfo.Size())
 
 	fmt.Println("Num blocks:", numberBlocks)
 	fmt.Println("file size:", fileSize)
 	fmt.Println("block size:", int64(utils.BLOCK_SIZE))
-
+	
+	// currentBlock := int64(0)
 	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
 
-		go func(currentBlock int64) {
+		// go func(currentBlock int64) {
 
-			allMemberIps := gossipUtils.MembershipMap.Keys()
-			remainingIps := utils.CreateConcurrentStringSlice(allMemberIps)
-			startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
-			file, err := os.Open(LocalFilename)
-
-			if err != nil {
-				log.Fatalf("error opening local file: %v\n", err)
-			}
-
-			for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
-
-				for {
-					if remainingIps.Size() == 0 {
-						break
-					}
-
-					if ip, ok := remainingIps.PopRandomElement().(string); ok {
-						log.Printf("ip")
-						member, _ := gossipUtils.MembershipMap.Get(ip)
-
-						if ip == gossipUtils.Ip || member.State == gossipUtils.DOWN {
-							continue
-						}
-
-						conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
-						if err != nil {
-							log.Fatalf("error opening follower connection: %v\n", err)
-							continue
-						}
-						connTCP, ok := conn.(*net.TCPConn)
-						if ok {
-							connTCP.SetLinger(0) // Set Linger option to flush data immediately
-						}
-
-						blockWritingTask := utils.Task{
-							DataTargetIp:        utils.New19Byte(gossipUtils.Ip),
-							AckTargetIp:         utils.New19Byte(utils.LEADER_IP),
-							ConnectionOperation: utils.WRITE,
-							FileName:            utils.New1024Byte(SdfsFilename),
-							FileNameLength:      len(SdfsFilename),
-							OriginalFileSize:    int(fileSize),
-							BlockIndex:          int(currentBlock),
-							DataSize:            uint32(lengthToWrite),
-							IsAck:               false,
-						}
-
-						// log.Printf(string(blockWritingTask.Marshal()))
-						// log.Printf(unsafe.Sizeof(blockWritingTask.Marshal()))
-						marshalledBytesWritten, writeError := conn.Write(blockWritingTask.Marshal())
-						conn.Write([]byte{'\n'})
-						if writeError != nil {
-							log.Fatalf("Could not write struct to connection in client put: %v\n", writeError)
-						}
-						// log.Println("HEYEUEEYEYE")
-						utils.ReadSmallAck(conn)
-
-						file.Seek(0, int(startIdx))
-						totalBytesWritten, writeErr := utils.BufferedReadAndWrite(conn, file, uint32(lengthToWrite), true)
-						fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
-						fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
-
-						if writeErr != nil { // If failure to write full block, redo loop
-							fmt.Println("connection broke early, rewrite block: ", writeErr)
-							continue
-						}
-						conn.Close()
-						break
-					}
-				}
-			}
-			file.Close()
-		}(currentBlock)
+		// }(currentBlock)
+		fmt.Println("current block: ", currentBlock)
+		SendOneBlock(currentBlock, LocalFilename, SdfsFilename, fileSize)
 	}
 
 	// 2. For i = 0; i < num_blocks; i ++
@@ -144,6 +76,79 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	// 				2.d.a. Spawn a thread to write current read block to ip with connections previously opened
 	//
 
+}
+
+func SendOneBlock(currentBlock int64, LocalFilename string, SdfsFilename string, fileSize int64) {
+	allMemberIps := gossipUtils.MembershipMap.Keys()
+	remainingIps := utils.CreateConcurrentStringSlice(allMemberIps)
+	startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
+	file, err := os.Open(LocalFilename)
+	if err != nil {
+		log.Fatalf("error opening local file: %v\n", err)
+	}
+
+	for currentReplica := 0; currentReplica < utils.REPLICATION_FACTOR; currentReplica++ {
+
+		for {
+			if remainingIps.Size() == 0 {
+				break
+			}
+
+			if ip, ok := remainingIps.PopRandomElement().(string); ok {
+				member, _ := gossipUtils.MembershipMap.Get(ip)
+
+				if member.State == gossipUtils.DOWN {
+					continue
+				} else if ip == gossipUtils.Ip {
+					// write locally
+					continue
+				}
+
+				conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
+				if err != nil {
+					log.Fatalf("error opening follower connection: %v\n", err)
+					continue
+				}
+				defer conn.Close()
+
+				connTCP, ok := conn.(*net.TCPConn)
+				if ok {
+					connTCP.SetLinger(0) // Set Linger option to flush data immediately
+				}
+
+				blockWritingTask := utils.Task{
+					DataTargetIp:        utils.New19Byte(gossipUtils.Ip),
+					AckTargetIp:         utils.New19Byte(utils.LEADER_IP),
+					ConnectionOperation: utils.WRITE,
+					FileName:            utils.New1024Byte(SdfsFilename),
+					FileNameLength:      len(SdfsFilename),
+					OriginalFileSize:    int(fileSize),
+					BlockIndex:          int(currentBlock),
+					DataSize:            uint32(lengthToWrite),
+					IsAck:               false,
+				}
+
+				_, writeError := conn.Write(blockWritingTask.Marshal())
+				conn.Write([]byte{'\n'})
+				if writeError != nil {
+					log.Fatalf("Could not write struct to connection in client put: %v\n", writeError)
+				}
+				utils.ReadSmallAck(conn)
+
+				file.Seek(0, int(startIdx))
+				totalBytesWritten, writeErr := utils.BufferedReadAndWrite(conn, file, uint32(lengthToWrite), true)
+				fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
+				// fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
+
+				if writeErr != nil { // If failure to write full block, redo loop
+					fmt.Println("Error writing blocks to connection:", writeErr)
+					continue
+				}
+				break
+			}
+		}
+	}
+	file.Close()
 }
 
 func InitiateGetCommand(sdfsFilename string, localfilename string) {
