@@ -147,11 +147,11 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 	if fromLocal {
 		w = bufio.NewWriter(conn)
 		r = bufio.NewReader(fp)
-		bufferSize = uint32(MB * 3 / 4)
+		bufferSize = uint32(6 * KB)
 	} else {
 		w = bufio.NewWriter(fp)
 		r = bufio.NewReader(conn)
-		bufferSize = uint32(MB / 2)
+		bufferSize = uint32(4 * MB)
 	}
 
 	dataBuffer := make([]byte, bufferSize)
@@ -207,7 +207,8 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 
 		total_bytes_processed += uint32(nWritten)
 	}
-
+	
+	fp.Sync()
 	return total_bytes_processed, nil
 }
 
