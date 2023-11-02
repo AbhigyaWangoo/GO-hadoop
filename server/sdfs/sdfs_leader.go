@@ -145,16 +145,16 @@ func Get2dArr(Filename string, conn net.Conn) {
 
 	// InitializeBlockLocationsEntry(Filename, FileSize) // TODO HARDCODED, CHANGE ME
 
-	a := [][]string{
-		{"172.22.94.162", "172.22.158.162", "172.22.156.162"},
-	}
+	// a := [][]string{
+	// 	{"172.22.94.162", "172.22.158.162", "172.22.156.162"},
+	// }
 
 	// 172.22.94.162
 	// 172.22.158.162
 	// 172.22.156.162
 
 	fmt.Println("Filename: ", Filename)
-	BlockLocations.Set("1mb.log", a)
+	// BlockLocations.Set("1mb.log", a)
 	arr, exists := BlockLocations.Get(Filename)
 	if !exists {
 		log.Fatalln("Block location filename dne")
