@@ -19,7 +19,6 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	utils.SendSmallAck(conn)
 
 	fmt.Println("Entering edit connection")
-	// defer conn.Close()
 
 	var FileName string = utils.BytesToString(Task.FileName[:])
 	var flags int
@@ -65,7 +64,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	utils.MuLocalFs.Unlock()
 	utils.CondLocalFs.Signal()
 
-	SendAckToMaster(Task)
+	// SendAckToMaster(Task)
 
 	return nil
 }
