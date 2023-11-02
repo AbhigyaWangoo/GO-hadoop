@@ -212,6 +212,7 @@ func InitiateDeleteCommand(sdfs_filename string) {
 	fmt.Printf("sdfs: %s\n", sdfs_filename)
 	// IF CONNECTION CLOSES WHILE READING, its all good. We can assume memory was wiped
 
+	// 1. Query master for 2d array of ip addresses (2darr)
 	mappings := RequestBlockMappings(sdfs_filename)
 	fmt.Println("Mappings: ", mappings)
 
@@ -222,12 +223,13 @@ func InitiateDeleteCommand(sdfs_filename string) {
 	task.FileNameLength = len(sdfs_filename)
 
 	for i := 0; i < len(mappings); i++ {
-		for j := 0; j < len(mappings[i]) && mappings[i][j] != utils.WRITE_OP; j++ {
-			blockIp := mappings[i][j]
+		for j := 0; j < len(mappings[i]) && mappings[i][j] != utils.WRITE_OP && mappings[i][j] != utils.DELETE_OP; j++ {
 			
+			// Create a delete task struct, with master as ack target, and send to ip addr.
+			blockIp := mappings[i][j]
 			task.BlockIndex = i
 
-			conn, err := utils.OpenTCPConnection(blockIp, utils.SDFS_PORT) // TODO Hardcoded, change me
+			conn, err := utils.OpenTCPConnection(blockIp, utils.SDFS_PORT)
 			if err != nil {
 				log.Fatalf("Couldn't open tcp conn to leader %v\n", err)
 			}
@@ -243,12 +245,6 @@ func InitiateDeleteCommand(sdfs_filename string) {
 			fmt.Println("Finished delete task")
 		}
 	}
-
-	// 1. Query master for 2d array of ip addresses (2darr)
-	// 2. For i = 0; i < num_blocks; i ++
-	// 3. 		For j = 0; j < num_replicas; j++
-	// 				3.a. Create a delete task struct, with master as ack target, and send to ip addr.
-
 }
 
 func InitiateLsCommand(sdfs_filename string) {
