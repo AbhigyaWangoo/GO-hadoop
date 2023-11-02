@@ -43,7 +43,7 @@ func HandleConnection(conn net.Conn) {
 	// Decode the FollowerTask instance
 	task, bytesRead := utils.Unmarshal(conn)
 	fmt.Println("________unmarshal size________: ", bytesRead)
-	
+
 	// if task.isack && we're a master node, spawn a seperate master.handleAck
 	if task.IsAck {
 		fmt.Println("Recieved new ack connection!")
