@@ -90,7 +90,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							log.Fatalf("error opening follower connection: %v\n", err)
 							continue
 						}
-						defer conn.Close()
+						// defer conn.Close()
 						buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
 						blockWritingTask := utils.Task{
@@ -113,6 +113,9 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						}
 						buffConn.Flush()
 						// log.Println("HEYEUEEYEYE")
+						// for {
+
+						// }
 						utils.ReadSmallAck(buffConn)
 
 						file.Seek(0, int(startIdx))
@@ -124,6 +127,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							// conn.Close()
 							continue
 						}
+						utils.ReadSmallAck(buffConn)
 
 						break
 					}
@@ -206,6 +210,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 				log.Printf("unable to connect to replica, ", err)
 				continue
 			}
+			defer replicaConn.Close()
 			replicaConnBuf := bufio.NewReadWriter(bufio.NewReader(replicaConn), bufio.NewWriter(replicaConn))
 			err = utils.SendTaskOnExistingConnection(task, replicaConnBuf)
 			if err != nil {

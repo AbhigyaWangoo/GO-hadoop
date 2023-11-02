@@ -32,8 +32,6 @@ func InitializeSdfsProcess() {
 			continue
 		}
 
-		defer conn.Close()
-
 		bufferReader := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
 		go HandleConnection(bufferReader)
