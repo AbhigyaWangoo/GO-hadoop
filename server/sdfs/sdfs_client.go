@@ -21,6 +21,7 @@ func RequestBlockMappings(FileName string) [][]string {
 	task.FileName = utils.New1024Byte(FileName)
 	task.FileNameLength = len(FileName)
 	task.IsAck = true
+	task.AckTargetIp = utils.New16Byte("127.0.0.1")
 
 	conn := SendAckToMaster(task)
 	locations := utils.UnmarshalBlockLocationArr(*conn)
