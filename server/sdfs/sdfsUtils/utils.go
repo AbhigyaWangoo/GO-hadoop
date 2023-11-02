@@ -147,7 +147,7 @@ func BufferedReadAndWrite(conn *bufio.ReadWriter, fp *os.File, size uint32, from
 	if fromLocal {
 		w = conn.Writer
 		r = bufio.NewReader(fp)
-		bufferSize = uint32(6 * KB)
+		bufferSize = size * 3 / 4
 	} else {
 		w = bufio.NewWriter(fp)
 		r = conn.Reader
