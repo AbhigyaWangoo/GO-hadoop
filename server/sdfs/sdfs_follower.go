@@ -64,7 +64,9 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	utils.MuLocalFs.Unlock()
 	utils.CondLocalFs.Signal()
 
-	SendAckToMaster(Task)
+	if Task.ConnectionOperation != utils.READ {
+		SendAckToMaster(Task)
+	}
 
 	return nil
 }
@@ -88,11 +90,11 @@ func HandleDeleteConnection(Task utils.Task) error {
 	if err := os.Remove(localFilename); err != nil {
 		if !os.IsNotExist(err) {
 			fmt.Println("Error removing file:", err)
-		
+
 			FileSet[localFilename] = false
 			utils.MuLocalFs.Unlock()
 			utils.CondLocalFs.Signal()
-		
+
 			return err
 		}
 	}

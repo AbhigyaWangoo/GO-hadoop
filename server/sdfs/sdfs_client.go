@@ -25,7 +25,6 @@ func RequestBlockMappings(FileName string) [][]string {
 	task.DataSize = 0
 	task.ConnectionOperation = utils.GET_2D
 	task.FileName = utils.New1024Byte(FileName)
-	task.FileNameLength = len(FileName)
 	task.IsAck = true
 	task.AckTargetIp = utils.New19Byte("127.0.0.1")
 
@@ -99,7 +98,6 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							AckTargetIp:         utils.New19Byte(utils.LEADER_IP),
 							ConnectionOperation: utils.WRITE,
 							FileName:            utils.New1024Byte(SdfsFilename),
-							FileNameLength:      len(SdfsFilename),
 							OriginalFileSize:    int(fileSize),
 							BlockIndex:          int(currentBlock),
 							DataSize:            uint32(lengthToWrite),
@@ -192,7 +190,6 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 				AckTargetIp:         utils.New19Byte(gossipUtils.Ip),
 				ConnectionOperation: utils.READ,
 				FileName:            utils.New1024Byte(sdfsFilename),
-				FileNameLength:      len(sdfsFilename),
 				OriginalFileSize:    0,
 				BlockIndex:          blockIdx,
 				DataSize:            0,
@@ -228,11 +225,10 @@ func InitiateDeleteCommand(sdfs_filename string) {
 	task.IsAck = false
 	task.ConnectionOperation = utils.DELETE
 	task.FileName = utils.New1024Byte(sdfs_filename)
-	task.FileNameLength = len(sdfs_filename)
 
 	for i := 0; i < len(mappings); i++ {
 		for j := 0; j < len(mappings[i]); j++ {
-			
+
 			if mappings[i][j] == utils.WRITE_OP || mappings[i][j] == utils.DELETE_OP {
 				continue
 			}
@@ -249,7 +245,7 @@ func InitiateDeleteCommand(sdfs_filename string) {
 			data := task.Marshal()
 			_, errMWrite := conn.Write(data)
 			conn.Write([]byte{'\n'})
-			
+
 			if errMWrite != nil {
 				log.Fatalf("Couldn't write marshalled delete task %v\n", errMWrite)
 			}
