@@ -47,8 +47,10 @@ func HandleStreamConnection(Task utils.Task, conn *bufio.ReadWriter) error {
 		utils.SendTaskOnExistingConnection(Task, conn)
 		utils.ReadSmallAck(conn)
 	}
+
 	fmt.Println("Amount of data to send back: ", Task.DataSize)
 	nread, bufferedErr := utils.BufferedReadAndWrite(conn, fp, Task.DataSize, fromLocal)
+
 	if bufferedErr != nil {
 		fmt.Println("Error:", bufferedErr)
 		FileSet[localFilename] = false
@@ -63,6 +65,7 @@ func HandleStreamConnection(Task utils.Task, conn *bufio.ReadWriter) error {
 		// Close the connection with an error here somehow.
 		return bufferedErr
 	}
+	utils.SendSmallAck(conn)
 
 	log.Println("Nread: ", nread)
 
