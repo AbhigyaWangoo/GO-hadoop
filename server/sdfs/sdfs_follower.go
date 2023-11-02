@@ -18,7 +18,6 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	// new conection should point to datatargetip
 
 	fmt.Println("Entering edit connection")
-	defer conn.Close()
 
 	var FileName string = utils.BytesToString(Task.FileName[:Task.FileNameLength])
 	var flags int
@@ -64,7 +63,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	utils.MuLocalFs.Unlock()
 	utils.CondLocalFs.Signal()
 
-	SendAckToMaster(Task)
+	// SendAckToMaster(Task)
 
 	return nil
 }
