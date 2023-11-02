@@ -103,6 +103,10 @@ func CeilDivide(a, b int64) int64 {
 	// Perform integer division
 	quotient := a / b
 
+	fmt.Println("quotient: ", quotient)
+	fmt.Println("a: ", a)
+	fmt.Println("b: ", b)
+
 	// Check if there is a remainder
 	remainder := a % b
 	if remainder > 0 {
