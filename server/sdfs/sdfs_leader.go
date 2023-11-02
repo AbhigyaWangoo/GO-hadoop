@@ -56,7 +56,7 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 	ackSourceIp := utils.BytesToString(IncomingAck.DataTargetIp[:])
 	if IncomingAck.ConnectionOperation == utils.WRITE {
 		utils.SendSmallAck(conn)
-		RouteToSubMasters(IncomingAck)
+		// RouteToSubMasters(IncomingAck)
 		if !BlockLocations.Has(fileName) {
 			InitializeBlockLocationsEntry(fileName, int64(IncomingAck.OriginalFileSize))
 			log.Printf("WRITTTEEEE")
