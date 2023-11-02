@@ -374,7 +374,7 @@ func UnmarshalBlockLocationArr(conn net.Conn) [][]string {
 func SendSmallAck(conn net.Conn) {
 	_, err := conn.Write([]byte("HEllo"))
 	if err != nil {
-		log.Fatalf("err: ", err)
+		log.Fatalln("err: ", err)
 	}
 }
 
