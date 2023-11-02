@@ -71,8 +71,6 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 				log.Fatalf("error opening local file: %v\n", err)
 			}
 
-			defer file.Close()
-
 			for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
 
 				for {
@@ -121,19 +119,20 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						utils.ReadSmallAck(conn)
 
 						file.Seek(0, int(startIdx))
-						totalBytesWritten, err := utils.BufferedReadAndWrite(conn, file, uint32(lengthToWrite), true)
+						totalBytesWritten, writeErr := utils.BufferedReadAndWrite(conn, file, uint32(lengthToWrite), true)
 						fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
 						fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
-						if err != nil { // If failure to write full block, redo loop
-							log.Fatalf("connection broke early, rewrite block")
-							// conn.Close()
+
+						if writeErr != nil { // If failure to write full block, redo loop
+							fmt.Println("connection broke early, rewrite block: ", writeErr)
 							continue
 						}
-
+						conn.Close()
 						break
 					}
 				}
 			}
+			file.Close()
 		}(currentBlock)
 	}
 
@@ -244,7 +243,7 @@ func InitiateDeleteCommand(sdfs_filename string) {
 
 	for i := 0; i < len(mappings); i++ {
 		for j := 0; j < len(mappings[i]); j++ {
-			
+
 			if mappings[i][j] == utils.WRITE_OP || mappings[i][j] == utils.DELETE_OP {
 				continue
 			}
@@ -261,7 +260,7 @@ func InitiateDeleteCommand(sdfs_filename string) {
 			data := task.Marshal()
 			_, errMWrite := conn.Write(data)
 			conn.Write([]byte{'\n'})
-			
+
 			if errMWrite != nil {
 				log.Fatalf("Couldn't write marshalled delete task %v\n", errMWrite)
 			}
@@ -282,13 +281,13 @@ func InitiateLsCommand(sdfs_filename string) {
 	}
 
 	for _, slice := range mappings {
-        for _, str := range slice {
-            if !IpAddrs[str] {
-                IpAddrs[str] = true
-                result = append(result, str)
-            }
-        }
-    }
+		for _, str := range slice {
+			if !IpAddrs[str] {
+				IpAddrs[str] = true
+				result = append(result, str)
+			}
+		}
+	}
 
 	fmt.Println(result)
 }
