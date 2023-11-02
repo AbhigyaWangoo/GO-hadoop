@@ -13,7 +13,7 @@ import (
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
-func RequestBlockMappings(FileName string) [][]string {
+func RequestBlockMappings(FileName string) ([][]string, error) {
 	// 1. Create a task with the GET_2D block operation, and send to current master. If timeout/ doesn't work, send to 1st submaster, second, and so on.
 	// 2. Listen for 2d array on responding connection. Read 2d array and return it.
 
@@ -31,9 +31,13 @@ func RequestBlockMappings(FileName string) [][]string {
 	conn := utils.SendAckToMaster(task)
 	defer (*conn).Close()
 	buffConn := bufio.NewReadWriter(bufio.NewReader(*conn), bufio.NewWriter(*conn))
-	locations := utils.UnmarshalBlockLocationArr(buffConn)
+	locations, err := utils.UnmarshalBlockLocationArr(buffConn)
 
-	return locations
+	if err != nil {
+		return nil, err // Returning an empty array on failure case
+	}
+
+	return locations, nil
 }
 
 func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
@@ -184,8 +188,13 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 	buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
 	utils.SendTaskOnExistingConnection(task, buffConn)
-	blockLocationArr := utils.UnmarshalBlockLocationArr(buffConn)
-	fmt.Printf("Unmarshalled block location arr: ", blockLocationArr)
+	blockLocationArr, BlockLocErr := utils.UnmarshalBlockLocationArr(buffConn)
+	if BlockLocErr != nil {
+		fmt.Printf("File probably dne on get command. returning.")
+		return
+	}
+
+	fmt.Println("Unmarshalled block location arr: ", blockLocationArr)
 	for blockIdx, replicas := range blockLocationArr {
 		for {
 			randomReplicaIp, err := PopRandomElementInArray(&replicas)
@@ -236,7 +245,10 @@ func InitiateDeleteCommand(sdfsFilename string) {
 	// IF CONNECTION CLOSES WHILE READING, its all good. We can assume memory was wiped
 
 	// 1. Query master for 2d array of ip addresses (2darr)
-	mappings := RequestBlockMappings(sdfsFilename)
+	mappings, mappingsErr := RequestBlockMappings(sdfsFilename)
+	if mappingsErr != nil {
+		fmt.Printf("File did not exist and thus cannot be deleted.")
+	}
 	fmt.Println("Mappings: ", mappings)
 
 	var task utils.Task
@@ -276,7 +288,7 @@ func InitiateDeleteCommand(sdfsFilename string) {
 }
 
 func InitiateLsCommand(sdfs_filename string) {
-	
+
 }
 
 func InitiateStoreCommand() {
