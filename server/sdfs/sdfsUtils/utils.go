@@ -2,7 +2,6 @@ package sdfsutils
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -234,6 +233,7 @@ func SendTaskOnExistingConnection(task Task, conn net.Conn) error {
 	} else if bytes_written != len(arr) {
 		return io.ErrShortWrite
 	}
+	conn.Write([]byte{'\n'})
 
 	return nil
 }
@@ -322,18 +322,21 @@ func (task Task) Marshal() []byte {
 func Unmarshal(conn net.Conn) (*Task, uint32) {
 	var task Task
 
-	var buf bytes.Buffer
-	teeReader := io.TeeReader(conn, &buf)
+	reader := bufio.NewReader(conn)
+	// Read from the connection until a newline is encountered
+	data, err := reader.ReadString('\n')
+	if err != nil {
+		log.Fatalf("Error reading from connection: %v\n", err)
+	}
+	data = data[:len(data)-1]
 
-	decoder := json.NewDecoder(teeReader)
-	err := decoder.Decode(&task)
-	bytesRead := buf.Len()
+	err = json.Unmarshal([]byte(data), &task)
 
 	if err != nil {
 		log.Fatalf("Error unmarshalling task: %v\n", err)
 	}
 
-	return &task, uint32(bytesRead)
+	return &task, uint32(len(data))
 }
 
 func MarshalBlockLocationArr(array [][]string) []byte {
