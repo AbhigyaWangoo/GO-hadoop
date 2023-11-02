@@ -167,7 +167,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 		OriginalFileSize:    -1,
 		BlockIndex:          -1,
 		DataSize:            0,
-		IsAck:               false,
+		IsAck:               true,
 	}
 
 	leaderIp := utils.GetLeader()
@@ -179,11 +179,15 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 
 	utils.SendTaskOnExistingConnection(task, conn)
 	blockLocationArr := utils.UnmarshalBlockLocationArr(conn)
+	fmt.Printf("Unmarshalled block location arr: ", blockLocationArr)
 	for blockIdx, replicas := range blockLocationArr {
 		for {
 			randomReplicaIp, err := PopRandomElementInArray(&replicas)
 			if err != nil {
 				log.Fatalf("All replicas down ):")
+			}
+			if randomReplicaIp == "w" {
+				continue
 			}
 			task := utils.Task{
 				DataTargetIp:        utils.New19Byte(gossipUtils.Ip),
@@ -206,7 +210,13 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 				continue
 			}
 
+			utils.ReadSmallAck(replicaConn)
+			log.Printf("Unmarshaling task\n")
+
 			blockMetadata, _ := utils.Unmarshal(replicaConn)
+			utils.SendSmallAck(replicaConn)
+
+			log.Printf("Number of bytes to read from connection: ", blockMetadata.DataSize)
 			utils.BufferedReadAndWrite(replicaConn, fp, blockMetadata.DataSize, false)
 			break
 		}
