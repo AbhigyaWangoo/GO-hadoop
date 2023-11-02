@@ -13,7 +13,7 @@ import (
 
 var BlockLocations cmap.ConcurrentMap[string, [][]string] = cmap.New[[][]string]()     // filename : [[ip addr, ip addr, ], ], index 2d arr by block index
 var FileToOriginator cmap.ConcurrentMap[string, []string] = cmap.New[[]string]()     // filename : [ClientIpWhoCreatedFile, ClientCreationTime]
-var FileToBlocks cmap.ConcurrentMap[string, [][2]interface{}] // IPaddr : [[blockidx, filename]]
+var FileToBlocks cmap.ConcurrentMap[string, [][2]interface{}] = cmap.New[[][2]interface{}]() // IPaddr : [[blockidx, filename]]
 
 // Initializes a new entry in BlockLocations, so the leader can begin listening for block acks.
 func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
