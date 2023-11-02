@@ -338,7 +338,7 @@ func Unmarshal(conn net.Conn) (*Task, uint32) {
 
 	reader := bufio.NewReader(conn)
 	// Read from the connection until a newline is encountered
-	data, err := reader.ReadString('\n')
+	data, err := reader.ReadBytes('\n')
 	if err != nil {
 		log.Fatalf("Error reading from connection: %v\n", err)
 	}
@@ -349,6 +349,7 @@ func Unmarshal(conn net.Conn) (*Task, uint32) {
 	if err != nil {
 		log.Fatalf("Error unmarshalling task: %v\n", err)
 	}
+	conn.Write([]byte{0})
 
 	return &task, uint32(len(data))
 }
