@@ -169,6 +169,8 @@ func BufferedReadAndWrite(conn *bufio.ReadWriter, fp *os.File, size uint32, from
 		var readErr error = nil
 
 		nRead, readErr = r.Read(dataBuffer)
+		
+		nWritten, writeErr := r.WriteTo(w)
 
 		if nRead == 0 && total_bytes_processed == size {
 			fmt.Println("Read no bytes")
@@ -185,20 +187,20 @@ func BufferedReadAndWrite(conn *bufio.ReadWriter, fp *os.File, size uint32, from
 			}
 			return total_bytes_processed, readErr // Error while reading data
 		}
+		
+		// var nWritten int = 0
+		// var writeErr error = nil
 
-		var nWritten int = 0
-		var writeErr error = nil
-
-		for curbyte := 0; curbyte < nRead; curbyte++ {
-			writeErr = w.WriteByte(dataBuffer[curbyte])
-			nWritten++
-		}
+		// for curbyte := 0; curbyte < nRead; curbyte++ {
+		// 	writeErr = w.WriteByte(dataBuffer[curbyte])
+		// 	nWritten++
+		// }
 
 		w.Flush()
 
-		if nWritten < nRead {
+		if nWritten < int64(nRead) {
 			return total_bytes_processed, io.ErrShortWrite
-		} else if nWritten > nRead || writeErr != nil {
+		} else if nWritten > int64(nRead) || writeErr != nil {
 			return total_bytes_processed, writeErr
 		}
 
