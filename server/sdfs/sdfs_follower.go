@@ -63,7 +63,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	utils.MuLocalFs.Unlock()
 	utils.CondLocalFs.Signal()
 
-	// SendAckToMaster(Task)
+	SendAckToMaster(Task)
 
 	return nil
 }
@@ -104,7 +104,7 @@ func SendAckToMaster(Task utils.Task) *net.Conn {
 	leaderIp := utils.GetLeader()
 
 	fmt.Printf("detected Leader ip: %s\n", leaderIp)
-
+	Task.AckTargetIp = utils.New19Byte(gossiputils.Ip)
 	val, ok := gossiputils.MembershipMap.Get(leaderIp)
 	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
 		fmt.Printf("sending Leader ip\n")

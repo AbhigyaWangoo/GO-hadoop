@@ -222,7 +222,7 @@ func SendTask(task Task, ipAddr string, ack bool) (*net.Conn, error) {
 		return nil, io.ErrShortWrite
 	}
 	conn.Write([]byte{'\n'})
-	
+
 	fmt.Println("Sent task to leader ip:", ipAddr)
 
 	return &conn, nil
@@ -282,7 +282,7 @@ func GetKLeaders() []string {
 	return kLeaders
 }
 
-func New16Byte(data string) [19]byte {
+func New19Byte(data string) [19]byte {
 	var byteArr [19]byte
 	copy(byteArr[:], []byte(data))
 	return byteArr

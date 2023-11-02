@@ -69,11 +69,11 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 	}
 
 	fileName := utils.BytesToString(IncomingAck.FileName[:IncomingAck.FileNameLength])
-	ackSourceIp := utils.BytesToString(IncomingAck.DataTargetIp)
+	ackSourceIp := utils.BytesToString(IncomingAck.AckTargetIp[:19])
 	
 	if IncomingAck.ConnectionOperation == utils.WRITE {
 		
-		fmt.Println("Got ack for write, ack source was ", ackSourceIp)
+		fmt.Printf("Got ack for write, the ack source is >{%s}<\n", ackSourceIp)
 		fmt.Println("Got ack for write, filename is ", fileName)
 		
 		// RouteToSubMasters(IncomingAck)
