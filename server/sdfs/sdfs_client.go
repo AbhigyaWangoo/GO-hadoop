@@ -73,33 +73,45 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	// locationsToWrite := InitializeBlockLocationsEntry(SdfsFilename, fileInfo.Size())
 
 	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
+		
 		go func(currentBlock int64) {
+			
 			allMemberIps := gossipUtils.MembershipMap.Keys()
 			remainingIps := utils.CreateConcurrentStringSlice(allMemberIps)
 			startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
 			file, err := os.Open(LocalFilename)
+			
 			if err != nil {
 				log.Fatalf("error opening local file: %v\n", err)
 			}
+			
 			defer file.Close()
+			
 			for currentReplica := 0; currentReplica < numberReplicas; currentReplica++ {
+				
 				for {
+					
 					log.Printf("TEST")
+					
 					if remainingIps.Size() == 0 {
 						break
 					}
+					
 					if ip, ok := remainingIps.PopRandomElement().(string); ok {
 						log.Printf("ip")
 						member, _ := gossipUtils.MembershipMap.Get(ip)
+						
 						if ip == gossipUtils.Ip || member.State == gossipUtils.DOWN {
 							continue
 						}
+						
 						conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
 						if err != nil {
 							log.Fatalf("error opening follower connection: %v\n", err)
 							continue
 						}
 						defer conn.Close()
+						
 						blockWritingTask := utils.Task{
 							DataTargetIp:        utils.New19Byte(""),
 							AckTargetIp:         utils.New19Byte(utils.LEADER_IP),
@@ -111,6 +123,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							DataSize:            uint32(lengthToWrite),
 							IsAck:               false,
 						}
+
 						// log.Printf(string(blockWritingTask.Marshal()))
 						// log.Printf(unsafe.Sizeof(blockWritingTask.Marshal()))
 						marshalledBytesWritten, writeError := conn.Write(blockWritingTask.Marshal())
@@ -127,6 +140,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							log.Fatalf("connection broke early, rewrite block")
 							continue
 						}
+						
 						break
 					}
 				}
