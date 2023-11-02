@@ -132,7 +132,7 @@ func Handle2DArrRequest(Filename string, conn net.Conn) {
 	// Reply to a connection with the 2d array for the provided filename. 
 	arr, exists := BlockLocations.Get(Filename)
 	if !exists {
-		log.Fatalln("Block location filename dne")
+		fmt.Println("Block location filename dne. Continuing")
 	}
 
 	marshalledArray := utils.MarshalBlockLocationArr(arr)

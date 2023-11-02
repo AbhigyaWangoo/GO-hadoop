@@ -47,7 +47,7 @@ const MB int = KB * 1024
 const SDFS_PORT string = "6000"
 const SDFS_ACK_PORT string = "9682"
 const FILESYSTEM_ROOT string = "server/sdfs/sdfsFileSystemRoot/"
-const BLOCK_SIZE int = 32 * MB
+const BLOCK_SIZE int = 500 * KB
 const REPLICATION_FACTOR int = 4
 const MAX_INT64 = 9223372036854775807
 const NUM_LEADERS = 4
@@ -358,7 +358,7 @@ func MarshalBlockLocationArr(array [][]string) []byte {
 	return jsonData
 }
 
-func UnmarshalBlockLocationArr(conn net.Conn) [][]string {
+func UnmarshalBlockLocationArr(conn net.Conn) ([][]string, error) {
 	var locations [][]string
 
 	decoder := json.NewDecoder(conn)
@@ -366,9 +366,10 @@ func UnmarshalBlockLocationArr(conn net.Conn) [][]string {
 
 	if err != nil {
 		log.Fatalf("Error unmarshalling 2d arr: %v\n", err)
+		return nil, err
 	}
 
-	return locations
+	return locations, nil
 }
 
 func SendSmallAck(conn net.Conn) {
