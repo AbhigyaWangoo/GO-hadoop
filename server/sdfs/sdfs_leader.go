@@ -68,8 +68,8 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 		return errors.New("ack passed to master for processing was not actually an ack")
 	}
 
-	fileName := utils.BytesToString(IncomingAck.FileName[:IncomingAck.FileNameLength])
-	ackSourceIp := utils.BytesToString(IncomingAck.AckTargetIp[:19])
+	fileName := utils.BytesToString(IncomingAck.FileName[:])
+	ackSourceIp := utils.BytesToString(IncomingAck.AckTargetIp[:])
 
 	if IncomingAck.ConnectionOperation == utils.WRITE {
 
@@ -169,7 +169,6 @@ func HandleReReplication(DownIpAddr string) {
 								AckTargetIp:         utils.New19Byte(gossiputils.Ip),
 								ConnectionOperation: utils.READ,
 								FileName:            utils.New1024Byte(fileName),
-								FileNameLength:      len(fileName),
 								OriginalFileSize:    -1,
 								BlockIndex:          blockIdx,
 								DataSize:            0,
