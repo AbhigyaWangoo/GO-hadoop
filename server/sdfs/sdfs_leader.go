@@ -143,11 +143,17 @@ func Handle2DArrRequest(Filename string, conn net.Conn) {
 }
 
 func HandleReReplication(DownIpAddr string) {
+	
 	if blocksToRereplicate, ok := FileToBlocks.Get(DownIpAddr); ok {
+		
 		for _, blockMetadata := range blocksToRereplicate {
+			
 			if fileName, ok := blockMetadata[1].(string); ok {
+				
 				if blockIdx, ok := blockMetadata[0].(int); ok {
+					
 					if blockLocations, ok := BlockLocations.Get(fileName); ok {
+						
 						locations := blockLocations[blockIdx]
 						for _, ip := range locations {
 							if ip == DownIpAddr {

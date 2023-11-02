@@ -267,10 +267,6 @@ func InitiateStoreCommand() {
 
 }
 
-// func GetSubmasters() []string {
-// 	gossipUtils.MembershipMap.Keys()
-// }
-
 func PopRandomElementInArray(array *[]string) (string, error) {
 	// Get a random index using crypto/rand
 	if len(*array) == 0 {
