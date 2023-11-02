@@ -115,7 +115,18 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 		// }
 		// utils.SendTaskOnExistingConnection(task, conn)
 		Get2dArr(fileName, conn)
-		conn.Close()
+	} else if IncomingAck.ConnectionOperation == utils.DELETE {
+		if !BlockLocations.Has(fileName) {
+			return errors.New("Never seen before filename, dropping delete operation")
+		}
+		
+		blockMap, _ := BlockLocations.Get(fileName)
+		row := blockMap[IncomingAck.BlockIndex]
+		for i := 0; i < utils.REPLICATION_FACTOR; i++ { 
+			if row[i] == ackSourceIp {
+				blockMap[IncomingAck.BlockIndex][i] = utils.DELETE_OP
+			}
+		}
 	}
 
 	// 1. Ack for Write operation
