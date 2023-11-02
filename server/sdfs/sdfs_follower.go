@@ -29,7 +29,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 		flags = os.O_CREATE | os.O_RDONLY
 	}
 
-	localFilename, fp, err := utils.GetFilePtr(FileName, strconv.Itoa(Task.BlockIndex), flags)
+	localFilename, fileSize, fp, err := utils.GetFilePtr(FileName, strconv.Itoa(Task.BlockIndex), flags)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,6 +42,12 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 
 	FileSet[localFilename] = true
 	fromLocal := Task.ConnectionOperation == utils.READ
+	if fromLocal {
+		Task.DataSize = uint32(fileSize)
+		utils.SendTaskOnExistingConnection(Task, conn)
+		utils.ReadSmallAck(conn)
+	}
+	fmt.Println("Amount of data to send back: ", Task.DataSize)
 	nread, bufferedErr := utils.BufferedReadAndWrite(conn, fp, Task.DataSize, fromLocal)
 	if bufferedErr != nil {
 		fmt.Println("Error:", bufferedErr)
