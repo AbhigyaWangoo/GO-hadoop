@@ -147,11 +147,11 @@ func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal boo
 	if fromLocal {
 		w = bufio.NewWriter(conn)
 		r = bufio.NewReader(fp)
-		bufferSize = uint32(6 * KB)
+		bufferSize = size * 3 / 4
 	} else {
 		w = bufio.NewWriter(fp)
 		r = bufio.NewReader(conn)
-		bufferSize = uint32(4 * KB)
+		bufferSize = uint32(5 * KB)
 	}
 
 	dataBuffer := make([]byte, bufferSize)
