@@ -74,6 +74,7 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 	if IncomingAck.ConnectionOperation == utils.WRITE {
 		
 		fmt.Println("Got ack for write, ack source was ", ackSourceIp)
+		fmt.Println("Got ack for write, filename is ", fileName)
 		
 		// RouteToSubMasters(IncomingAck)
 		
