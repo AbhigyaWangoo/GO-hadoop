@@ -44,7 +44,7 @@ type Task struct {
 
 const KB int = 1024
 const MB int = KB * 1024
-const SDFS_PORT string = "8901"
+const SDFS_PORT string = "3456"
 const SDFS_ACK_PORT string = "9682"
 const FILESYSTEM_ROOT string = "server/sdfs/sdfsFileSystemRoot/"
 const BLOCK_SIZE int = 128 * MB
@@ -135,6 +135,10 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (string, *os.F
 // This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and
 // buffered write to (a connection if fromLocal is true, the filepointer if fromLocal is false)
 func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal bool) (uint32, error) {
+	connTCP, ok := conn.(*net.TCPConn)
+	if ok {
+		connTCP.SetLinger(0) // Set Linger option to flush data immediately
+	}
 	var total_bytes_processed uint32 = 0
 	var w *bufio.Writer
 	var r *bufio.Reader
@@ -225,6 +229,10 @@ func SendTask(task Task, ipAddr string, ack bool) (*net.Conn, error) {
 	
 	fmt.Println("Sent task to leader ip:", ipAddr)
 
+	if connTCP, ok := conn.(*net.TCPConn); ok {
+		connTCP.SetLinger(0) // Set Linger option to flush data immediately
+	}
+
 	return &conn, nil
 }
 
@@ -238,6 +246,9 @@ func SendTaskOnExistingConnection(task Task, conn net.Conn) error {
 	}
 	conn.Write([]byte{'\n'})
 
+	if connTCP, ok := conn.(*net.TCPConn); ok {
+		connTCP.SetLinger(0) // Set Linger option to flush data immediately
+	}
 	return nil
 }
 

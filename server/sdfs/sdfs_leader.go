@@ -54,7 +54,7 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 	fileName := utils.BytesToString(IncomingAck.FileName[:IncomingAck.FileNameLength])
 	ackSourceIp := utils.BytesToString(IncomingAck.DataTargetIp)
 	if IncomingAck.ConnectionOperation == utils.WRITE {
-		conn.Close()
+		// conn.Close()
 		RouteToSubMasters(IncomingAck)
 		if !BlockLocations.Has(fileName) {
 			InitializeBlockLocationsEntry(fileName, int64(IncomingAck.OriginalFileSize))
@@ -91,7 +91,7 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 		// }
 		// utils.SendTaskOnExistingConnection(task, conn)
 		Get2dArr(fileName, conn)
-		conn.Close()
+		// conn.Close()
 	}
 
 	// 1. Ack for Write operation

@@ -99,7 +99,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							log.Fatalf("error opening follower connection: %v\n", err)
 							continue
 						}
-						defer conn.Close()
+
 						blockWritingTask := utils.Task{
 							DataTargetIp:        utils.New16Byte(""),
 							AckTargetIp:         utils.New16Byte(utils.LEADER_IP),
@@ -118,6 +118,9 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						if writeError != nil {
 							log.Fatalf("Could not write struct to connection in client put: %v\n", writeError)
 						}
+						var tmp []byte
+						_, _ = conn.Read(tmp)
+						log.Print(tmp)
 
 						file.Seek(0, int(startIdx))
 						totalBytesWritten, err := utils.BufferedReadAndWrite(conn, file, uint32(lengthToWrite), true)
@@ -125,8 +128,10 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
 						if err != nil { // If failure to write full block, redo loop
 							log.Fatalf("connection broke early, rewrite block")
+							// conn.Close()
 							continue
 						}
+						// conn.Close()
 						break
 					}
 				}
@@ -173,10 +178,10 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 
 	leaderIp := utils.GetLeader()
 	conn, err := utils.OpenTCPConnection(leaderIp, utils.SDFS_PORT)
-	defer conn.Close()
 	if err != nil {
 		log.Fatalf("unable to open connection to master: ", err)
 	}
+	defer conn.Close()
 	utils.SendTaskOnExistingConnection(task, conn)
 	blockLocationArr := utils.UnmarshalBlockLocationArr(conn)
 	for blockIdx, replicas := range blockLocationArr {
