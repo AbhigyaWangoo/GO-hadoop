@@ -2,7 +2,6 @@ package sdfs
 
 import (
 	"fmt"
-	"log"
 	"net"
 
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -51,15 +50,7 @@ func HandleConnection(conn net.Conn) {
 		machineType := MachineType()
 		if machineType == gossiputils.LEADER {
 			fmt.Printf("Recieved ack for %s at master\n", utils.BytesToString(task.FileName[:task.FileNameLength]))
-
-			go func() {
-				ackHandleError := HandleAck(*task, conn)
-
-				if ackHandleError != nil {
-					log.Fatalf("Master couldn't handle ack for %s at master with error %v\n", utils.BytesToString(task.FileName[:task.FileNameLength]), ackHandleError)
-				}
-			}()
-
+			HandleAck(*task, conn)
 			return
 		}
 	}
