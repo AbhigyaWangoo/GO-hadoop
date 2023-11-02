@@ -305,11 +305,8 @@ func New1024Byte(data string) [1024]byte {
 	return byteArr
 }
 
-func BytesToString(data interface{}) string {
-	if byteArr, ok := data.([]byte); ok {
-		return strings.TrimRight(string(byteArr), "\x00")
-	}
-	return ""
+func BytesToString(data []byte) string {
+	return strings.TrimRight(string(data), "\x00")
 }
 
 func GetBlockPosition(blockNumber int64, fileSize int64) (int64, int64) {
@@ -349,14 +346,6 @@ func Unmarshal(conn net.Conn) (*Task, uint32) {
 	if err != nil {
 		log.Fatalf("Error unmarshalling task: %v\n", err)
 	}
-	
-
-	n, err := conn.Write([]byte("HEllo"))
-	if err != nil {
-		log.Fatalf("err: ", err)
-	}
-	log.Printf("Data: ", n)
-	log.Printf("WROTEEE")
 
 	return &task, uint32(len(data))
 }
@@ -380,4 +369,25 @@ func UnmarshalBlockLocationArr(conn net.Conn) [][]string {
 	}
 
 	return locations
+}
+
+func SendSmallAck(conn net.Conn) {
+	_, err := conn.Write([]byte("HEllo"))
+	if err != nil {
+		log.Fatalf("err: ", err)
+	}
+}
+
+func ReadSmallAck(conn net.Conn) {
+	buffer := make([]byte, 5)
+	for {
+		n, err := conn.Read(buffer)
+		if err != nil {
+			log.Print("Error reading from connection: ", err)
+			break
+		}
+		if n > 0 {
+			break
+		}
+	}
 }

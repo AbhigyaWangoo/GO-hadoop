@@ -16,11 +16,12 @@ var FileSet map[string]bool
 func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	// TODO for rereplication, if the src in the conn object == master, then we have to open a new connection to send data over that connection. The
 	// new conection should point to datatargetip
+	utils.SendSmallAck(conn)
 
 	fmt.Println("Entering edit connection")
 	// defer conn.Close()
 
-	var FileName string = utils.BytesToString(Task.FileName[:Task.FileNameLength])
+	var FileName string = utils.BytesToString(Task.FileName[:])
 	var flags int
 
 	if Task.ConnectionOperation == utils.WRITE {
@@ -76,7 +77,7 @@ func HandleDeleteConnection(Task utils.Task) error {
 	// that operation is done. When the thread does end up in the middle of a buffered read, it must mark that particular file as being read from to
 	// in the map.
 
-	localFilename := utils.GetFileName(utils.BytesToString(Task.FileName[:Task.FileNameLength]), fmt.Sprint(Task.BlockIndex))
+	localFilename := utils.GetFileName(utils.BytesToString(Task.FileName[:]), fmt.Sprint(Task.BlockIndex))
 
 	utils.MuLocalFs.Lock()
 	for FileSet[localFilename] {
