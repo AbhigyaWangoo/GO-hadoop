@@ -44,39 +44,60 @@ func RouteToSubMasters(IncomingAck utils.Task) {
 
 // checks current machine's IP addr in gossip's MembershipMap, returns whether current machine is leader, subleader, or follower
 func MachineType() gossiputils.SdfsNodeType {
-	return gossiputils.LEADER
+	kleaders := utils.GetKLeaders()
+	leader := utils.GetLeader()
+
+	thisIp := gossiputils.Ip
+
+	if thisIp == leader {
+		return gossiputils.LEADER
+	}
+
+	for i := 0; i < len(kleaders); i++ {
+		if thisIp == kleaders[i] {
+			return gossiputils.SUB_LEADER
+		}
+	}
+
+	return gossiputils.FOLLOWER
 }
 
 func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
+	
 	if !IncomingAck.IsAck {
 		return errors.New("ack passed to master for processing was not actually an ack")
 	}
+
 	fileName := utils.BytesToString(IncomingAck.FileName[:IncomingAck.FileNameLength])
 	ackSourceIp := utils.BytesToString(IncomingAck.DataTargetIp)
+	
 	if IncomingAck.ConnectionOperation == utils.WRITE {
-		conn.Close()
-		RouteToSubMasters(IncomingAck)
-		if !BlockLocations.Has(fileName) {
-			InitializeBlockLocationsEntry(fileName, int64(IncomingAck.OriginalFileSize))
-		}
+		
+		fmt.Println("Got ack for write, ack source was ", ackSourceIp)
+		
+		// RouteToSubMasters(IncomingAck)
+		
+		// if !BlockLocations.Has(fileName) {
+		// 	InitializeBlockLocationsEntry(fileName, int64(IncomingAck.OriginalFileSize))
+		// }
 
-		blockMap, _ := BlockLocations.Get(fileName)
-		for i := 0; i < utils.REPLICATION_FACTOR; i++ {
-			if blockMap[IncomingAck.BlockIndex][i] == utils.WRITE_OP {
-				blockMap[IncomingAck.BlockIndex][i] = ackSourceIp
-				break
-			}
-		}
-		BlockLocations.Set(fileName, blockMap)
+		// blockMap, _ := BlockLocations.Get(fileName)
+		// for i := 0; i < utils.REPLICATION_FACTOR; i++ {
+		// 	if blockMap[IncomingAck.BlockIndex][i] == utils.WRITE_OP {
+		// 		blockMap[IncomingAck.BlockIndex][i] = ackSourceIp
+		// 		break
+		// 	}
+		// }
+		// BlockLocations.Set(fileName, blockMap)
 
-		if mapping, ok := FileToBlocks.Get(utils.BytesToString(IncomingAck.DataTargetIp)); ok {
-			mapping = append(mapping, [2]interface{}{IncomingAck.BlockIndex, ackSourceIp})
-			FileToBlocks.Set(ackSourceIp, mapping)
-		} else {
-			initialMapping := make([][2]interface{}, 1)
-			initialMapping[0] = [2]interface{}{IncomingAck.BlockIndex, ackSourceIp}
-			FileToBlocks.Set(ackSourceIp, initialMapping)
-		}
+		// if mapping, ok := FileToBlocks.Get(utils.BytesToString(IncomingAck.DataTargetIp)); ok {
+		// 	mapping = append(mapping, [2]interface{}{IncomingAck.BlockIndex, ackSourceIp})
+		// 	FileToBlocks.Set(ackSourceIp, mapping)
+		// } else {
+		// 	initialMapping := make([][2]interface{}, 1)
+		// 	initialMapping[0] = [2]interface{}{IncomingAck.BlockIndex, ackSourceIp}
+		// 	FileToBlocks.Set(ackSourceIp, initialMapping)
+		// }
 	} else if IncomingAck.ConnectionOperation == utils.GET_2D {
 		// fileName := utils.BytesToString(IncomingAck.FileName)
 		// task := utils.Task{
