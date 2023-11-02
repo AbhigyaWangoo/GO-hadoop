@@ -1,21 +1,21 @@
 package sdfs
 
 import (
+	"bufio"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"strconv"
 
-	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
 var FileSet map[string]bool
 
-func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
+func HandleStreamConnection(Task utils.Task, conn *bufio.ReadWriter) error {
 	// TODO for rereplication, if the src in the conn object == master, then we have to open a new connection to send data over that connection. The
 	// new conection should point to datatargetip
+
 	utils.SendSmallAck(conn)
 
 	fmt.Println("Entering edit connection")
@@ -71,7 +71,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	utils.CondLocalFs.Signal()
 
 	if Task.ConnectionOperation != utils.READ {
-		SendAckToMaster(Task)
+		utils.SendAckToMaster(Task)
 	}
 
 	return nil
@@ -109,27 +109,9 @@ func HandleDeleteConnection(Task utils.Task) error {
 	utils.MuLocalFs.Unlock()
 	utils.CondLocalFs.Signal()
 
-	SendAckToMaster(Task)
+	utils.SendAckToMaster(Task)
 
 	// Used for delete command
 	fmt.Println("Recieved a request to delete some block on this node")
 	return nil
-}
-
-func SendAckToMaster(Task utils.Task) *net.Conn {
-	leaderIp := utils.GetLeader()
-
-	fmt.Printf("detected Leader ip: %s\n", leaderIp)
-	Task.AckTargetIp = utils.New19Byte(gossiputils.Ip)
-	val, ok := gossiputils.MembershipMap.Get(leaderIp)
-	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
-		conn, _ := utils.SendTask(Task, leaderIp, true)
-
-		return conn
-	} else {
-		newLeader := utils.GetLeader()
-		conn, _ := utils.SendTask(Task, newLeader, true)
-
-		return conn
-	}
 }

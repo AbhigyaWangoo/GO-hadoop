@@ -134,11 +134,11 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (string, int, 
 
 // This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and
 // buffered write to (a connection if fromLocal is true, the filepointer if fromLocal is false)
-func BufferedReadAndWrite(conn net.Conn, fp *os.File, size uint32, fromLocal bool) (uint32, error) {
-	connTCP, ok := conn.(*net.TCPConn)
-	if ok {
-		connTCP.SetLinger(0) // Set Linger option to flush data immediately
-	}
+func BufferedReadAndWrite(conn *bufio.ReadWriter, fp *os.File, size uint32, fromLocal bool) (uint32, error) {
+	// connTCP, ok := conn.(*net.TCPConn)
+	// if ok {
+	// 	connTCP.SetLinger(0) // Set Linger option to flush data immediately
+	// }
 	var total_bytes_processed uint32 = 0
 	var w *bufio.Writer
 	var r *bufio.Reader
@@ -217,26 +217,25 @@ func SendTask(task Task, ipAddr string, ack bool) (*net.Conn, error) {
 		return nil, nil
 	}
 
+	bufferConn := bufio.NewWriter(conn)
+
 	task.IsAck = ack
 	arr := task.Marshal()
-	bytes_written, err := conn.Write(arr)
+	bytes_written, err := bufferConn.Write(arr)
 	if err != nil {
 		return nil, err
 	} else if bytes_written != len(arr) {
 		return nil, io.ErrShortWrite
 	}
-	conn.Write([]byte{'\n'})
+	bufferConn.Write([]byte{'\n'})
+	bufferConn.Flush()
 
 	fmt.Println("Sent task to leader ip:", ipAddr)
-
-	if connTCP, ok := conn.(*net.TCPConn); ok {
-		connTCP.SetLinger(0) // Set Linger option to flush data immediately
-	}
 
 	return &conn, nil
 }
 
-func SendTaskOnExistingConnection(task Task, conn net.Conn) error {
+func SendTaskOnExistingConnection(task Task, conn *bufio.ReadWriter) error {
 	arr := task.Marshal()
 	bytes_written, err := conn.Write(arr)
 	if err != nil {
@@ -245,11 +244,27 @@ func SendTaskOnExistingConnection(task Task, conn net.Conn) error {
 		return io.ErrShortWrite
 	}
 	conn.Write([]byte{'\n'})
+	conn.Flush()
 
-	if connTCP, ok := conn.(*net.TCPConn); ok {
-		connTCP.SetLinger(0) // Set Linger option to flush data immediately
-	}
 	return nil
+}
+
+func SendAckToMaster(task Task) *net.Conn {
+	leaderIp := GetLeader()
+
+	fmt.Printf("detected Leader ip: %s\n", leaderIp)
+	task.AckTargetIp = New19Byte(gossiputils.Ip)
+	val, ok := gossiputils.MembershipMap.Get(leaderIp)
+	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
+		conn, _ := SendTask(task, leaderIp, true)
+
+		return conn
+	} else {
+		newLeader := GetLeader()
+		conn, _ := SendTask(task, newLeader, true)
+
+		return conn
+	}
 }
 
 func GetLeader() string {
@@ -330,12 +345,11 @@ func (task Task) Marshal() []byte {
 	return marshaledTask
 }
 
-func Unmarshal(conn net.Conn) (*Task, uint32) {
+func Unmarshal(conn *bufio.ReadWriter) (*Task, uint32) {
 	var task Task
 
-	reader := bufio.NewReader(conn)
 	// Read from the connection until a newline is encountered
-	data, err := reader.ReadBytes('\n')
+	data, err := conn.ReadBytes('\n')
 	if err != nil {
 		log.Fatalf("Error reading from connection: %v\n", err)
 	}
@@ -358,7 +372,7 @@ func MarshalBlockLocationArr(array [][]string) []byte {
 	return jsonData
 }
 
-func UnmarshalBlockLocationArr(conn net.Conn) [][]string {
+func UnmarshalBlockLocationArr(conn *bufio.ReadWriter) [][]string {
 	var locations [][]string
 
 	decoder := json.NewDecoder(conn)
@@ -371,14 +385,15 @@ func UnmarshalBlockLocationArr(conn net.Conn) [][]string {
 	return locations
 }
 
-func SendSmallAck(conn net.Conn) {
+func SendSmallAck(conn *bufio.ReadWriter) {
 	_, err := conn.Write([]byte("A"))
 	if err != nil {
 		log.Fatalln("err: ", err)
 	}
+	conn.Flush()
 }
 
-func ReadSmallAck(conn net.Conn) {
+func ReadSmallAck(conn *bufio.ReadWriter) {
 	buffer := make([]byte, 1)
 	for {
 		n, err := conn.Read(buffer)

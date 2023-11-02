@@ -1,12 +1,12 @@
 package sdfs
 
 import (
+	"bufio"
 	"crypto/rand"
 	"errors"
 	"fmt"
 	"log"
 	"math/big"
-	"net"
 	"os"
 
 	gossipUtils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -28,8 +28,10 @@ func RequestBlockMappings(FileName string) [][]string {
 	task.IsAck = true
 	task.AckTargetIp = utils.New19Byte("127.0.0.1")
 
-	conn := SendAckToMaster(task)
-	locations := utils.UnmarshalBlockLocationArr(*conn)
+	conn := utils.SendAckToMaster(task)
+	defer (*conn).Close()
+	buffConn := bufio.NewReadWriter(bufio.NewReader(*conn), bufio.NewWriter(*conn))
+	locations := utils.UnmarshalBlockLocationArr(buffConn)
 
 	return locations
 }
@@ -88,10 +90,8 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 							log.Fatalf("error opening follower connection: %v\n", err)
 							continue
 						}
-						connTCP, ok := conn.(*net.TCPConn)
-						if ok {
-							connTCP.SetLinger(0) // Set Linger option to flush data immediately
-						}
+						defer conn.Close()
+						buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
 						blockWritingTask := utils.Task{
 							DataTargetIp:        utils.New19Byte(gossipUtils.Ip),
@@ -106,16 +106,17 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 
 						// log.Printf(string(blockWritingTask.Marshal()))
 						// log.Printf(unsafe.Sizeof(blockWritingTask.Marshal()))
-						marshalledBytesWritten, writeError := conn.Write(blockWritingTask.Marshal())
-						conn.Write([]byte{'\n'})
+						marshalledBytesWritten, writeError := buffConn.Write(blockWritingTask.Marshal())
+						buffConn.Write([]byte{'\n'})
 						if writeError != nil {
 							log.Fatalf("Could not write struct to connection in client put: %v\n", writeError)
 						}
+						buffConn.Flush()
 						// log.Println("HEYEUEEYEYE")
-						utils.ReadSmallAck(conn)
+						utils.ReadSmallAck(buffConn)
 
 						file.Seek(0, int(startIdx))
-						totalBytesWritten, err := utils.BufferedReadAndWrite(conn, file, uint32(lengthToWrite), true)
+						totalBytesWritten, err := utils.BufferedReadAndWrite(buffConn, file, uint32(lengthToWrite), true)
 						fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
 						fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
 						if err != nil { // If failure to write full block, redo loop
@@ -176,9 +177,10 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 		log.Fatalln("unable to open connection to master: ", err)
 	}
 	defer conn.Close()
+	buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
-	utils.SendTaskOnExistingConnection(task, conn)
-	blockLocationArr := utils.UnmarshalBlockLocationArr(conn)
+	utils.SendTaskOnExistingConnection(task, buffConn)
+	blockLocationArr := utils.UnmarshalBlockLocationArr(buffConn)
 	fmt.Printf("Unmarshalled block location arr: ", blockLocationArr)
 	for blockIdx, replicas := range blockLocationArr {
 		for {
@@ -204,37 +206,38 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 				log.Printf("unable to connect to replica, ", err)
 				continue
 			}
-			err = utils.SendTaskOnExistingConnection(task, replicaConn)
+			replicaConnBuf := bufio.NewReadWriter(bufio.NewReader(replicaConn), bufio.NewWriter(replicaConn))
+			err = utils.SendTaskOnExistingConnection(task, replicaConnBuf)
 			if err != nil {
 				log.Printf("unable to send task to replica, ", err)
 				continue
 			}
 
-			utils.ReadSmallAck(replicaConn)
+			utils.ReadSmallAck(replicaConnBuf)
 			log.Printf("Unmarshaling task\n")
 
-			blockMetadata, _ := utils.Unmarshal(replicaConn)
-			utils.SendSmallAck(replicaConn)
+			blockMetadata, _ := utils.Unmarshal(replicaConnBuf)
+			utils.SendSmallAck(replicaConnBuf)
 
 			log.Printf("Number of bytes to read from connection: ", blockMetadata.DataSize)
-			utils.BufferedReadAndWrite(replicaConn, fp, blockMetadata.DataSize, false)
+			utils.BufferedReadAndWrite(replicaConnBuf, fp, blockMetadata.DataSize, false)
 			break
 		}
 	}
 }
 
-func InitiateDeleteCommand(sdfs_filename string) {
-	fmt.Printf("sdfs: %s\n", sdfs_filename)
+func InitiateDeleteCommand(sdfsFilename string) {
+	fmt.Printf("sdfs: %s\n", sdfsFilename)
 	// IF CONNECTION CLOSES WHILE READING, its all good. We can assume memory was wiped
 
 	// 1. Query master for 2d array of ip addresses (2darr)
-	mappings := RequestBlockMappings(sdfs_filename)
+	mappings := RequestBlockMappings(sdfsFilename)
 	fmt.Println("Mappings: ", mappings)
 
 	var task utils.Task
 	task.IsAck = false
 	task.ConnectionOperation = utils.DELETE
-	task.FileName = utils.New1024Byte(sdfs_filename)
+	task.FileName = utils.New1024Byte(sdfsFilename)
 
 	for i := 0; i < len(mappings); i++ {
 		for j := 0; j < len(mappings[i]); j++ {
@@ -251,10 +254,12 @@ func InitiateDeleteCommand(sdfs_filename string) {
 			if err != nil {
 				log.Fatalf("Couldn't open tcp conn to leader %v\n", err)
 			}
+			buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
 			data := task.Marshal()
-			_, errMWrite := conn.Write(data)
-			conn.Write([]byte{'\n'})
+			_, errMWrite := buffConn.Write(data)
+			buffConn.Write([]byte{'\n'})
+			buffConn.Flush()
 
 			if errMWrite != nil {
 				log.Fatalf("Couldn't write marshalled delete task %v\n", errMWrite)
