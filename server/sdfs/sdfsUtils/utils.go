@@ -116,10 +116,11 @@ func GetFileName(sdfs_filename string, blockidx string) string {
 	return fmt.Sprintf("%s%s_%s", FILESYSTEM_ROOT, blockidx, sdfs_filename)
 }
 
-func GetFilePtr(sdfs_filename string, blockidx string, flags int) (string, *os.File, error) {
+func GetFilePtr(sdfs_filename string, blockidx string, flags int) (string, int, *os.File, error) {
 	// Specify the file path
 	filePath := GetFileName(sdfs_filename, blockidx)
-
+	fileSize := GetFileSize(filePath)
+	fmt.Printf("File path to block", filePath)
 	file, err := os.OpenFile(filePath, flags, 0666)
 	if err != nil {
 		// Handle the error if the file cannot be opened
@@ -128,7 +129,7 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (string, *os.F
 		}
 	}
 
-	return filePath, file, err
+	return filePath, int(fileSize), file, err
 }
 
 // This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and
@@ -371,14 +372,14 @@ func UnmarshalBlockLocationArr(conn net.Conn) [][]string {
 }
 
 func SendSmallAck(conn net.Conn) {
-	_, err := conn.Write([]byte("HEllo"))
+	_, err := conn.Write([]byte("A"))
 	if err != nil {
 		log.Fatalln("err: ", err)
 	}
 }
 
 func ReadSmallAck(conn net.Conn) {
-	buffer := make([]byte, 5)
+	buffer := make([]byte, 1)
 	for {
 		n, err := conn.Read(buffer)
 		if err != nil {
