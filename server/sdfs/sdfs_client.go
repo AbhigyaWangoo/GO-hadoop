@@ -223,35 +223,33 @@ func InitiateDeleteCommand(sdfs_filename string) {
 
 	mappings := RequestBlockMappings(sdfs_filename)
 	fmt.Println("Mappings: ", mappings)
+	
+	var task utils.Task
+	task.IsAck = false
+	task.ConnectionOperation = utils.DELETE
+	task.FileName = utils.New1024Byte(sdfs_filename)
+	task.FileNameLength = len(sdfs_filename)
 
-	// fileSize := 10485760      // TODO Hardcoded, change me
-	// currentBlock := 0         // TODO Hardcoded, change me
-	// lengthToWrite := 10485760 // TODO Hardcoded, change me
+	for i := 0; i < len(mappings); i++ {
+        for j := 0; j < len(mappings[i]); j++ {
+			blockIp := mappings[i][j]
 
-	// conn, err := utils.OpenTCPConnection(utils.LEADER_IP, utils.SDFS_PORT) // TODO Hardcoded, change me
-	// if err != nil {
-	// 	log.Fatalf("Couldn't open tcp conn to leader %v\n", err)
-	// }
+			task.BlockIndex = i
 
-	// task := utils.Task{
-	// 	DataTargetIp:        utils.New16Byte(""),
-	// 	AckTargetIp:         utils.New16Byte(utils.LEADER_IP),
-	// 	ConnectionOperation: utils.DELETE,
-	// 	FileName:            utils.New1024Byte(sdfs_filename),
-	// 	FileNameLength:      len(sdfs_filename),
-	// 	OriginalFileSize:    int(fileSize),
-	// 	BlockIndex:          int(currentBlock),
-	// 	DataSize:            uint32(lengthToWrite),
-	// 	IsAck:               false,
-	// }
-
-	// data := task.Marshal()
-	// _, errMWrite := conn.Write(data)
-	// if errMWrite != nil {
-	// 	log.Fatalf("Couldn't write marshalled delete task %v\n", errMWrite)
-	// }
-
-	// fmt.Println("Finished delete task")
+			conn, err := utils.OpenTCPConnection(blockIp, utils.SDFS_PORT) // TODO Hardcoded, change me
+			if err != nil {
+				log.Fatalf("Couldn't open tcp conn to leader %v\n", err)
+			}
+			
+			data := task.Marshal()
+			_, errMWrite := conn.Write(data)
+			if errMWrite != nil {
+				log.Fatalf("Couldn't write marshalled delete task %v\n", errMWrite)
+			}
+			
+			fmt.Println("Finished delete task")
+		}
+    }
 
 	// 1. Query master for 2d array of ip addresses (2darr)
 	// 2. For i = 0; i < num_blocks; i ++
