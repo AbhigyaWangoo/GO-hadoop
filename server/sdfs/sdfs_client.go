@@ -66,6 +66,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 		// }(currentBlock)
 		fmt.Println("current block: ", currentBlock)
 		SendOneBlock(currentBlock, LocalFilename, SdfsFilename, fileSize)
+		return
 	}
 
 	// 2. For i = 0; i < num_blocks; i ++
