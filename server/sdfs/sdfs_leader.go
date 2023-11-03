@@ -128,41 +128,46 @@ func HandleReReplication(DownIpAddr string) {
 
 	if blocksToRereplicate, ok := FileToBlocks.Get(DownIpAddr); ok {
 
+		fmt.Println("Handling re-replication on blocks: ", blocksToRereplicate)
+
 		for _, blockMetadata := range blocksToRereplicate {
 
 			if fileName, ok := blockMetadata[1].(string); ok {
+				fmt.Println("Handling re-replication file: ", fileName)
 
 				if blockIdx, ok := blockMetadata[0].(int64); ok {
+					fmt.Println("Handling re-replication block: ", blockIdx)
 
 					if blockLocations, ok := BlockLocations.Get(fileName); ok {
+						fmt.Println("Block locations for found at", blockLocations[blockIdx])
 
 						locations := blockLocations[blockIdx]
 						for _, ip := range locations {
-							if ip == DownIpAddr {
+							if ip == DownIpAddr || ip == utils.WRITE_OP || ip == utils.DELETE_OP {
 								continue
 							}
-							conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
-							if err != nil {
-								log.Printf("unable to open connection: ", err)
-								continue
-							}
-							defer conn.Close()
-							task := utils.Task{
-								DataTargetIp:        utils.New19Byte(ip),
-								AckTargetIp:         utils.New19Byte(gossiputils.Ip),
-								ConnectionOperation: utils.READ,
-								FileName:            utils.New1024Byte(fileName),
-								OriginalFileSize:    0,
-								BlockIndex:          blockIdx,
-								DataSize:            0,
-								IsAck:               false,
-							}
+						// 	conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
+						// 	if err != nil {
+						// 		log.Println("unable to open connection: ", err)
+						// 		continue
+						// 	}
+						// 	defer conn.Close()
+						// 	task := utils.Task{
+						// 		DataTargetIp:        utils.New19Byte(ip),
+						// 		AckTargetIp:         utils.New19Byte(gossiputils.Ip),
+						// 		ConnectionOperation: utils.READ,
+						// 		FileName:            utils.New1024Byte(fileName),
+						// 		OriginalFileSize:    0,
+						// 		BlockIndex:          blockIdx,
+						// 		DataSize:            0,
+						// 		IsAck:               false,
+						// 	}
 
-							err = utils.SendTaskOnExistingConnection(task, conn)
-							if err != nil {
-								log.Printf("unable to send task on existing connection: ", err)
-								continue
-							}
+						// 	err = utils.SendTaskOnExistingConnection(task, conn)
+						// 	if err != nil {
+						// 		log.Printf("unable to send task on existing connection: ", err)
+						// 		continue
+						// 	}
 						}
 					}
 				}
