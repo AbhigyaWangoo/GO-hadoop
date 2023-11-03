@@ -18,7 +18,7 @@ var FileToBlocks cmap.ConcurrentMap[string, [][2]interface{}] = cmap.New[[][2]in
 // Initializes a new entry in BlockLocations, so the leader can begin listening for block acks.
 func InitializeBlockLocationsEntry(Filename string, FileSize uint32) {
 	n, m := utils.CeilDivide(FileSize, utils.BLOCK_SIZE), utils.REPLICATION_FACTOR // Size of the 2D array (n rows, m columns)
-	newEntry := make([][]string, n)                                                       // Create a slice of slices (2D array)
+	newEntry := make([][]string, n)                                                // Create a slice of slices (2D array)
 
 	// Populate the 2D array with arbitrary values
 	var i uint32
@@ -36,47 +36,12 @@ func InitializeBlockLocationsEntry(Filename string, FileSize uint32) {
 // Master functions
 func RouteToSubMasters(IncomingAck utils.Task) {
 	// Route an incoming ack that makes a change to the membership list to the submasters.(Bully git issue)
-	kLeaders := utils.GetKLeaders()
+	kLeaders := gossiputils.GetKLeaders()
 	for _, leader := range kLeaders {
 		if leader != gossiputils.Ip {
 			utils.SendTask(IncomingAck, leader, true)
 		}
 	}
-}
-
-// checks current machine's IP addr in gossip's MembershipMap, returns whether current machine is leader, subleader, or follower
-func MachineType() gossiputils.SdfsNodeType {
-	kleaders := utils.GetKLeaders()
-	leader := utils.GetLeader()
-	thisIp := gossiputils.Ip
-	myMember, ok := gossiputils.MembershipMap.Get(gossiputils.Ip)
-
-	if thisIp == leader {
-		fmt.Println("_____I AM A LEADER____")
-		
-		if ok {
-			myMember.Type = gossiputils.LEADER
-		}
-		gossiputils.MembershipMap.Set(gossiputils.Ip, myMember)
-		return gossiputils.LEADER
-	}
-
-	for i := 0; i < len(kleaders); i++ {
-		if thisIp == kleaders[i] {
-			fmt.Println("_____I AM A SUB LEADER____")
-			if ok {
-				myMember.Type = gossiputils.SUB_LEADER
-			}
-			return gossiputils.SUB_LEADER
-		}
-	}
-
-	fmt.Println("_____I AM A FOLLOWER____")
-	if ok {
-		myMember.Type = gossiputils.FOLLOWER
-	}
-	
-	return gossiputils.FOLLOWER
 }
 
 func HandleAck(IncomingAck utils.Task, conn *bufio.ReadWriter) error {
@@ -161,17 +126,17 @@ func Handle2DArrRequest(Filename string, conn *bufio.ReadWriter) {
 }
 
 func HandleReReplication(DownIpAddr string) {
-	
+
 	if blocksToRereplicate, ok := FileToBlocks.Get(DownIpAddr); ok {
-		
+
 		for _, blockMetadata := range blocksToRereplicate {
-			
+
 			if fileName, ok := blockMetadata[1].(string); ok {
-				
+
 				if blockIdx, ok := blockMetadata[0].(int); ok {
-					
+
 					if blockLocations, ok := BlockLocations.Get(fileName); ok {
-						
+
 						locations := blockLocations[blockIdx]
 						for _, ip := range locations {
 							if ip == DownIpAddr {
