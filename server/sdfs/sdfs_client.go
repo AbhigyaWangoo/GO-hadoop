@@ -49,9 +49,9 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	dir, _ := os.Getwd()
 	log.Println(dir)
 
-	fileSize := utils.GetFileSize(LocalFilename)
+	fileSize, _ := utils.GetFileSize(LocalFilename)
 
-	numberBlocks := (utils.CeilDivide(fileSize, int64(utils.BLOCK_SIZE)))
+	numberBlocks := utils.CeilDivide(fileSize, utils.BLOCK_SIZE)
 
 	// locationsToWrite := InitializeBlockLocationsEntry(SdfsFilename, fileInfo.Size())
 
@@ -59,13 +59,16 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	fmt.Println("file size:", fileSize)
 	fmt.Println("block size:", int64(utils.BLOCK_SIZE))
 	// currentBlock := int64(0)
-	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
+	for currentBlock := uint32(0); currentBlock < numberBlocks; currentBlock++ {
 
 		// go func(currentBlock int64) {
 
 		allMemberIps := gossipUtils.MembershipMap.Keys()
 		remainingIps := utils.CreateConcurrentStringSlice(allMemberIps)
 		startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
+
+		fmt.Printf("start index: %d length to write: %d", startIdx, lengthToWrite)
+
 		file, err := os.Open(LocalFilename)
 
 		if err != nil {
@@ -100,7 +103,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						AckTargetIp:         utils.New19Byte(utils.LEADER_IP),
 						ConnectionOperation: utils.WRITE,
 						FileName:            utils.New1024Byte(SdfsFilename),
-						OriginalFileSize:    int(fileSize),
+						OriginalFileSize:    fileSize,
 						BlockIndex:          int(currentBlock),
 						DataSize:            uint32(lengthToWrite),
 						IsAck:               false,
@@ -172,7 +175,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 		AckTargetIp:         utils.New19Byte("-1"),
 		ConnectionOperation: utils.GET_2D,
 		FileName:            utils.New1024Byte(sdfsFilename),
-		OriginalFileSize:    -1,
+		OriginalFileSize:    0,
 		BlockIndex:          -1,
 		DataSize:            0,
 		IsAck:               true,

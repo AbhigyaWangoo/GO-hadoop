@@ -35,18 +35,18 @@ type Task struct {
 	AckTargetIp         [19]byte
 	ConnectionOperation BlockOperation // READ, WRITE, GET_2D, OR DELETE from sdfs utils
 	FileName            [1024]byte
-	OriginalFileSize    int
+	OriginalFileSize    uint32
 	BlockIndex          int
 	DataSize            uint32 // TODO change me to uint32
 	IsAck               bool
 }
 
-const KB int = 1024
-const MB int = KB * 1024
+const KB uint32 = 1024
+const MB uint32 = KB * 1024
 const SDFS_PORT string = "6000"
 const SDFS_ACK_PORT string = "9682"
 const FILESYSTEM_ROOT string = "server/sdfs/sdfsFileSystemRoot/"
-const BLOCK_SIZE int = 5 * MB
+const BLOCK_SIZE uint32 = 5 * MB
 const REPLICATION_FACTOR int = 4
 const MAX_INT64 = 9223372036854775807
 const NUM_LEADERS = 4
@@ -83,22 +83,22 @@ func ListenOnTCPConnection(Port string) (net.Listener, error) {
 	return tcpConn, nil
 }
 
-func GetFileSize(filePath string) int64 {
+func GetFileSize(filePath string) (uint32, error) {
 	// Get file information
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return -1
+		return 0, err
 	}
 
 	// Get file size in bytes
-	fileSize := fileInfo.Size()
+	fileSize := uint32(fileInfo.Size())
 
 	// Print the file size
-	return fileSize
+	return fileSize, nil
 }
 
-func CeilDivide(a, b int64) int64 {
+func CeilDivide(a, b uint32) uint32 {
 	// Perform integer division
 	quotient := a / b
 
@@ -119,7 +119,7 @@ func GetFileName(sdfs_filename string, blockidx string) string {
 func GetFilePtr(sdfs_filename string, blockidx string, flags int) (string, int, *os.File, error) {
 	// Specify the file path
 	filePath := GetFileName(sdfs_filename, blockidx)
-	fileSize := GetFileSize(filePath)
+	fileSize, _ := GetFileSize(filePath)
 	fmt.Printf("File path to block", filePath)
 	file, err := os.OpenFile(filePath, flags, 0666)
 	if err != nil {
@@ -327,10 +327,14 @@ func BytesToString(data []byte) string {
 	return strings.TrimRight(string(data), "\x00")
 }
 
-func GetBlockPosition(blockNumber int64, fileSize int64) (int64, int64) {
-	currentByteIdx := blockNumber * int64(BLOCK_SIZE)
-	blockSize := GetMinInt64(fileSize-currentByteIdx, int64(BLOCK_SIZE))
-	return currentByteIdx, blockSize
+func GetBlockPosition(blockNumber uint32, fileSize uint32) (uint32, uint32) {
+	currentByteIdx := blockNumber * BLOCK_SIZE
+
+	if BLOCK_SIZE < uint32(fileSize)-currentByteIdx {
+		return currentByteIdx, BLOCK_SIZE
+	} else {
+		return currentByteIdx, uint32(fileSize) - currentByteIdx
+	}
 }
 
 func GetMinInt64(a int64, b int64) int64 {

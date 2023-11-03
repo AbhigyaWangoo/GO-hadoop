@@ -16,12 +16,12 @@ var FileToOriginator cmap.ConcurrentMap[string, []string] = cmap.New[[]string]()
 var FileToBlocks cmap.ConcurrentMap[string, [][2]interface{}] = cmap.New[[][2]interface{}]() // IPaddr : [[blockidx, filename]]
 
 // Initializes a new entry in BlockLocations, so the leader can begin listening for block acks.
-func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
-	n, m := utils.CeilDivide(FileSize, int64(utils.BLOCK_SIZE)), utils.REPLICATION_FACTOR // Size of the 2D array (n rows, m columns)
+func InitializeBlockLocationsEntry(Filename string, FileSize uint32) {
+	n, m := utils.CeilDivide(FileSize, utils.BLOCK_SIZE), utils.REPLICATION_FACTOR // Size of the 2D array (n rows, m columns)
 	newEntry := make([][]string, n)                                                       // Create a slice of slices (2D array)
 
 	// Populate the 2D array with arbitrary values
-	var i int64
+	var i uint32
 	for i = 0; i < n; i++ {
 		newEntry[i] = make([]string, m)
 		for j := 0; j < m; j++ {
@@ -81,7 +81,7 @@ func HandleAck(IncomingAck utils.Task, conn *bufio.ReadWriter) error {
 
 		if !BlockLocations.Has(fileName) {
 			fmt.Println("Never seen before filename, creating block locations entry")
-			InitializeBlockLocationsEntry(fileName, int64(IncomingAck.OriginalFileSize))
+			InitializeBlockLocationsEntry(fileName, IncomingAck.OriginalFileSize)
 		}
 
 		blockMap, _ := BlockLocations.Get(fileName)
@@ -174,7 +174,7 @@ func HandleReReplication(DownIpAddr string) {
 								AckTargetIp:         utils.New19Byte(gossiputils.Ip),
 								ConnectionOperation: utils.READ,
 								FileName:            utils.New1024Byte(fileName),
-								OriginalFileSize:    -1,
+								OriginalFileSize:    0,
 								BlockIndex:          blockIdx,
 								DataSize:            0,
 								IsAck:               false,
