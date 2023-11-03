@@ -59,7 +59,6 @@ func GetOutboundIP() net.IP {
 // Check if nodes need to be degraded from ALIVE or DOWN statuses
 func PruneNodeMembers() {
 	for {
-		machineType := utils.MachineType()
 		
 		// Go through all currently stored nodes and check their lastUpdatedTimes
 		for info := range utils.MembershipUpdateTimes.IterBuffered() {
@@ -83,7 +82,8 @@ func PruneNodeMembers() {
 					node.State = utils.DOWN
 
 					val, ok := utils.FailureHandler.Get(node.Ip)
-					if !ok || !val && machineType == utils.LEADER {
+					machineType := utils.MachineType()
+					if (!ok || !val) && machineType == utils.LEADER {
 						// HandleNodeFailure()
 						
 						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
@@ -109,7 +109,8 @@ func PruneNodeMembers() {
 					node.State = utils.DOWN
 
 					val, ok := utils.FailureHandler.Get(node.Ip)
-					if !ok || !val && machineType == utils.LEADER {
+					machineType := utils.MachineType()
+					if (!ok || !val ) && machineType == utils.LEADER {
 						// HandleNodeFailure()
 						
 						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
