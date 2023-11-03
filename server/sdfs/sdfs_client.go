@@ -10,6 +10,7 @@ import (
 	"os"
 
 	gossipUtils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
+	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
@@ -267,6 +268,12 @@ func InitiateDeleteCommand(sdfsFilename string) {
 
 			// Create a delete task struct, with master as ack target, and send to ip addr.
 			blockIp := mappings[i][j]
+			member, ok := gossipUtils.MembershipMap.Get(blockIp)
+			if !ok || member.State == gossiputils.DOWN {
+				fmt.Printf("No need to delete on node %s, it's already down. Continuing...", blockIp)
+				continue
+			}
+
 			task.BlockIndex = i
 
 			conn, err := utils.OpenTCPConnection(blockIp, utils.SDFS_PORT)
