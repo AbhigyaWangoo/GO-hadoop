@@ -49,21 +49,33 @@ func MachineType() gossiputils.SdfsNodeType {
 	kleaders := utils.GetKLeaders()
 	leader := utils.GetLeader()
 	thisIp := gossiputils.Ip
+	myMember, ok := gossiputils.MembershipMap.Get(gossiputils.Ip)
 
 	if thisIp == leader {
 		fmt.Println("_____I AM A LEADER____")
+		
+		if ok {
+			myMember.Type = gossiputils.LEADER
+		}
+		gossiputils.MembershipMap.Set(gossiputils.Ip, myMember)
 		return gossiputils.LEADER
 	}
 
 	for i := 0; i < len(kleaders); i++ {
 		if thisIp == kleaders[i] {
 			fmt.Println("_____I AM A SUB LEADER____")
+			if ok {
+				myMember.Type = gossiputils.SUB_LEADER
+			}
 			return gossiputils.SUB_LEADER
 		}
 	}
 
 	fmt.Println("_____I AM A FOLLOWER____")
-
+	if ok {
+		myMember.Type = gossiputils.FOLLOWER
+	}
+	
 	return gossiputils.FOLLOWER
 }
 
