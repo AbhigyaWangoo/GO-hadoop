@@ -1,8 +1,8 @@
 package sdfs
 
 import (
-	"bufio"
 	"fmt"
+	"net"
 
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
@@ -32,13 +32,11 @@ func InitializeSdfsProcess() {
 			continue
 		}
 
-		bufferReader := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
-
-		go HandleConnection(bufferReader)
+		go HandleConnection(conn)
 	}
 }
 
-func HandleConnection(conn *bufio.ReadWriter) {
+func HandleConnection(conn net.Conn) {
 
 	// Decode the FollowerTask instance
 	task, _ := utils.Unmarshal(conn)
