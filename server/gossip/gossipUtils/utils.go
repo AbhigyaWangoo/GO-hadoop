@@ -145,7 +145,7 @@ func GetLogFilePointer() *os.File {
 // checks current machine's IP addr in gossip's MembershipMap, returns whether current machine is leader, subleader, or follower
 func MachineType() SdfsNodeType {
 	kleaders := GetKLeaders()
-	leader := GetLeader()
+	leader := kleaders[0]
 	thisIp := Ip
 	myMember, ok := MembershipMap.Get(Ip)
 
