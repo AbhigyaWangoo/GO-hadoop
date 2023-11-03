@@ -58,7 +58,6 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	fmt.Println("Num blocks:", numberBlocks)
 	fmt.Println("file size:", fileSize)
 	fmt.Println("block size:", int64(utils.BLOCK_SIZE))
-
 	// currentBlock := int64(0)
 	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
 
