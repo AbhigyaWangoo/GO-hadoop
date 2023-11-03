@@ -23,9 +23,9 @@ const (
 type SdfsNodeType int
 
 const (
-	LEADER     SdfsNodeType = 0
+	LEADER     SdfsNodeType = 2
 	SUB_LEADER SdfsNodeType = 1
-	FOLLOWER   SdfsNodeType = 2
+	FOLLOWER   SdfsNodeType = 0
 )
 
 type Member struct {
