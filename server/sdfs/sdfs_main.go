@@ -48,12 +48,17 @@ func HandleConnection(conn *bufio.ReadWriter) {
 	if task.IsAck {
 		fmt.Println("Recieved new ack connection!")
 		machineType := MachineType()
+		
 		if machineType == gossiputils.LEADER {
 			fmt.Printf("Recieved ack for %s at master\n", utils.BytesToString(task.FileName[:]))
-			HandleAck(*task, conn)
 
 			RouteToSubMasters(*task)
+		} else if machineType == gossiputils.SUB_LEADER {
+			fmt.Printf("Recieved ack for %s at SUBmaster\n", utils.BytesToString(task.FileName[:]))
 		}
+
+		HandleAck(*task, conn)
+
 	} else if task.ConnectionOperation == utils.DELETE {
 		HandleDeleteConnection(*task)
 	} else if task.ConnectionOperation == utils.WRITE || task.ConnectionOperation == utils.READ {

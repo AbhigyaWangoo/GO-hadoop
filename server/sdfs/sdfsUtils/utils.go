@@ -259,7 +259,11 @@ func SendAckToMaster(task Task) *net.Conn {
 	task.AckTargetIp = New19Byte(gossiputils.Ip)
 	val, ok := gossiputils.MembershipMap.Get(leaderIp)
 	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
-		conn, _ := SendTask(task, leaderIp, true)
+		conn, connectionError := SendTask(task, leaderIp, true)
+		
+		if connectionError != nil {
+			return SendAckToMaster(task)
+		}
 
 		return conn
 	} else {
