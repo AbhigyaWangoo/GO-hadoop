@@ -135,14 +135,12 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 
 func Handle2DArrRequest(Filename string, conn net.Conn) {
 	// Reply to a connection with the 2d array for the provided filename.
-	fmt.Printf("File name: ", Filename)
 	arr, exists := BlockLocations.Get(Filename)
 	if !exists {
 		fmt.Println("Block location filename dne. Continuing")
 	}
 
 	marshalledArray := utils.MarshalBlockLocationArr(arr)
-	fmt.Printf("Array of block locations: ", string(marshalledArray))
 	_, err := conn.Write(marshalledArray)
 	if err != nil {
 		log.Fatalf("Error writing 2d arr to conn: %v\n", err)
