@@ -81,9 +81,12 @@ func PruneNodeMembers() {
 					}
 					node.State = utils.DOWN
 
-					if machineType == utils.LEADER {
+					val, ok := utils.FailureHandler.Get(node.Ip)
+					if !ok || !val && machineType == utils.LEADER {
 						// HandleNodeFailure()
+						
 						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
+						utils.FailureHandler.Set(node.Ip, true)
 					}
 				} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than Tfail, mark node as SUSPECTED
 					// If the node is not already suspicious, log it as so
@@ -104,9 +107,12 @@ func PruneNodeMembers() {
 					}
 					node.State = utils.DOWN
 
-					if machineType == utils.LEADER {
+					val, ok := utils.FailureHandler.Get(node.Ip)
+					if !ok || !val && machineType == utils.LEADER {
 						// HandleNodeFailure()
+						
 						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
+						utils.FailureHandler.Set(node.Ip, true)
 					}
 				} else {
 					node.State = utils.ALIVE
