@@ -155,6 +155,7 @@ func MachineType() SdfsNodeType {
 		if ok {
 			myMember.Type = LEADER
 		}
+		
 		MembershipMap.Set(Ip, myMember)
 		return LEADER
 	}
@@ -165,6 +166,8 @@ func MachineType() SdfsNodeType {
 			if ok {
 				myMember.Type = SUB_LEADER
 			}
+			
+			MembershipMap.Set(Ip, myMember)
 			return SUB_LEADER
 		}
 	}
@@ -173,7 +176,8 @@ func MachineType() SdfsNodeType {
 	if ok {
 		myMember.Type = FOLLOWER
 	}
-
+	
+	MembershipMap.Set(Ip, myMember)
 	return FOLLOWER
 }
 
