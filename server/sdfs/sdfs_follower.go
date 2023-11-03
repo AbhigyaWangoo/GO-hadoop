@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 
+	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
@@ -21,7 +22,13 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	fmt.Println("Entering edit connection")
 
 	var FileName string = utils.BytesToString(Task.FileName[:])
+	var TargetIp string = utils.BytesToString(Task.DataTargetIp[:])
 	var flags int
+
+	if TargetIp != gossiputils.Ip {
+		fmt.Println("Recived replication request. Exiting for now.")
+		return nil
+	}
 
 	if Task.ConnectionOperation == utils.WRITE {
 		flags = os.O_CREATE | os.O_WRONLY

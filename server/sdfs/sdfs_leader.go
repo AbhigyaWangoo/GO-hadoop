@@ -83,7 +83,7 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		} else {
 			initialMapping := make([][2]interface{}, 1)
 			initialMapping[0] = [2]interface{}{IncomingAck.BlockIndex, fileName}
-			
+
 			fmt.Println("Creating a new file+blockidx for ip addr ", ackSourceIp)
 			fmt.Println("mapping: ", initialMapping)
 
@@ -103,10 +103,10 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 				blockMap[IncomingAck.BlockIndex][i] = utils.DELETE_OP
 			}
 		}
-		
+
 		if mapping, ok := FileToBlocks.Get(ackSourceIp); ok { // IPaddr : [[blockidx, filename]]
 			var idx uint
-			
+
 			for i, pair := range mapping {
 				if pair[0] == int(IncomingAck.BlockIndex) && pair[1] == utils.BytesToString(IncomingAck.FileName[:]) {
 					idx = uint(i)
@@ -114,11 +114,11 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 				}
 			}
 			// TODO need to delete from IPaddr, the value [blockidx, filename]
-			
+
 			fmt.Println("Mapping before delete: ", mapping)
 			mapping = append(mapping[:idx], mapping[idx+1:]...)
 			fmt.Println("Mapping after delete: ", mapping)
-			
+
 			FileToBlocks.Set(ackSourceIp, mapping)
 		}
 	}
@@ -148,9 +148,30 @@ func Handle2DArrRequest(Filename string, conn net.Conn) {
 	}
 }
 
+func HandleDown(DownIpAddr string) {
+	// Remove IP addr from BlockLocations. set all with a 'd'.
+	for keyval := range BlockLocations.IterBuffered() {
+		sdfsFilename := keyval.Key
+		blockLocations := keyval.Val
+
+		for blockIdx := range blockLocations {
+			for i := 0; i < int(utils.REPLICATION_FACTOR); i++ {
+				if blockLocations[blockIdx][i] == DownIpAddr {
+					blockLocations[blockIdx][i] = utils.WRITE_OP
+				}
+			}
+		}
+
+		BlockLocations.Set(sdfsFilename, blockLocations)
+	}
+
+	// Remove IP addr from FileToblocks. Delete all entries associated.
+	FileToBlocks.Pop(DownIpAddr)
+}
+
 func HandleReReplication(DownIpAddr string) {
 
-	fmt.Println("Entering re replication")
+	fmt.Println("Entering re replication.")
 
 	if blocksToRereplicate, ok := FileToBlocks.Get(DownIpAddr); ok {
 
@@ -172,32 +193,72 @@ func HandleReReplication(DownIpAddr string) {
 							if ip == DownIpAddr || ip == utils.WRITE_OP || ip == utils.DELETE_OP {
 								continue
 							}
-						// 	conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
-						// 	if err != nil {
-						// 		log.Println("unable to open connection: ", err)
-						// 		continue
-						// 	}
-						// 	defer conn.Close()
-						// 	task := utils.Task{
-						// 		DataTargetIp:        utils.New19Byte(ip),
-						// 		AckTargetIp:         utils.New19Byte(gossiputils.Ip),
-						// 		ConnectionOperation: utils.READ,
-						// 		FileName:            utils.New1024Byte(fileName),
-						// 		OriginalFileSize:    0,
-						// 		BlockIndex:          blockIdx,
-						// 		DataSize:            0,
-						// 		IsAck:               false,
-						// 	}
 
-						// 	err = utils.SendTaskOnExistingConnection(task, conn)
-						// 	if err != nil {
-						// 		log.Printf("unable to send task on existing connection: ", err)
-						// 		continue
-						// 	}
+							allIps := gossiputils.MembershipMap.Keys()
+							locationSet := make(map[string]bool)
+							for _, item := range locations {
+								locationSet[item] = true
+							}
+
+							// fmt.Println("All ips: ", allIps)
+							// fmt.Println("Current locations set: ", locationSet)
+
+							var replicationT string
+							for {
+								replicationTarget, err := PopRandomElementInArray(&allIps)
+								// fmt.Println("Potential replication target: ", replicationTarget)
+
+								if err != nil {
+									fmt.Println("Error popping random ip from all ips. Continuing.", err)
+									return
+								}
+								member, ok := gossiputils.MembershipMap.Get(replicationTarget)
+
+								// fmt.Println("picked ip already has block: ", locationSet[replicationTarget])
+								// fmt.Println("Member exists ", ok)
+								// fmt.Println("Member state is alive ", member.State == gossiputils.ALIVE)
+								if !locationSet[replicationTarget] && ok && member.State == gossiputils.ALIVE {
+									replicationT = replicationTarget
+									break
+								}
+							}
+
+							fmt.Println("Replication Target ", replicationT)
+
+							// TODO potential bug, if there is a connection that is down, we should try to pick a new one right away, not continue alltogether.
+							conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
+							if err != nil {
+								log.Println("unable to open connection: ", err)
+								continue
+							}
+							defer conn.Close()
+
+							fmt.Println("Openeed connection to ", ip)
+
+							task := utils.Task{
+								DataTargetIp:        utils.New19Byte(replicationT),
+								AckTargetIp:         utils.New19Byte(gossiputils.Ip),
+								ConnectionOperation: utils.WRITE,
+								FileName:            utils.New1024Byte(fileName),
+								OriginalFileSize:    0,
+								BlockIndex:          blockIdx,
+								DataSize:            0,
+								IsAck:               false,
+							}
+
+							err = utils.SendTaskOnExistingConnection(task, conn)
+							if err != nil {
+								log.Printf("unable to send task on existing connection: ", err)
+								continue
+							}
 						}
 					}
 				}
 			}
 		}
 	}
+
+	fmt.Println("Cleaning downed node data.")
+	HandleDown(DownIpAddr)
+	fmt.Println("Cleaned downed node data.")
 }

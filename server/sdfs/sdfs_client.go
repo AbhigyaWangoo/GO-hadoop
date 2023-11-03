@@ -96,7 +96,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 					}
 					// defer conn.Close()
 					blockWritingTask := utils.Task{
-						DataTargetIp:        utils.New19Byte(gossipUtils.Ip),
+						DataTargetIp:        utils.New19Byte(ip),
 						AckTargetIp:         utils.New19Byte(utils.LEADER_IP),
 						ConnectionOperation: utils.WRITE,
 						FileName:            utils.New1024Byte(SdfsFilename),
