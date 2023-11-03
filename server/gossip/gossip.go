@@ -26,6 +26,7 @@ func InitializeGossip() {
 	// Index by hostname
 	utils.MembershipMap = cmap.New[utils.Member]()
 	utils.MembershipUpdateTimes = cmap.New[int64]()
+	utils.FailureHandler = cmap.New[bool]()
 
 	utils.MembershipMap.Set(utils.Ip, newMember)
 	utils.MembershipUpdateTimes.Set(utils.Ip, timestamp)
