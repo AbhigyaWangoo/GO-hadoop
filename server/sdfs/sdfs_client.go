@@ -73,7 +73,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 		startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
 
 		for currentReplica := int64(0); currentReplica < utils.REPLICATION_FACTOR; currentReplica++ {
-			fmt.Printf("start index: %d length to write: %d", startIdx, lengthToWrite)
+			fmt.Printf("start index: %d length to write: %d\n", startIdx, lengthToWrite)
 
 			for {
 				if remainingIps.Size() == 0 {
@@ -218,7 +218,6 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 				log.Printf("unable to connect to replica, ", err)
 				continue
 			}
-			defer replicaConn.Close()
 			err = utils.SendTaskOnExistingConnection(task, replicaConn)
 			if err != nil {
 				log.Printf("unable to send task to replica, ", err)
@@ -233,6 +232,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 
 			log.Printf("Number of bytes to read from connection: ", blockMetadata.DataSize)
 			utils.BufferedReadFromConnection(replicaConn, fp, blockMetadata.DataSize)
+			replicaConn.Close()
 			// utils.BufferedReadAndWrite(replicaConnBuf, fp, blockMetadata.DataSize, false, 0)
 			break
 		}
