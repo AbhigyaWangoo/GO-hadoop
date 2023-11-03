@@ -285,7 +285,7 @@ func BufferedReadFromConnection(conn net.Conn, fp *os.File, size int64) (int64, 
 func SendTask(task Task, ipAddr string, ack bool) (*net.Conn, error) {
 	conn, tcpOpenError := OpenTCPConnection(ipAddr, SDFS_PORT)
 	if tcpOpenError != nil {
-		return nil, nil
+		return nil, tcpOpenError
 	}
 
 	bufferConn := bufio.NewWriter(conn)
@@ -329,6 +329,7 @@ func SendAckToMaster(task Task) *net.Conn {
 		conn, connectionError := SendTask(task, leaderIp, true)
 		
 		if connectionError != nil {
+			fmt.Println("Pick")
 			return SendAckToMaster(task)
 		}
 
@@ -349,7 +350,7 @@ func GetLeader() string {
 	for key := range allKeys {
 		member, exist := gossiputils.MembershipMap.Get(allKeys[key])
 
-		if exist && member.CreationTimestamp < int64(oldestTime) {
+		if exist && member.CreationTimestamp < int64(oldestTime) && member.State != gossiputils.DOWN {
 			oldestMemberIp = member.Ip
 			oldestTime = member.CreationTimestamp
 		}
