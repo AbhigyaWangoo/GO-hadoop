@@ -53,6 +53,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	var bufferedErr error
 	if !fromLocal { // PUT request
 		nread, bufferedErr = utils.BufferedReadFromConnection(conn, fp, Task.DataSize)
+		log.Printf("HELLOOO")
 	} else { // GET request
 		nread, bufferedErr = utils.BufferedWriteToConnection(conn, fp, Task.DataSize, 0)
 	}

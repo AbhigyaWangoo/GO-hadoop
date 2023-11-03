@@ -55,6 +55,31 @@ var MuLocalFs sync.Mutex
 var CondLocalFs = sync.NewCond(&MuLocalFs)
 var LEADER_IP string = "172.22.158.162"
 
+type LimitedWriter struct {
+	Writer  io.Writer
+	Limit   int64
+	Written int64
+}
+
+func (lw *LimitedWriter) Write(p []byte) (n int, err error) {
+	// Check if the limit has been reached
+	remaining := lw.Limit - lw.Written
+	if remaining <= 0 {
+		return 0, io.EOF
+	}
+	if int64(len(p)) > remaining {
+		p = p[:remaining]
+	}
+
+	// Write the data and update the number of bytes written
+	n, err = lw.Writer.Write(p)
+	lw.Written += int64(n)
+	if lw.Written >= lw.Limit {
+		return n, io.EOF
+	}
+	return n, err
+}
+
 // Opens a tcp connection to the provided ip address and port, and returns the connection object
 func OpenTCPConnection(IpAddr string, Port string) (net.Conn, error) {
 	// Concatenate IP address and port to form the address string
@@ -154,15 +179,22 @@ func BufferedWriteToConnection(conn net.Conn, fp *os.File, size, startIdx int64)
 }
 
 func BufferedReadFromConnection(conn net.Conn, fp *os.File, size int64) (int64, error) {
-	n, err := io.Copy(fp, bufio.NewReader(conn))
-	if err != nil {
-		panic(err)
+	// Create a custom writer to limit the number of bytes copied
+	limitedWriter := &LimitedWriter{
+		Writer: fp,
+		Limit:  size,
 	}
 
+	// Use io.Copy to copy data, respecting the limit
+	n, err := io.Copy(limitedWriter, conn)
+	if err != nil && err != io.EOF {
+		panic(err)
+	}
+	log.Printf("Size: %d, Read: %d", size, n)
 	if n < size {
 		log.Printf("didn't read enough data from connection")
 	}
-	return n, err
+	return n, nil
 }
 
 // This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and
