@@ -37,8 +37,10 @@ func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
 func RouteToSubMasters(IncomingAck utils.Task) {
 	// Route an incoming ack that makes a change to the membership list to the submasters.(Bully git issue)
 	kLeaders := utils.GetKLeaders()
-	for _, leader := range kLeaders[1:] {
-		utils.SendTask(IncomingAck, leader, true)
+	for _, leader := range kLeaders {
+		if leader != gossiputils.Ip {
+			utils.SendTask(IncomingAck, leader, true)
+		}
 	}
 }
 
