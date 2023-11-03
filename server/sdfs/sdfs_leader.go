@@ -1,10 +1,10 @@
 package sdfs
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"log"
+	"net"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -44,7 +44,7 @@ func RouteToSubMasters(IncomingAck utils.Task) {
 	}
 }
 
-func HandleAck(IncomingAck utils.Task, conn *bufio.ReadWriter) error {
+func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 
 	if !IncomingAck.IsAck {
 		return errors.New("ack passed to master for processing was not actually an ack")
@@ -84,7 +84,7 @@ func HandleAck(IncomingAck utils.Task, conn *bufio.ReadWriter) error {
 			FileToBlocks.Set(ackSourceIp, initialMapping)
 		}
 	} else if IncomingAck.ConnectionOperation == utils.GET_2D {
-		Handle2DArrRequest(fileName, conn)
+		Handle2DArrRequest(fileName, *conn)
 	} else if IncomingAck.ConnectionOperation == utils.DELETE {
 		if !BlockLocations.Has(fileName) {
 			return errors.New("Never seen before filename, dropping delete operation")
@@ -110,7 +110,7 @@ func HandleAck(IncomingAck utils.Task, conn *bufio.ReadWriter) error {
 	return nil
 }
 
-func Handle2DArrRequest(Filename string, conn *bufio.ReadWriter) {
+func Handle2DArrRequest(Filename string, conn net.Conn) {
 	// Reply to a connection with the 2d array for the provided filename.
 	arr, exists := BlockLocations.Get(Filename)
 	if !exists {
