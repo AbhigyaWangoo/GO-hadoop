@@ -109,6 +109,8 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						IsAck:               false,
 					}
 
+					log.Printf("Expecting size of: ", blockWritingTask.DataSize)
+
 					// log.Printf(string(blockWritingTask.Marshal()))
 					// log.Printf(unsafe.Sizeof(blockWritingTask.Marshal()))
 					marshalledBytesWritten, writeError := buffConn.Write(blockWritingTask.Marshal())
