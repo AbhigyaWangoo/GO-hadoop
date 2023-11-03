@@ -40,7 +40,7 @@ func InitializeGossip() {
 }
 
 func MemberPrint(m utils.Member) string {
-	return fmt.Sprintf("IP: %s, Port: %s, Timestamp: %d, State: %d", m.Ip, m.Port, m.CreationTimestamp, m.State)
+	return fmt.Sprintf("IP: %s, Port: %s, Timestamp: %d, State: %d, Type: %d", m.Ip, m.Port, m.CreationTimestamp, m.State, m.Type)
 }
 
 func GetOutboundIP() net.IP {
@@ -58,7 +58,8 @@ func GetOutboundIP() net.IP {
 // Check if nodes need to be degraded from ALIVE or DOWN statuses
 func PruneNodeMembers() {
 	for {
-
+		machineType := utils.MachineType()
+		
 		// Go through all currently stored nodes and check their lastUpdatedTimes
 		for info := range utils.MembershipUpdateTimes.IterBuffered() {
 			nodeIp, lastUpdateTime := info.Key, info.Val
@@ -80,10 +81,9 @@ func PruneNodeMembers() {
 					}
 					node.State = utils.DOWN
 
-					member, ok := utils.MembershipMap.Get(utils.Ip)
-					if ok && member.Type == utils.LEADER {
+					if machineType == utils.LEADER {
 						// HandleNodeFailure()
-						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", member.Ip)
+						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
 					}
 				} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than Tfail, mark node as SUSPECTED
 					// If the node is not already suspicious, log it as so
@@ -103,10 +103,10 @@ func PruneNodeMembers() {
 						utils.LogFile.WriteString(mssg)
 					}
 					node.State = utils.DOWN
-					member, ok := utils.MembershipMap.Get(utils.Ip)
-					if ok && member.Type == utils.LEADER {
+
+					if machineType == utils.LEADER {
 						// HandleNodeFailure()
-						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", member.Ip)
+						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
 					}
 				} else {
 					node.State = utils.ALIVE
