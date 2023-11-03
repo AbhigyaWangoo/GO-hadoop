@@ -41,15 +41,15 @@ type Task struct {
 	IsAck               bool
 }
 
-const KB int64 = 1024
-const MB int64 = KB * 1024
-const SDFS_PORT string = "3456"
-const SDFS_ACK_PORT string = "9682"
-const FILESYSTEM_ROOT string = "server/sdfs/sdfsFileSystemRoot/"
-const BLOCK_SIZE int64 = 5 * MB
-const REPLICATION_FACTOR int = 4
-const MAX_INT64 = 9223372036854775807
-const NUM_LEADERS = 4
+const KB = int64(1024)
+const MB = int64(KB * 1024)
+const SDFS_PORT = "3456"
+const SDFS_ACK_PORT = "9682"
+const FILESYSTEM_ROOT = "server/sdfs/sdfsFileSystemRoot/"
+const BLOCK_SIZE = int64(5 * MB)
+const REPLICATION_FACTOR = int64(4)
+const MAX_INT64 = int64(9223372036854775807)
+const NUM_LEADERS = int64(4)
 
 var MuLocalFs sync.Mutex
 var CondLocalFs = sync.NewCond(&MuLocalFs)
@@ -328,7 +328,7 @@ func BytesToString(data []byte) string {
 }
 
 func GetBlockPosition(blockNumber int64, fileSize int64) (int64, int64) {
-	currentByteIdx := blockNumber * BLOCK_SIZE
+	currentByteIdx := blockNumber * int64(BLOCK_SIZE)
 
 	if BLOCK_SIZE < fileSize-currentByteIdx {
 		return currentByteIdx, BLOCK_SIZE
