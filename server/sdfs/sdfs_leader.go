@@ -1,10 +1,10 @@
 package sdfs
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"log"
-	"net"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -36,7 +36,7 @@ func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
 // Master functions
 func RouteToSubMasters(IncomingAck utils.Task) {
 	// Route an incoming ack that makes a change to the membership list to the submasters.(Bully git issue)
-	kLeaders := utils.GetKLeaders()
+	kLeaders := gossiputils.GetKLeaders()
 	for _, leader := range kLeaders {
 		if leader != gossiputils.Ip {
 			utils.SendTask(IncomingAck, leader, true)
@@ -44,42 +44,7 @@ func RouteToSubMasters(IncomingAck utils.Task) {
 	}
 }
 
-// checks current machine's IP addr in gossip's MembershipMap, returns whether current machine is leader, subleader, or follower
-func MachineType() gossiputils.SdfsNodeType {
-	kleaders := utils.GetKLeaders()
-	leader := utils.GetLeader()
-	thisIp := gossiputils.Ip
-	myMember, ok := gossiputils.MembershipMap.Get(gossiputils.Ip)
-
-	if thisIp == leader {
-		fmt.Println("_____I AM A LEADER____")
-		
-		if ok {
-			myMember.Type = gossiputils.LEADER
-		}
-		gossiputils.MembershipMap.Set(gossiputils.Ip, myMember)
-		return gossiputils.LEADER
-	}
-
-	for i := 0; i < len(kleaders); i++ {
-		if thisIp == kleaders[i] {
-			fmt.Println("_____I AM A SUB LEADER____")
-			if ok {
-				myMember.Type = gossiputils.SUB_LEADER
-			}
-			return gossiputils.SUB_LEADER
-		}
-	}
-
-	fmt.Println("_____I AM A FOLLOWER____")
-	if ok {
-		myMember.Type = gossiputils.FOLLOWER
-	}
-	
-	return gossiputils.FOLLOWER
-}
-
-func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
+func HandleAck(IncomingAck utils.Task, conn *bufio.ReadWriter) error {
 
 	if !IncomingAck.IsAck {
 		return errors.New("ack passed to master for processing was not actually an ack")
@@ -145,7 +110,7 @@ func HandleAck(IncomingAck utils.Task, conn net.Conn) error {
 	return nil
 }
 
-func Handle2DArrRequest(Filename string, conn net.Conn) {
+func Handle2DArrRequest(Filename string, conn *bufio.ReadWriter) {
 	// Reply to a connection with the 2d array for the provided filename.
 	arr, exists := BlockLocations.Get(Filename)
 	if !exists {
