@@ -49,20 +49,14 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 
 	dir, _ := os.Getwd()
 	log.Println(dir)
-
 	fileSize, _ := utils.GetFileSize(LocalFilename)
-
 	numberBlocks := utils.CeilDivide(fileSize, utils.BLOCK_SIZE)
-
-	// locationsToWrite := InitializeBlockLocationsEntry(SdfsFilename, fileInfo.Size())
 
 	fmt.Println("Num blocks:", numberBlocks)
 	fmt.Println("file size:", fileSize)
 	fmt.Println("block size:", int64(utils.BLOCK_SIZE))
 	// currentBlock := int64(0)
 	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
-
-		// go func(currentBlock int64) {
 
 		allMemberIps := gossipUtils.MembershipMap.Keys()
 		remainingIps := utils.CreateConcurrentStringSlice(allMemberIps)
@@ -108,22 +102,15 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 					fmt.Printf("start index: %d length to write: %d\n", startIdx, lengthToWrite)
 					fmt.Printf("Expecting size of: %d\n", blockWritingTask.DataSize)
 
-					// log.Printf(string(blockWritingTask.Marshal()))
-					// log.Printf(unsafe.Sizeof(blockWritingTask.Marshal()))
 					marshalledBytesWritten, writeError := conn.Write(blockWritingTask.Marshal())
 					conn.Write([]byte{'\n'})
 					if writeError != nil {
 						log.Fatalf("Could not write struct to connection in client put: %v\n", writeError)
 					}
 
-					// log.Println("HEYEUEEYEYE")
-					// for {
-
-					// }
 					utils.ReadSmallAck(conn)
 
 					totalBytesWritten, writeErr := utils.BufferedWriteToConnection(conn, file, lengthToWrite, startIdx)
-					// utils.BufferedReadAndWrite(buffConn, file, lengthToWrite, true, startIdx)
 					fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
 					fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
 
@@ -138,17 +125,52 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 			}
 		}
 		file.Close()
-		// } (currentBlock)
+	}
+}
+
+func PutBlock(sdfsFilename string, blockIdx int64, ipDst string) {
+	_, fileSize, fp, err := utils.GetFilePtr(sdfsFilename, string(blockIdx), os.O_RDONLY)
+
+	blockWritingTask := utils.Task{
+		DataTargetIp:        utils.New19Byte(ipDst),
+		AckTargetIp:         utils.New19Byte(utils.LEADER_IP),
+		ConnectionOperation: utils.WRITE,
+		FileName:            utils.New1024Byte(sdfsFilename),
+		OriginalFileSize:    int64(fileSize),
+		BlockIndex:          blockIdx,
+		DataSize:            int64(fileSize),
+		IsAck:               false,
 	}
 
-	// 2. For i = 0; i < num_blocks; i ++
-	// 		2.a. Construct a List of FollowerTasks, with the ack target as the master and DataTargetIp as empty
-	// 		2.b. Open Connections to all ips in 2darr[i], and write tasks to all ips.
-	// 		2.c. buffered read localfilename[i:i+block_size] (4kb at a time should work, check utils for KB variable)
-	// 		2.d. IN BUFFERED READ FUNCTION -> for ip in 2darr[i]:
-	// 				2.d.a. Spawn a thread to write current read block to ip with connections previously opened
-	//
+	member, ok := gossipUtils.MembershipMap.Get(ipDst)
+	if ipDst == gossipUtils.Ip || !ok || member.State == gossipUtils.DOWN {
+		return
+	}
 
+	conn, err := utils.OpenTCPConnection(ipDst, utils.SDFS_PORT)
+	if err != nil {
+		fmt.Printf("error opening follower connection: %v\n", err)
+		return
+	}
+
+	marshalledBytesWritten, writeError := conn.Write(blockWritingTask.Marshal())
+	conn.Write([]byte{'\n'})
+	if writeError != nil {
+		fmt.Printf("Could not write struct to connection in client put: %v\n", writeError)
+	}
+
+	utils.ReadSmallAck(conn)
+
+	startIdx := blockIdx * utils.BLOCK_SIZE
+	totalBytesWritten, writeErr := utils.BufferedWriteToConnection(conn, fp, int64(fileSize), startIdx)
+	fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
+	fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
+
+	if writeErr != nil { // If failure to write full block, redo loop
+		fmt.Println("connection broke early, rewrite block: ", writeErr)
+		return
+	}
+	utils.ReadSmallAck(conn)
 }
 
 func InitiateGetCommand(sdfsFilename string, localfilename string) {
@@ -319,7 +341,7 @@ func InitiateLsCommand(sdfs_filename string) {
 func InitiateStoreCommand() {
 	// utils.FILESYSTEM_ROOT
 	items, _ := ioutil.ReadDir(utils.FILESYSTEM_ROOT)
-	for _, item := range items { 
+	for _, item := range items {
 		if !item.IsDir() {
 			fmt.Println(item.Name())
 		}
