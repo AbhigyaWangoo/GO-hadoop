@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/big"
 	"os"
@@ -316,6 +317,13 @@ func InitiateLsCommand(sdfs_filename string) {
 }
 
 func InitiateStoreCommand() {
+	// utils.FILESYSTEM_ROOT
+	items, _ := ioutil.ReadDir(utils.FILESYSTEM_ROOT)
+	for _, item := range items { 
+		if !item.IsDir() {
+			fmt.Println(item.Name())
+		}
+	}
 
 }
 

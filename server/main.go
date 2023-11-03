@@ -98,6 +98,8 @@ func RunCLI() {
 
 			sdfs_client.InitiateLsCommand(sdfs_filename)
 
+		} else if strings.Contains(command, string(STORE)) {
+			sdfs_client.InitiateStoreCommand()
 		} else {
 			error_msg := `
 			Command not understood. Available commands are as follows:
