@@ -24,7 +24,7 @@ func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
 	var i int64
 	for i = 0; i < n; i++ {
 		newEntry[i] = make([]string, m)
-		for j := 0; j < m; j++ {
+		for j := int64(0); j < m; j++ {
 			// Assign sentinal values to the 2D array
 			newEntry[i][j] = utils.WRITE_OP
 		}
@@ -85,7 +85,7 @@ func HandleAck(IncomingAck utils.Task, conn *bufio.ReadWriter) error {
 		}
 
 		blockMap, _ := BlockLocations.Get(fileName)
-		for i := 0; i < utils.REPLICATION_FACTOR; i++ {
+		for i := int64(0); i < utils.REPLICATION_FACTOR; i++ {
 			if blockMap[IncomingAck.BlockIndex][i] == utils.WRITE_OP {
 				blockMap[IncomingAck.BlockIndex][i] = ackSourceIp
 				break
@@ -110,7 +110,7 @@ func HandleAck(IncomingAck utils.Task, conn *bufio.ReadWriter) error {
 
 		blockMap, _ := BlockLocations.Get(fileName)
 		row := blockMap[IncomingAck.BlockIndex]
-		for i := 0; i < utils.REPLICATION_FACTOR; i++ {
+		for i := int64(0); i < utils.REPLICATION_FACTOR; i++ {
 			if row[i] == ackSourceIp {
 				blockMap[IncomingAck.BlockIndex][i] = utils.DELETE_OP
 			}
