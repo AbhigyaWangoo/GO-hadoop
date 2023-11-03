@@ -179,7 +179,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 		IsAck:               true,
 	}
 
-	leaderIp := utils.GetLeader()
+	leaderIp := gossiputils.GetLeader()
 	conn, err := utils.OpenTCPConnection(leaderIp, utils.SDFS_PORT)
 	if err != nil {
 		log.Fatalln("unable to open connection to master: ", err)

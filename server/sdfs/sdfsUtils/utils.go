@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"sort"
 	"strings"
 	"sync"
 
@@ -48,8 +47,6 @@ const SDFS_ACK_PORT = "9682"
 const FILESYSTEM_ROOT = "server/sdfs/sdfsFileSystemRoot/"
 const BLOCK_SIZE = int64(5 * MB)
 const REPLICATION_FACTOR = int64(4)
-const MAX_INT64 = int64(9223372036854775807)
-const NUM_LEADERS = int64(4)
 
 var MuLocalFs sync.Mutex
 var CondLocalFs = sync.NewCond(&MuLocalFs)
@@ -320,14 +317,14 @@ func SendTaskOnExistingConnection(task Task, conn net.Conn) error {
 }
 
 func SendAckToMaster(task Task) *net.Conn {
-	leaderIp := GetLeader()
+	leaderIp := gossiputils.GetLeader()
 
 	fmt.Printf("detected Leader ip: %s\n", leaderIp)
 	task.AckTargetIp = New19Byte(gossiputils.Ip)
 	val, ok := gossiputils.MembershipMap.Get(leaderIp)
 	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
 		conn, connectionError := SendTask(task, leaderIp, true)
-		
+
 		if connectionError != nil {
 			fmt.Println("Pick")
 			return SendAckToMaster(task)
@@ -335,52 +332,11 @@ func SendAckToMaster(task Task) *net.Conn {
 
 		return conn
 	} else {
-		newLeader := GetLeader()
+		newLeader := gossiputils.GetLeader()
 		conn, _ := SendTask(task, newLeader, true)
 
 		return conn
 	}
-}
-
-func GetLeader() string {
-	var oldestTime int64 = MAX_INT64
-	var oldestMemberIp string
-
-	allKeys := gossiputils.MembershipMap.Keys()
-	for key := range allKeys {
-		member, exist := gossiputils.MembershipMap.Get(allKeys[key])
-
-		if exist && member.CreationTimestamp < int64(oldestTime) && member.State != gossiputils.DOWN {
-			oldestMemberIp = member.Ip
-			oldestTime = member.CreationTimestamp
-		}
-	}
-
-	return oldestMemberIp
-}
-
-func GetKLeaders() []string {
-	allKeys := gossiputils.MembershipMap.Keys()
-	allMembers := make([]gossiputils.Member, 0)
-	for _, key := range allKeys {
-		member, _ := gossiputils.MembershipMap.Get(key)
-		allMembers = append(allMembers, member)
-	}
-	sort.Slice(allMembers, func(i, j int) bool {
-		return allMembers[i].CreationTimestamp < allMembers[j].CreationTimestamp
-	})
-
-	var kLeaders []string
-	numLeaders := NUM_LEADERS
-	for _, member := range allMembers {
-		if numLeaders == 0 {
-			break
-		}
-		kLeaders = append(kLeaders, member.Ip)
-		numLeaders--
-	}
-
-	return kLeaders
 }
 
 func New19Byte(data string) [19]byte {

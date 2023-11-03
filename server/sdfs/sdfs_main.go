@@ -1,6 +1,7 @@
 package sdfs
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 
@@ -45,7 +46,7 @@ func HandleConnection(conn net.Conn) {
 	// if task.isack && we're a master node, spawn a seperate master.handleAck
 	if task.IsAck {
 		fmt.Println("Recieved new ack connection!")
-		machineType := MachineType()
+		machineType := gossiputils.MachineType()
 		
 		if machineType == gossiputils.LEADER {
 			fmt.Printf("Recieved ack for %s at master\n", utils.BytesToString(task.FileName[:]))
@@ -55,7 +56,11 @@ func HandleConnection(conn net.Conn) {
 			fmt.Printf("Recieved ack for %s at SUBmaster\n", utils.BytesToString(task.FileName[:]))
 		}
 
-		HandleAck(*task, conn)
+		reader := bufio.NewReader(conn)
+		writer := bufio.NewWriter(conn)
+		rw := bufio.NewReadWriter(reader, writer)
+		
+		HandleAck(*task, rw)
 
 	} else if task.ConnectionOperation == utils.DELETE {
 		HandleDeleteConnection(*task)

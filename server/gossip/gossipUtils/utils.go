@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"sort"
 	"sync"
 
 	"crypto/rand"
@@ -42,6 +43,8 @@ const GOSSIP_PORT string = "8000"
 const MLIST_SIZE int = 20480
 const ENABLE_SUSPICION_MSG = "enable"
 const DISABLE_SUSPICION_MSG = "disable"
+const NUM_LEADERS = 4
+const MAX_INT64 = 9223372036854775807
 
 const GOSSIP_K int = 2
 const GOSSIP_SEND_T int64 = 2
@@ -136,4 +139,80 @@ func GetLogFilePointer() *os.File {
 	logFilePath := fmt.Sprintf("logs/machine.%s.log", machineNumber)
 	logFile, _ := os.OpenFile(logFilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	return logFile
+}
+
+// checks current machine's IP addr in gossip's MembershipMap, returns whether current machine is leader, subleader, or follower
+func MachineType() SdfsNodeType {
+	kleaders := GetKLeaders()
+	leader := GetLeader()
+	thisIp := Ip
+	myMember, ok := MembershipMap.Get(Ip)
+
+	if thisIp == leader {
+		fmt.Println("_____I AM A LEADER____")
+
+		if ok {
+			myMember.Type = LEADER
+		}
+		MembershipMap.Set(Ip, myMember)
+		return LEADER
+	}
+
+	for i := 0; i < len(kleaders); i++ {
+		if thisIp == kleaders[i] {
+			fmt.Println("_____I AM A SUB LEADER____")
+			if ok {
+				myMember.Type = SUB_LEADER
+			}
+			return SUB_LEADER
+		}
+	}
+
+	fmt.Println("_____I AM A FOLLOWER____")
+	if ok {
+		myMember.Type = FOLLOWER
+	}
+
+	return FOLLOWER
+}
+
+func GetKLeaders() []string {
+	allKeys := MembershipMap.Keys()
+	allMembers := make([]Member, 0)
+	for _, key := range allKeys {
+		member, _ := MembershipMap.Get(key)
+		allMembers = append(allMembers, member)
+	}
+	sort.Slice(allMembers, func(i, j int) bool {
+		return allMembers[i].CreationTimestamp < allMembers[j].CreationTimestamp
+	})
+
+	var kLeaders []string
+	numLeaders := NUM_LEADERS
+	for _, member := range allMembers {
+		if numLeaders == 0 {
+			break
+		}
+		kLeaders = append(kLeaders, member.Ip)
+		numLeaders--
+	}
+
+	return kLeaders
+}
+
+func GetLeader() string {
+	var oldestTime int64 = MAX_INT64
+	var oldestMemberIp string
+
+	allKeys := MembershipMap.Keys()
+	for key := range allKeys {
+		member, exist := MembershipMap.Get(allKeys[key])
+
+		if exist && member.CreationTimestamp < int64(oldestTime) && member.State != DOWN {
+			oldestMemberIp = member.Ip
+			oldestTime = member.CreationTimestamp
+		}
+	}
+
+	return oldestMemberIp
 }
