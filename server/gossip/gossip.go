@@ -86,9 +86,9 @@ func PruneNodeMembers() {
 					machineType := utils.MachineType()
 					if (!ok || !val) && machineType == utils.LEADER {
 						utils.FailureHandler.Set(node.Ip, false)
+						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
 						sdfsleader.HandleReReplication(node.Ip) // TODO UNTESTED
 						
-						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
 						utils.FailureHandler.Set(node.Ip, true)
 					}
 				} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than Tfail, mark node as SUSPECTED
@@ -114,9 +114,9 @@ func PruneNodeMembers() {
 					machineType := utils.MachineType()
 					if (!ok || !val ) && machineType == utils.LEADER {
 						utils.FailureHandler.Set(node.Ip, false)
+						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
 						sdfsleader.HandleReReplication(node.Ip) // TODO UNTESTED
 						
-						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
 						utils.FailureHandler.Set(node.Ip, true)
 					}
 				} else {
