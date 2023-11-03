@@ -54,6 +54,7 @@ const Tcleanup int64 = 1 * 1e9 // 1 second * 10^9 nanoseconds
 
 var MembershipMap cmap.ConcurrentMap[string, Member]
 var MembershipUpdateTimes cmap.ConcurrentMap[string, int64]
+var FailureHandler cmap.ConcurrentMap[string, bool] // If IPs are in this set as True, that means the process is done rereplicating the date on that IP.
 var Ip string
 var MessageDropRate float32 = 0.0
 var ENABLE_SUSPICION bool = false
