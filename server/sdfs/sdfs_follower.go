@@ -29,7 +29,7 @@ func HandleStreamConnection(Task utils.Task, conn *bufio.ReadWriter) error {
 		flags = os.O_CREATE | os.O_RDONLY
 	}
 
-	localFilename, fileSize, fp, err := utils.GetFilePtr(FileName, strconv.FormatUint(Task.BlockIndex, 10), flags)
+	localFilename, fileSize, fp, err := utils.GetFilePtr(FileName, strconv.FormatInt(Task.BlockIndex, 10), flags)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func HandleStreamConnection(Task utils.Task, conn *bufio.ReadWriter) error {
 	FileSet[localFilename] = true
 	fromLocal := Task.ConnectionOperation == utils.READ
 	if fromLocal {
-		Task.DataSize = uint64(fileSize)
+		Task.DataSize = int64(fileSize)
 		utils.SendTaskOnExistingConnection(Task, conn)
 		utils.ReadSmallAck(conn)
 	}

@@ -35,18 +35,18 @@ type Task struct {
 	AckTargetIp         [19]byte
 	ConnectionOperation BlockOperation // READ, WRITE, GET_2D, OR DELETE from sdfs utils
 	FileName            [1024]byte
-	OriginalFileSize    uint64
-	BlockIndex          uint64
-	DataSize            uint64 // TODO change me to uint64
+	OriginalFileSize    int64
+	BlockIndex          int64
+	DataSize            int64 // TODO change me to int64
 	IsAck               bool
 }
 
-const KB uint64 = 1024
-const MB uint64 = KB * 1024
+const KB int64 = 1024
+const MB int64 = KB * 1024
 const SDFS_PORT string = "3456"
 const SDFS_ACK_PORT string = "9682"
 const FILESYSTEM_ROOT string = "server/sdfs/sdfsFileSystemRoot/"
-const BLOCK_SIZE uint64 = 5 * MB
+const BLOCK_SIZE int64 = 5 * MB
 const REPLICATION_FACTOR int = 4
 const MAX_INT64 = 9223372036854775807
 const NUM_LEADERS = 4
@@ -83,7 +83,7 @@ func ListenOnTCPConnection(Port string) (net.Listener, error) {
 	return tcpConn, nil
 }
 
-func GetFileSize(filePath string) (uint64, error) {
+func GetFileSize(filePath string) (int64, error) {
 	// Get file information
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
@@ -92,13 +92,13 @@ func GetFileSize(filePath string) (uint64, error) {
 	}
 
 	// Get file size in bytes
-	fileSize := uint64(fileInfo.Size())
+	fileSize := int64(fileInfo.Size())
 
 	// Print the file size
 	return fileSize, nil
 }
 
-func CeilDivide(a, b uint64) uint64 {
+func CeilDivide(a, b int64) int64 {
 	// Perform integer division
 	quotient := a / b
 
@@ -134,15 +134,15 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (string, int, 
 
 // This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and
 // buffered write to (a connection if fromLocal is true, the filepointer if fromLocal is false)
-func BufferedReadAndWrite(conn *bufio.ReadWriter, fp *os.File, size uint64, fromLocal bool) (uint64, error) {
+func BufferedReadAndWrite(conn *bufio.ReadWriter, fp *os.File, size int64, fromLocal bool) (int64, error) {
 	// connTCP, ok := conn.(*net.TCPConn)
 	// if ok {
 	// 	connTCP.SetLinger(0) // Set Linger option to flush data immediately
 	// }
-	var total_bytes_processed uint64 = 0
+	var total_bytes_processed int64 = 0
 	var w *bufio.Writer
 	var r *bufio.Reader
-	var bufferSize uint64
+	var bufferSize int64
 
 	if fromLocal {
 		w = conn.Writer
@@ -151,7 +151,7 @@ func BufferedReadAndWrite(conn *bufio.ReadWriter, fp *os.File, size uint64, from
 	} else {
 		w = bufio.NewWriter(fp)
 		r = conn.Reader
-		bufferSize = uint64(5 * KB)
+		bufferSize = int64(5 * KB)
 	}
 
 	dataBuffer := make([]byte, bufferSize)
@@ -202,11 +202,11 @@ func BufferedReadAndWrite(conn *bufio.ReadWriter, fp *os.File, size uint64, from
 			return total_bytes_processed, writeErr
 		}
 
-		if uint64(nWritten) != bufferSize {
+		if int64(nWritten) != bufferSize {
 			fmt.Println("wrote not buffer size: ", nRead)
 		}
 
-		total_bytes_processed += uint64(nWritten)
+		total_bytes_processed += int64(nWritten)
 	}
 	fp.Sync()
 	log.Println("Processed x bytes: ", total_bytes_processed)
@@ -327,13 +327,13 @@ func BytesToString(data []byte) string {
 	return strings.TrimRight(string(data), "\x00")
 }
 
-func GetBlockPosition(blockNumber uint64, fileSize uint64) (uint64, uint64) {
+func GetBlockPosition(blockNumber int64, fileSize int64) (int64, int64) {
 	currentByteIdx := blockNumber * BLOCK_SIZE
 
-	if BLOCK_SIZE < uint64(fileSize)-currentByteIdx {
+	if BLOCK_SIZE < fileSize-currentByteIdx {
 		return currentByteIdx, BLOCK_SIZE
 	} else {
-		return currentByteIdx, uint64(fileSize) - currentByteIdx
+		return currentByteIdx, fileSize - currentByteIdx
 	}
 }
 
@@ -352,7 +352,7 @@ func (task Task) Marshal() []byte {
 	return marshaledTask
 }
 
-func Unmarshal(conn *bufio.ReadWriter) (*Task, uint64) {
+func Unmarshal(conn *bufio.ReadWriter) (*Task, int64) {
 	var task Task
 
 	// Read from the connection until a newline is encountered
@@ -368,7 +368,7 @@ func Unmarshal(conn *bufio.ReadWriter) (*Task, uint64) {
 		log.Fatalf("Error unmarshalling task: %v\n", err)
 	}
 
-	return &task, uint64(len(data))
+	return &task, int64(len(data))
 }
 
 func MarshalBlockLocationArr(array [][]string) []byte {

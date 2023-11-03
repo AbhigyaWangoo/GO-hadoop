@@ -16,12 +16,12 @@ var FileToOriginator cmap.ConcurrentMap[string, []string] = cmap.New[[]string]()
 var FileToBlocks cmap.ConcurrentMap[string, [][2]interface{}] = cmap.New[[][2]interface{}]() // IPaddr : [[blockidx, filename]]
 
 // Initializes a new entry in BlockLocations, so the leader can begin listening for block acks.
-func InitializeBlockLocationsEntry(Filename string, FileSize uint64) {
+func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
 	n, m := utils.CeilDivide(FileSize, utils.BLOCK_SIZE), utils.REPLICATION_FACTOR // Size of the 2D array (n rows, m columns)
 	newEntry := make([][]string, n)                                                // Create a slice of slices (2D array)
 
 	// Populate the 2D array with arbitrary values
-	var i uint64
+	var i int64
 	for i = 0; i < n; i++ {
 		newEntry[i] = make([]string, m)
 		for j := 0; j < m; j++ {
@@ -153,7 +153,7 @@ func HandleReReplication(DownIpAddr string) {
 
 			if fileName, ok := blockMetadata[1].(string); ok {
 
-				if blockIdx, ok := blockMetadata[0].(uint64); ok {
+				if blockIdx, ok := blockMetadata[0].(int64); ok {
 
 					if blockLocations, ok := BlockLocations.Get(fileName); ok {
 
