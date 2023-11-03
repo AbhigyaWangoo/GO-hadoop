@@ -71,9 +71,9 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 		if err != nil {
 			log.Fatalf("error opening local file: %v\n", err)
 		}
+		startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
 
-		for currentReplica := 0; currentReplica < utils.REPLICATION_FACTOR; currentReplica++ {
-			startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
+		for currentReplica := int64(0); currentReplica < utils.REPLICATION_FACTOR; currentReplica++ {
 			fmt.Printf("start index: %d length to write: %d", startIdx, lengthToWrite)
 
 			for {
@@ -82,7 +82,6 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 				}
 
 				if ip, ok := remainingIps.PopRandomElement().(string); ok {
-					log.Printf("ip")
 					member, _ := gossipUtils.MembershipMap.Get(ip)
 
 					if ip == gossipUtils.Ip || member.State == gossipUtils.DOWN {
@@ -94,7 +93,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						log.Fatalf("error opening follower connection: %v\n", err)
 						continue
 					}
-					// defer conn.Close()
+					defer conn.Close()
 					buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 					blockWritingTask := utils.Task{
 						DataTargetIp:        utils.New19Byte(gossipUtils.Ip),
@@ -124,7 +123,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 					utils.ReadSmallAck(buffConn)
 
 					file.Seek(0, int(startIdx))
-					totalBytesWritten, writeErr := utils.BufferedReadAndWrite(buffConn, file, int64(lengthToWrite), true)
+					totalBytesWritten, writeErr := utils.BufferedReadAndWrite(buffConn, file, lengthToWrite, true)
 					fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
 					fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
 
