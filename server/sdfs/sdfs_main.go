@@ -51,6 +51,8 @@ func HandleConnection(conn *bufio.ReadWriter) {
 		if machineType == gossiputils.LEADER {
 			fmt.Printf("Recieved ack for %s at master\n", utils.BytesToString(task.FileName[:]))
 			HandleAck(*task, conn)
+
+			RouteToSubMasters(*task)
 		}
 	} else if task.ConnectionOperation == utils.DELETE {
 		HandleDeleteConnection(*task)
