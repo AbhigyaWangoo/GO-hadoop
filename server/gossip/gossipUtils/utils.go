@@ -150,7 +150,7 @@ func MachineType() SdfsNodeType {
 	myMember, ok := MembershipMap.Get(Ip)
 
 	if thisIp == leader {
-		fmt.Println("_____I AM A LEADER____")
+		// fmt.Println("_____I AM A LEADER____")
 
 		if ok {
 			myMember.Type = LEADER
@@ -161,7 +161,7 @@ func MachineType() SdfsNodeType {
 
 	for i := 0; i < len(kleaders); i++ {
 		if thisIp == kleaders[i] {
-			fmt.Println("_____I AM A SUB LEADER____")
+			// fmt.Println("_____I AM A SUB LEADER____")
 			if ok {
 				myMember.Type = SUB_LEADER
 			}
@@ -169,7 +169,7 @@ func MachineType() SdfsNodeType {
 		}
 	}
 
-	fmt.Println("_____I AM A FOLLOWER____")
+	// fmt.Println("_____I AM A FOLLOWER____")
 	if ok {
 		myMember.Type = FOLLOWER
 	}
