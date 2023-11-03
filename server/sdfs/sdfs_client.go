@@ -59,15 +59,12 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	fmt.Println("file size:", fileSize)
 	fmt.Println("block size:", int64(utils.BLOCK_SIZE))
 	// currentBlock := int64(0)
-	for currentBlock := uint64(0); currentBlock < numberBlocks; currentBlock++ {
+	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
 
 		// go func(currentBlock int64) {
 
 		allMemberIps := gossipUtils.MembershipMap.Keys()
 		remainingIps := utils.CreateConcurrentStringSlice(allMemberIps)
-		startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
-
-		fmt.Printf("start index: %d length to write: %d", startIdx, lengthToWrite)
 
 		file, err := os.Open(LocalFilename)
 
@@ -76,6 +73,8 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 		}
 
 		for currentReplica := 0; currentReplica < utils.REPLICATION_FACTOR; currentReplica++ {
+			startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
+			fmt.Printf("start index: %d length to write: %d", startIdx, lengthToWrite)
 
 			for {
 				if remainingIps.Size() == 0 {
@@ -97,7 +96,6 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 					}
 					// defer conn.Close()
 					buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
-
 					blockWritingTask := utils.Task{
 						DataTargetIp:        utils.New19Byte(gossipUtils.Ip),
 						AckTargetIp:         utils.New19Byte(utils.LEADER_IP),
@@ -105,11 +103,11 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						FileName:            utils.New1024Byte(SdfsFilename),
 						OriginalFileSize:    fileSize,
 						BlockIndex:          currentBlock,
-						DataSize:            uint64(lengthToWrite),
+						DataSize:            lengthToWrite,
 						IsAck:               false,
 					}
-
-					log.Printf("Expecting size of: ", blockWritingTask.DataSize)
+					fmt.Printf("start index: %d length to write: %d\n", startIdx, lengthToWrite)
+					fmt.Printf("Expecting size of: %d\n", blockWritingTask.DataSize)
 
 					// log.Printf(string(blockWritingTask.Marshal()))
 					// log.Printf(unsafe.Sizeof(blockWritingTask.Marshal()))
@@ -126,7 +124,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 					utils.ReadSmallAck(buffConn)
 
 					file.Seek(0, int(startIdx))
-					totalBytesWritten, writeErr := utils.BufferedReadAndWrite(buffConn, file, uint64(lengthToWrite), true)
+					totalBytesWritten, writeErr := utils.BufferedReadAndWrite(buffConn, file, int64(lengthToWrite), true)
 					fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
 					fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
 
@@ -214,7 +212,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 				ConnectionOperation: utils.READ,
 				FileName:            utils.New1024Byte(sdfsFilename),
 				OriginalFileSize:    0,
-				BlockIndex:          uint64(blockIdx),
+				BlockIndex:          int64(blockIdx),
 				DataSize:            0,
 				IsAck:               false,
 			}
@@ -269,7 +267,7 @@ func InitiateDeleteCommand(sdfsFilename string) {
 
 			// Create a delete task struct, with master as ack target, and send to ip addr.
 			blockIp := mappings[i][j]
-			task.BlockIndex = uint64(i)
+			task.BlockIndex = int64(i)
 
 			conn, err := utils.OpenTCPConnection(blockIp, utils.SDFS_PORT)
 			if err != nil {
