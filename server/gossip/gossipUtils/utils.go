@@ -188,7 +188,9 @@ func GetKLeaders() []string {
 	
 	for _, key := range allKeys {
 		member, _ := MembershipMap.Get(key)
-		allMembers = append(allMembers, member)
+		if member.State != DOWN {
+			allMembers = append(allMembers, member)
+		}
 	}
 	sort.Slice(allMembers, func(i, j int) bool {
 		return allMembers[i].CreationTimestamp < allMembers[j].CreationTimestamp
