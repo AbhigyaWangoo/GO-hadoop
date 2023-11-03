@@ -160,7 +160,7 @@ func MachineType() SdfsNodeType {
 		return LEADER
 	}
 
-	for i := 0; i < len(kleaders); i++ {
+	for i := 1; i < len(kleaders); i++ {
 		if thisIp == kleaders[i] {
 			// fmt.Println("_____I AM A SUB LEADER____")
 			if ok {
@@ -182,8 +182,10 @@ func MachineType() SdfsNodeType {
 }
 
 func GetKLeaders() []string {
+	
 	allKeys := MembershipMap.Keys()
 	allMembers := make([]Member, 0)
+	
 	for _, key := range allKeys {
 		member, _ := MembershipMap.Get(key)
 		allMembers = append(allMembers, member)
