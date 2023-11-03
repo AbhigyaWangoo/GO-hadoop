@@ -77,10 +77,16 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 
 		if mapping, ok := FileToBlocks.Get(ackSourceIp); ok { // IPaddr : [[blockidx, filename]]
 			mapping = append(mapping, [2]interface{}{IncomingAck.BlockIndex, fileName})
+			fmt.Println("Appending a new file+blockidx for ip addr ", ackSourceIp)
+			fmt.Println("mapping: ", mapping)
 			FileToBlocks.Set(ackSourceIp, mapping)
 		} else {
 			initialMapping := make([][2]interface{}, 1)
 			initialMapping[0] = [2]interface{}{IncomingAck.BlockIndex, fileName}
+			
+			fmt.Println("Creating a new file+blockidx for ip addr ", ackSourceIp)
+			fmt.Println("mapping: ", initialMapping)
+
 			FileToBlocks.Set(ackSourceIp, initialMapping)
 		}
 	} else if IncomingAck.ConnectionOperation == utils.GET_2D {
@@ -96,6 +102,24 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 			if row[i] == ackSourceIp {
 				blockMap[IncomingAck.BlockIndex][i] = utils.DELETE_OP
 			}
+		}
+		
+		if mapping, ok := FileToBlocks.Get(ackSourceIp); ok { // IPaddr : [[blockidx, filename]]
+			var idx uint
+			
+			for i, pair := range mapping {
+				if pair[0] == int(IncomingAck.BlockIndex) && pair[1] == utils.BytesToString(IncomingAck.FileName[:]) {
+					idx = uint(i)
+					break
+				}
+			}
+			// TODO need to delete from IPaddr, the value [blockidx, filename]
+			
+			fmt.Println("Mapping before delete: ", mapping)
+			mapping = append(mapping[:idx], mapping[idx+1:]...)
+			fmt.Println("Mapping after delete: ", mapping)
+			
+			FileToBlocks.Set(ackSourceIp, mapping)
 		}
 	}
 
@@ -125,6 +149,8 @@ func Handle2DArrRequest(Filename string, conn net.Conn) {
 }
 
 func HandleReReplication(DownIpAddr string) {
+
+	fmt.Println("Entering re replication")
 
 	if blocksToRereplicate, ok := FileToBlocks.Get(DownIpAddr); ok {
 

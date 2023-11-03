@@ -85,6 +85,7 @@ func PruneNodeMembers() {
 					val, ok := utils.FailureHandler.Get(node.Ip)
 					machineType := utils.MachineType()
 					if (!ok || !val) && machineType == utils.LEADER {
+						utils.FailureHandler.Set(node.Ip, false)
 						sdfsleader.HandleReReplication(node.Ip) // TODO UNTESTED
 						
 						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
@@ -112,6 +113,7 @@ func PruneNodeMembers() {
 					val, ok := utils.FailureHandler.Get(node.Ip)
 					machineType := utils.MachineType()
 					if (!ok || !val ) && machineType == utils.LEADER {
+						utils.FailureHandler.Set(node.Ip, false)
 						sdfsleader.HandleReReplication(node.Ip) // TODO UNTESTED
 						
 						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
