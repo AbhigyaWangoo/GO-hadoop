@@ -46,18 +46,21 @@ func RouteToSubMasters(IncomingAck utils.Task) {
 func MachineType() gossiputils.SdfsNodeType {
 	kleaders := utils.GetKLeaders()
 	leader := utils.GetLeader()
-
 	thisIp := gossiputils.Ip
 
 	if thisIp == leader {
+		fmt.Println("_____I AM A LEADER____")
 		return gossiputils.LEADER
 	}
 
 	for i := 0; i < len(kleaders); i++ {
 		if thisIp == kleaders[i] {
+			fmt.Println("_____I AM A SUB LEADER____")
 			return gossiputils.SUB_LEADER
 		}
 	}
+
+	fmt.Println("_____I AM A FOLLOWER____")
 
 	return gossiputils.FOLLOWER
 }
