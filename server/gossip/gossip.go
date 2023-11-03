@@ -8,6 +8,7 @@ import (
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
+	sdfsleader "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
 )
 
 // Our main entry point to begin gossiping
@@ -84,7 +85,7 @@ func PruneNodeMembers() {
 					val, ok := utils.FailureHandler.Get(node.Ip)
 					machineType := utils.MachineType()
 					if (!ok || !val) && machineType == utils.LEADER {
-						// HandleNodeFailure()
+						sdfsleader.HandleReReplication(node.Ip) // TODO UNTESTED
 						
 						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
 						utils.FailureHandler.Set(node.Ip, true)
@@ -111,7 +112,7 @@ func PruneNodeMembers() {
 					val, ok := utils.FailureHandler.Get(node.Ip)
 					machineType := utils.MachineType()
 					if (!ok || !val ) && machineType == utils.LEADER {
-						// HandleNodeFailure()
+						sdfsleader.HandleReReplication(node.Ip) // TODO UNTESTED
 						
 						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
 						utils.FailureHandler.Set(node.Ip, true)
