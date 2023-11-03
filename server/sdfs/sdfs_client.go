@@ -59,7 +59,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	fmt.Println("file size:", fileSize)
 	fmt.Println("block size:", int64(utils.BLOCK_SIZE))
 	// currentBlock := int64(0)
-	for currentBlock := uint32(0); currentBlock < numberBlocks; currentBlock++ {
+	for currentBlock := uint64(0); currentBlock < numberBlocks; currentBlock++ {
 
 		// go func(currentBlock int64) {
 
@@ -104,8 +104,8 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						ConnectionOperation: utils.WRITE,
 						FileName:            utils.New1024Byte(SdfsFilename),
 						OriginalFileSize:    fileSize,
-						BlockIndex:          int(currentBlock),
-						DataSize:            uint32(lengthToWrite),
+						BlockIndex:          currentBlock,
+						DataSize:            uint64(lengthToWrite),
 						IsAck:               false,
 					}
 
@@ -124,7 +124,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 					utils.ReadSmallAck(buffConn)
 
 					file.Seek(0, int(startIdx))
-					totalBytesWritten, writeErr := utils.BufferedReadAndWrite(buffConn, file, uint32(lengthToWrite), true)
+					totalBytesWritten, writeErr := utils.BufferedReadAndWrite(buffConn, file, uint64(lengthToWrite), true)
 					fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
 					fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
 
@@ -176,7 +176,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 		ConnectionOperation: utils.GET_2D,
 		FileName:            utils.New1024Byte(sdfsFilename),
 		OriginalFileSize:    0,
-		BlockIndex:          -1,
+		BlockIndex:          0,
 		DataSize:            0,
 		IsAck:               true,
 	}
@@ -212,7 +212,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 				ConnectionOperation: utils.READ,
 				FileName:            utils.New1024Byte(sdfsFilename),
 				OriginalFileSize:    0,
-				BlockIndex:          blockIdx,
+				BlockIndex:          uint64(blockIdx),
 				DataSize:            0,
 				IsAck:               false,
 			}
@@ -267,7 +267,7 @@ func InitiateDeleteCommand(sdfsFilename string) {
 
 			// Create a delete task struct, with master as ack target, and send to ip addr.
 			blockIp := mappings[i][j]
-			task.BlockIndex = i
+			task.BlockIndex = uint64(i)
 
 			conn, err := utils.OpenTCPConnection(blockIp, utils.SDFS_PORT)
 			if err != nil {
