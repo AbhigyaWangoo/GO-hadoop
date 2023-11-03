@@ -1,9 +1,9 @@
 package sdfs
 
 import (
-	"bufio"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"strconv"
 
@@ -12,7 +12,7 @@ import (
 
 var FileSet map[string]bool
 
-func HandleStreamConnection(Task utils.Task, conn *bufio.ReadWriter) error {
+func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	// TODO for rereplication, if the src in the conn object == master, then we have to open a new connection to send data over that connection. The
 	// new conection should point to datatargetip
 
@@ -49,7 +49,14 @@ func HandleStreamConnection(Task utils.Task, conn *bufio.ReadWriter) error {
 	}
 
 	fmt.Println("Amount of data to send back: ", Task.DataSize)
-	nread, bufferedErr := utils.BufferedReadAndWrite(conn, fp, Task.DataSize, fromLocal)
+	var nread int64
+	var bufferedErr error
+	if !fromLocal { // PUT request
+		nread, bufferedErr = utils.BufferedReadFromConnection(conn, fp, Task.DataSize)
+	} else { // GET request
+		nread, bufferedErr = utils.BufferedWriteToConnection(conn, fp, Task.DataSize, 0)
+	}
+	// utils.BufferedReadAndWrite(conn, fp, Task.DataSize, fromLocal, 0)
 
 	if bufferedErr != nil {
 		fmt.Println("Error:", bufferedErr)

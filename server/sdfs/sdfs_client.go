@@ -30,8 +30,7 @@ func RequestBlockMappings(FileName string) ([][]string, error) {
 
 	conn := utils.SendAckToMaster(task)
 	defer (*conn).Close()
-	buffConn := bufio.NewReadWriter(bufio.NewReader(*conn), bufio.NewWriter(*conn))
-	locations, err := utils.UnmarshalBlockLocationArr(buffConn)
+	locations, err := utils.UnmarshalBlockLocationArr(*conn)
 
 	if err != nil {
 		return nil, err // Returning an empty array on failure case
@@ -93,8 +92,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						log.Fatalf("error opening follower connection: %v\n", err)
 						continue
 					}
-					defer conn.Close()
-					buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
+					// defer conn.Close()
 					blockWritingTask := utils.Task{
 						DataTargetIp:        utils.New19Byte(gossipUtils.Ip),
 						AckTargetIp:         utils.New19Byte(utils.LEADER_IP),
@@ -110,20 +108,20 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 
 					// log.Printf(string(blockWritingTask.Marshal()))
 					// log.Printf(unsafe.Sizeof(blockWritingTask.Marshal()))
-					marshalledBytesWritten, writeError := buffConn.Write(blockWritingTask.Marshal())
-					buffConn.Write([]byte{'\n'})
+					marshalledBytesWritten, writeError := conn.Write(blockWritingTask.Marshal())
+					conn.Write([]byte{'\n'})
 					if writeError != nil {
 						log.Fatalf("Could not write struct to connection in client put: %v\n", writeError)
 					}
-					buffConn.Flush()
+
 					// log.Println("HEYEUEEYEYE")
 					// for {
 
 					// }
-					utils.ReadSmallAck(buffConn)
+					utils.ReadSmallAck(conn)
 
-					file.Seek(0, int(startIdx))
-					totalBytesWritten, writeErr := utils.BufferedReadAndWrite(buffConn, file, lengthToWrite, true)
+					totalBytesWritten, writeErr := utils.BufferedWriteToConnection(conn, file, lengthToWrite, startIdx)
+					// utils.BufferedReadAndWrite(buffConn, file, lengthToWrite, true, startIdx)
 					fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
 					fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
 
@@ -131,7 +129,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						fmt.Println("connection broke early, rewrite block: ", writeErr)
 						continue
 					}
-					utils.ReadSmallAck(buffConn)
+					utils.ReadSmallAck(conn)
 
 					break
 				}
@@ -186,10 +184,10 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 		log.Fatalln("unable to open connection to master: ", err)
 	}
 	defer conn.Close()
-	buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
+	// buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
-	utils.SendTaskOnExistingConnection(task, buffConn)
-	blockLocationArr, BlockLocErr := utils.UnmarshalBlockLocationArr(buffConn)
+	utils.SendTaskOnExistingConnection(task, conn)
+	blockLocationArr, BlockLocErr := utils.UnmarshalBlockLocationArr(conn)
 	if BlockLocErr != nil {
 		fmt.Printf("File probably dne on get command. returning.")
 		return
@@ -221,21 +219,21 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 				continue
 			}
 			defer replicaConn.Close()
-			replicaConnBuf := bufio.NewReadWriter(bufio.NewReader(replicaConn), bufio.NewWriter(replicaConn))
-			err = utils.SendTaskOnExistingConnection(task, replicaConnBuf)
+			err = utils.SendTaskOnExistingConnection(task, replicaConn)
 			if err != nil {
 				log.Printf("unable to send task to replica, ", err)
 				continue
 			}
 
-			utils.ReadSmallAck(replicaConnBuf)
+			utils.ReadSmallAck(replicaConn)
 			log.Printf("Unmarshaling task\n")
 
-			blockMetadata, _ := utils.Unmarshal(replicaConnBuf)
-			utils.SendSmallAck(replicaConnBuf)
+			blockMetadata, _ := utils.Unmarshal(replicaConn)
+			utils.SendSmallAck(replicaConn)
 
 			log.Printf("Number of bytes to read from connection: ", blockMetadata.DataSize)
-			utils.BufferedReadAndWrite(replicaConnBuf, fp, blockMetadata.DataSize, false)
+			utils.BufferedReadFromConnection(replicaConn, fp, blockMetadata.DataSize)
+			// utils.BufferedReadAndWrite(replicaConnBuf, fp, blockMetadata.DataSize, false, 0)
 			break
 		}
 	}

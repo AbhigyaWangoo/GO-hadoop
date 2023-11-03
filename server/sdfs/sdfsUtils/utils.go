@@ -132,87 +132,123 @@ func GetFilePtr(sdfs_filename string, blockidx string, flags int) (string, int, 
 	return filePath, int(fileSize), file, err
 }
 
+func BufferedWriteToConnection(conn net.Conn, fp *os.File, size, startIdx int64) (int64, error) {
+	// Seek to the starting index in the source file
+	_, err := fp.Seek(startIdx, io.SeekStart)
+	if err != nil {
+		panic(err)
+	}
+
+	// Create a LimitedReader to copy a specific number of bytes
+	limitedReader := &io.LimitedReader{
+		R: fp,
+		N: size,
+	}
+
+	// Use io.CopyN to copy the specified number of bytes to the connection
+	n, err := io.CopyN(bufio.NewWriter(conn), limitedReader, size)
+	if err != nil {
+		panic(err)
+	}
+	return n, err
+}
+
+func BufferedReadFromConnection(conn net.Conn, fp *os.File, size int64) (int64, error) {
+	n, err := io.Copy(fp, bufio.NewReader(conn))
+	if err != nil {
+		panic(err)
+	}
+
+	if n < size {
+		log.Printf("didn't read enough data from connection")
+	}
+	return n, err
+}
+
 // This function will buffered read from (a connection if fromLocal is false, the filepointer if fromLocal is true), and
 // buffered write to (a connection if fromLocal is true, the filepointer if fromLocal is false)
-func BufferedReadAndWrite(conn *bufio.ReadWriter, fp *os.File, size int64, fromLocal bool) (int64, error) {
-	// connTCP, ok := conn.(*net.TCPConn)
-	// if ok {
-	// 	connTCP.SetLinger(0) // Set Linger option to flush data immediately
-	// }
-	var total_bytes_processed int64 = 0
-	var w *bufio.Writer
-	var r *bufio.Reader
-	var bufferSize int64
+// func BufferedReadAndWrite(conn net.Conn, fp *os.File, size int64, fromLocal bool, startIndex int64) (int64, error) {
+// 	// connTCP, ok := conn.(*net.TCPConn)
+// 	// if ok {
+// 	// 	connTCP.SetLinger(0) // Set Linger option to flush data immediately
+// 	// }
+// 	var total_bytes_processed int64 = 0
+// 	var w io.Writer
+// 	var r io.Reader
+// 	var bufferSize int64
 
-	if fromLocal {
-		w = conn.Writer
-		r = bufio.NewReader(fp)
-		bufferSize = size * 3 / 4
-	} else {
-		w = bufio.NewWriter(fp)
-		r = conn.Reader
-		bufferSize = int64(5 * KB)
-	}
+// 	if fromLocal {
+// 		w = io.Writer(conn)
+// 		r = io.Reader(fp)
 
-	dataBuffer := make([]byte, bufferSize)
+// 		_, err := r.Seek(startIndex, 0)
+// 		io.ReadSeeker(r)
+// 		bufferSize = size * 3 / 4
+// 	} else {
+// 		w = bufio.NewWriter(fp)
+// 		r = io.ReadSeeker(conn)
+// 		bufferSize = int64(5 * KB)
+// 	}
 
-	fmt.Println("Entering buffered readwrite. buffer size: ", bufferSize)
-	fp.Sync()
-	for {
-		// fmt.Println("TRYING TO READ")
-		if total_bytes_processed == size {
-			fmt.Println("Read all bytes")
-			break
-		}
+// 	dataBuffer := make([]byte, bufferSize)
 
-		var nRead int = 0
-		var readErr error = nil
+// 	fmt.Println("Entering buffered readwrite. buffer size: ", bufferSize)
+// 	fp.Sync()
+// 	for {
+// 		// fmt.Println("TRYING TO READ")
+// 		if total_bytes_processed == size {
+// 			fmt.Println("Read all bytes")
+// 			break
+// 		}
 
-		nRead, readErr = r.Read(dataBuffer)
+// 		var nRead int = 0
+// 		var readErr error = nil
 
-		if nRead == 0 && total_bytes_processed == size {
-			fmt.Println("Read no bytes")
-			break
-		}
+// 		nRead, readErr = r.Read(dataBuffer)
 
-		if readErr != nil {
-			if readErr == io.EOF {
-				if total_bytes_processed < size {
-					fmt.Println("bytes processed with EOF: ", total_bytes_processed)
-					return total_bytes_processed, io.ErrUnexpectedEOF
-				}
-				break // Connection closed by the other end
-			}
-			return total_bytes_processed, readErr // Error while reading data
-		}
+// 		if nRead == 0 && total_bytes_processed == size {
+// 			fmt.Println("Read no bytes")
+// 			break
+// 		}
 
-		var nWritten int = 0
-		var writeErr error = nil
+// 		if readErr != nil {
+// 			if readErr == io.EOF {
+// 				if total_bytes_processed < size {
+// 					fmt.Println("bytes processed with EOF: ", total_bytes_processed)
+// 					return total_bytes_processed, io.ErrUnexpectedEOF
+// 				}
+// 				break // Connection closed by the other end
+// 			}
+// 			return total_bytes_processed, readErr // Error while reading data
+// 		}
 
-		for curbyte := 0; curbyte < nRead; curbyte++ {
-			writeErr = w.WriteByte(dataBuffer[curbyte])
-			nWritten++
-		}
+// 		var nWritten int = 0
+// 		var writeErr error = nil
 
-		w.Flush()
+// 		for curbyte := 0; curbyte < nRead; curbyte++ {
+// 			writeErr = w.WriteByte(dataBuffer[curbyte])
+// 			nWritten++
+// 		}
 
-		if nWritten < nRead {
-			return total_bytes_processed, io.ErrShortWrite
-		} else if nWritten > nRead || writeErr != nil {
-			return total_bytes_processed, writeErr
-		}
+// 		w.Flush()
 
-		if int64(nWritten) != bufferSize {
-			fmt.Println("wrote not buffer size: ", nRead)
-		}
+// 		if nWritten < nRead {
+// 			return total_bytes_processed, io.ErrShortWrite
+// 		} else if nWritten > nRead || writeErr != nil {
+// 			return total_bytes_processed, writeErr
+// 		}
 
-		total_bytes_processed += int64(nWritten)
-	}
-	fp.Sync()
-	log.Println("Processed x bytes: ", total_bytes_processed)
+// 		if int64(nWritten) != bufferSize {
+// 			fmt.Println("wrote not buffer size: ", nRead)
+// 		}
 
-	return total_bytes_processed, nil
-}
+// 		total_bytes_processed += int64(nWritten)
+// 	}
+// 	fp.Sync()
+// 	log.Println("Processed x bytes: ", total_bytes_processed)
+
+// 	return total_bytes_processed, nil
+// }
 
 func SendTask(task Task, ipAddr string, ack bool) (*net.Conn, error) {
 	conn, tcpOpenError := OpenTCPConnection(ipAddr, SDFS_PORT)
@@ -238,7 +274,7 @@ func SendTask(task Task, ipAddr string, ack bool) (*net.Conn, error) {
 	return &conn, nil
 }
 
-func SendTaskOnExistingConnection(task Task, conn *bufio.ReadWriter) error {
+func SendTaskOnExistingConnection(task Task, conn net.Conn) error {
 	arr := task.Marshal()
 	bytes_written, err := conn.Write(arr)
 	if err != nil {
@@ -247,7 +283,6 @@ func SendTaskOnExistingConnection(task Task, conn *bufio.ReadWriter) error {
 		return io.ErrShortWrite
 	}
 	conn.Write([]byte{'\n'})
-	conn.Flush()
 
 	return nil
 }
@@ -352,11 +387,13 @@ func (task Task) Marshal() []byte {
 	return marshaledTask
 }
 
-func Unmarshal(conn *bufio.ReadWriter) (*Task, int64) {
+func Unmarshal(conn net.Conn) (*Task, int64) {
 	var task Task
 
+	buffConn := bufio.NewReader(conn)
+
 	// Read from the connection until a newline is encountered
-	data, err := conn.ReadBytes('\n')
+	data, err := buffConn.ReadBytes('\n')
 	if err != nil {
 		log.Fatalf("Error reading from connection: %v\n", err)
 	}
@@ -379,7 +416,7 @@ func MarshalBlockLocationArr(array [][]string) []byte {
 	return jsonData
 }
 
-func UnmarshalBlockLocationArr(conn *bufio.ReadWriter) ([][]string, error) {
+func UnmarshalBlockLocationArr(conn net.Conn) ([][]string, error) {
 	var locations [][]string
 
 	decoder := json.NewDecoder(conn)
@@ -393,15 +430,14 @@ func UnmarshalBlockLocationArr(conn *bufio.ReadWriter) ([][]string, error) {
 	return locations, nil
 }
 
-func SendSmallAck(conn *bufio.ReadWriter) {
+func SendSmallAck(conn net.Conn) {
 	_, err := conn.Write([]byte("A"))
 	if err != nil {
 		log.Fatalln("err: ", err)
 	}
-	conn.Flush()
 }
 
-func ReadSmallAck(conn *bufio.ReadWriter) {
+func ReadSmallAck(conn net.Conn) {
 	buffer := make([]byte, 1)
 	for {
 		n, err := conn.Read(buffer)
