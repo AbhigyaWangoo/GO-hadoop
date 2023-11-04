@@ -363,10 +363,10 @@ func InitiateMultiRead(fileName string, ipsToInitiate []string) {
 			IsAck:               false,
 		}
 
-		conn, err := utils.SendTask(task, ip, false)
+		_, err := utils.SendTask(task, ip, false)
 		if err != nil {
 			log.Printf("Failed to send task on multiread with error: ", err)
 		}
-		defer (*conn).Close()
+		// defer (*conn).Close()
 	}
 }

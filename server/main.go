@@ -107,7 +107,7 @@ func RunCLI() {
 				part = strings.TrimSpace(part)
 				parts[i] = part
 			}
-			sdfs_client.InitiateMultiRead(parts[0], parts[1:])
+			sdfs_client.InitiateMultiRead(parts[1], parts[2:])
 
 		} else {
 			error_msg := `
