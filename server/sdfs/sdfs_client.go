@@ -319,7 +319,7 @@ func InitiateLsCommand(sdfs_filename string) {
 func InitiateStoreCommand() {
 	// utils.FILESYSTEM_ROOT
 	items, _ := ioutil.ReadDir(utils.FILESYSTEM_ROOT)
-	for _, item := range items { 
+	for _, item := range items {
 		if !item.IsDir() {
 			fmt.Println(item.Name())
 		}
@@ -344,4 +344,25 @@ func PopRandomElementInArray(array *[]string) (string, error) {
 	return randomElement, nil
 
 	// [randomIndex], append(array[:randomIndex], array[randomIndex+1:]...)
+}
+
+func InitiateMultiRead(fileName string, ipsToInitiate []string) {
+	for _, ip := range ipsToInitiate {
+		task := utils.Task{
+			DataTargetIp:        utils.New19Byte(""),
+			AckTargetIp:         utils.New19Byte(""),
+			ConnectionOperation: utils.FOCE_GET, // READ, WRITE, GET_2D, OR DELETE from sdfs utils
+			FileName:            utils.New1024Byte(fileName),
+			OriginalFileSize:    0,
+			BlockIndex:          0,
+			DataSize:            0,
+			IsAck:               false,
+		}
+
+		conn, err := utils.SendTask(task, ip, false)
+		if err != nil {
+			log.Printf("Failed to send task on multiread with error: ", err)
+		}
+		defer (*conn).Close()
+	}
 }

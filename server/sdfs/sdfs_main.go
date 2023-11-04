@@ -40,7 +40,7 @@ func HandleConnection(conn net.Conn) {
 
 	// Decode the FollowerTask instance
 	task, _ := utils.Unmarshal(conn)
-	// defer conn.Close()
+	defer conn.Close()
 
 	// if task.isack && we're a master node, spawn a seperate master.handleAck
 	if task.IsAck {
@@ -65,6 +65,9 @@ func HandleConnection(conn net.Conn) {
 		HandleDeleteConnection(*task)
 	} else if task.ConnectionOperation == utils.WRITE || task.ConnectionOperation == utils.READ {
 		HandleStreamConnection(*task, conn)
+	} else if task.ConnectionOperation == utils.FOCE_GET {
+		fileName := utils.BytesToString(task.FileName[:])
+		InitiateGetCommand(fileName, fileName)
 	} else {
 		// fmt.Printf("Error: inbound task from ip %s has no specific type", )
 	}
