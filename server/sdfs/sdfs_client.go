@@ -210,7 +210,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 				continue
 			}
 			task := utils.Task{
-				DataTargetIp:        utils.New19Byte(gossipUtils.Ip),
+				DataTargetIp:        utils.New19Byte(randomReplicaIp),
 				AckTargetIp:         utils.New19Byte(gossipUtils.Ip),
 				ConnectionOperation: utils.READ,
 				FileName:            utils.New1024Byte(sdfsFilename),
