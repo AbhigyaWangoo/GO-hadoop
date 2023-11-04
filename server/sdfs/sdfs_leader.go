@@ -59,8 +59,6 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		fmt.Println("Got ack for write, filename is ", fileName)
 		fmt.Println("Got ack for write, File size is ", IncomingAck.OriginalFileSize)
 
-		// RouteToSubMasters(IncomingAck)
-
 		if !BlockLocations.Has(fileName) {
 			fmt.Println("Never seen before filename, creating block locations entry")
 			InitializeBlockLocationsEntry(fileName, IncomingAck.OriginalFileSize)

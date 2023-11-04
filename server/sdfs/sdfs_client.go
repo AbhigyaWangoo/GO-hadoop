@@ -245,6 +245,51 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 	}
 }
 
+func PutBlock(sdfsFilename string, blockIdx int64, ipDst string) {
+	_, fileSize, fp, err := utils.GetFilePtr(sdfsFilename, fmt.Sprint(blockIdx), os.O_RDONLY)
+
+	blockWritingTask := utils.Task{
+		DataTargetIp:        utils.New19Byte(ipDst),
+		AckTargetIp:         utils.New19Byte(utils.LEADER_IP),
+		ConnectionOperation: utils.WRITE,
+		FileName:            utils.New1024Byte(sdfsFilename),
+		OriginalFileSize:    int64(fileSize),
+		BlockIndex:          blockIdx,
+		DataSize:            int64(fileSize),
+		IsAck:               false,
+	}
+
+	member, ok := gossipUtils.MembershipMap.Get(ipDst)
+	if ipDst == gossipUtils.Ip || !ok || member.State == gossipUtils.DOWN {
+		return
+	}
+
+	conn, err := utils.OpenTCPConnection(ipDst, utils.SDFS_PORT)
+	if err != nil {
+		fmt.Printf("error opening follower connection: %v\n", err)
+		return
+	}
+
+	marshalledBytesWritten, writeError := conn.Write(blockWritingTask.Marshal())
+	conn.Write([]byte{'\n'})
+	if writeError != nil {
+		fmt.Printf("Could not write struct to connection in client put: %v\n", writeError)
+	}
+
+	utils.ReadSmallAck(conn)
+
+	startIdx := blockIdx * utils.BLOCK_SIZE
+	totalBytesWritten, writeErr := utils.BufferedWriteToConnection(conn, fp, int64(fileSize), startIdx)
+	fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
+	fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
+
+	if writeErr != nil { // If failure to write full block, redo loop
+		fmt.Println("connection broke early, rewrite block: ", writeErr)
+		return
+	}
+	utils.ReadSmallAck(conn)
+}
+
 func InitiateDeleteCommand(sdfsFilename string) {
 	fmt.Printf("sdfs: %s\n", sdfsFilename)
 	// IF CONNECTION CLOSES WHILE READING, its all good. We can assume memory was wiped
