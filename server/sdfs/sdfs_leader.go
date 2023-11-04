@@ -113,7 +113,7 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 					break
 				}
 			}
-			// TODO need to delete from IPaddr, the value [blockidx, filename]
+			// TODO need to delete from IPaddr, the value [blockidx, filename].
 
 			fmt.Println("Mapping before delete: ", mapping)
 			mapping = append(mapping[:idx], mapping[idx+1:]...)
@@ -137,6 +137,26 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 func Handle2DArrRequest(Filename string, conn net.Conn) {
 	// Reply to a connection with the 2d array for the provided filename.
 	arr, exists := BlockLocations.Get(Filename)
+	allDs := true
+	for i := 0; i < len(arr); i++ {
+		for j := 0; j < len(arr[i]); j++ {
+			if arr[i][j] != utils.DELETE_OP {
+				allDs = false
+				break
+			}
+		}
+		if !allDs {
+			break
+		}
+	}
+
+	if allDs {
+		BlockLocations.Remove(Filename)
+		fmt.Println("Block location filename dne. Continuing")
+		var empty [][]string
+		arr = empty
+	}
+
 	if !exists {
 		fmt.Println("Block location filename dne. Continuing")
 	}
