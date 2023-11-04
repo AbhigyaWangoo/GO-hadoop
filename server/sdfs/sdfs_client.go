@@ -284,6 +284,7 @@ func PutBlock(sdfsFilename string, blockIdx int64, ipDst string) {
 	}
 
 	utils.ReadSmallAck(conn)
+	fmt.Println("Read small ack in put block")
 
 	startIdx := blockIdx * utils.BLOCK_SIZE
 	totalBytesWritten, writeErr := utils.BufferedWriteToConnection(conn, fp, int64(fileSize), startIdx)
@@ -295,6 +296,7 @@ func PutBlock(sdfsFilename string, blockIdx int64, ipDst string) {
 		return
 	}
 	utils.ReadSmallAck(conn)
+	fmt.Println("Read another small ack in put block")
 }
 
 func InitiateDeleteCommand(sdfsFilename string) {
