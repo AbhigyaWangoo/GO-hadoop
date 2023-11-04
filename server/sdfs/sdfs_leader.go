@@ -251,6 +251,7 @@ func HandleReReplication(DownIpAddr string) {
 								log.Printf("unable to send task on existing connection: ", err)
 								continue
 							}
+							break
 						}
 					}
 				}
