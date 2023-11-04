@@ -35,7 +35,7 @@ func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
 
 // Master functions
 func RouteToSubMasters(IncomingAck utils.Task) {
-	// Route an incoming ack that makes a change to the membership list to the submasters.(Bully git issue)
+	// Route an incoming ack that makes a change to the membership list to the submasters.(Bully git issue) put test/500mb.txt 500
 	kLeaders := gossiputils.GetKLeaders()
 	for _, leader := range kLeaders {
 		if leader != gossiputils.Ip {

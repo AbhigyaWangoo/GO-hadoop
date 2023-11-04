@@ -13,6 +13,9 @@ import (
 
 var FileSet map[string]bool
 
+// var nWritingThreads uint
+// var nReadingThreads uint
+
 func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	// TODO for rereplication, if the src in the conn object == master, then we have to open a new connection to send data over that connection. The
 	// new conection should point to datatargetip
@@ -60,7 +63,6 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	var bufferedErr error
 	if !fromLocal { // PUT request
 		nread, bufferedErr = utils.BufferedReadFromConnection(conn, fp, Task.DataSize)
-		log.Printf("HELLOOO")
 	} else { // GET request
 		nread, bufferedErr = utils.BufferedWriteToConnection(conn, fp, Task.DataSize, 0)
 	}
