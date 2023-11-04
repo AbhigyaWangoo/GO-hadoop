@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"time"
 
 	gossipUtils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -43,6 +44,7 @@ func RequestBlockMappings(FileName string) ([][]string, error) {
 
 func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	fmt.Printf("localfilename: %s sdfs: %s\n", LocalFilename, SdfsFilename)
+	start := time.Now() // Record the start time
 
 	// IF CONNECTION CLOSES WHILE WRITING, WE NEED TO REPICK AN IP ADDR. Can have a seperate function to handle this on failure cases.
 	// Ask master when its ok to start writing
@@ -140,6 +142,9 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 		file.Close()
 		// } (currentBlock)
 	}
+	elapsed := time.Since(start) // Calculate the elapsed time
+
+	fmt.Println("INIT PUT COMMAND TOOK :", elapsed.Seconds())
 
 	// 2. For i = 0; i < num_blocks; i ++
 	// 		2.a. Construct a List of FollowerTasks, with the ack target as the master and DataTargetIp as empty
@@ -147,7 +152,6 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	// 		2.c. buffered read localfilename[i:i+block_size] (4kb at a time should work, check utils for KB variable)
 	// 		2.d. IN BUFFERED READ FUNCTION -> for ip in 2darr[i]:
 	// 				2.d.a. Spawn a thread to write current read block to ip with connections previously opened
-	//
 
 }
 
