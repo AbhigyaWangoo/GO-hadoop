@@ -59,7 +59,7 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		fmt.Println("Got ack for write, filename is ", fileName)
 		fmt.Println("Got ack for write, File size is ", IncomingAck.OriginalFileSize)
 
-		// RouteToSubMasters(IncomingAck)
+		RouteToSubMasters(IncomingAck)
 
 		if !BlockLocations.Has(fileName) {
 			fmt.Println("Never seen before filename, creating block locations entry")
@@ -96,6 +96,8 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 			return errors.New("Never seen before filename, dropping delete operation")
 		}
 
+		RouteToSubMasters(IncomingAck)
+
 		blockMap, _ := BlockLocations.Get(fileName)
 		row := blockMap[IncomingAck.BlockIndex]
 		for i := int64(0); i < utils.REPLICATION_FACTOR; i++ {
@@ -103,7 +105,8 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 				blockMap[IncomingAck.BlockIndex][i] = utils.DELETE_OP
 			}
 		}
-
+		
+		// delete from IPaddr, the value [blockidx, filename]
 		if mapping, ok := FileToBlocks.Get(ackSourceIp); ok { // IPaddr : [[blockidx, filename]]
 			var idx uint
 
@@ -113,12 +116,8 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 					break
 				}
 			}
-			// TODO need to delete from IPaddr, the value [blockidx, filename]
-
-			fmt.Println("Mapping before delete: ", mapping)
+			
 			mapping = append(mapping[:idx], mapping[idx+1:]...)
-			fmt.Println("Mapping after delete: ", mapping)
-
 			FileToBlocks.Set(ackSourceIp, mapping)
 		}
 	}
