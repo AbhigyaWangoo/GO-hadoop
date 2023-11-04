@@ -47,17 +47,13 @@ func HandleConnection(conn net.Conn) {
 		fmt.Println("Recieved new ack connection!")
 		machineType := gossiputils.MachineType()
 
-		if machineType == gossiputils.LEADER {
+		if machineType == gossiputils.LEADER  && task.ConnectionOperation != utils.GET_2D {
 			fmt.Printf("Recieved ack for %s at master\n", utils.BytesToString(task.FileName[:]))
-
+			
 			RouteToSubMasters(*task)
 		} else if machineType == gossiputils.SUB_LEADER {
 			fmt.Printf("Recieved ack for %s at SUBmaster\n", utils.BytesToString(task.FileName[:]))
 		}
-
-		// reader := bufio.NewReader(conn)
-		// writer := bufio.NewWriter(conn)
-		// rw := bufio.NewReadWriter(reader, writer)
 
 		HandleAck(*task, &conn)
 
