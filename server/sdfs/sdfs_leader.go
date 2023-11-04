@@ -36,10 +36,12 @@ func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
 // Master functions
 func RouteToSubMasters(IncomingAck utils.Task) {
 	// Route an incoming ack that makes a change to the membership list to the submasters.(Bully git issue)
-	kLeaders := gossiputils.GetKLeaders()
-	for _, leader := range kLeaders {
-		if leader != gossiputils.Ip {
-			utils.SendTask(IncomingAck, leader, true)
+	if gossiputils.MachineType() == gossiputils.LEADER {
+		kLeaders := gossiputils.GetKLeaders()
+		for _, leader := range kLeaders {
+			if leader != gossiputils.Ip {
+				utils.SendTask(IncomingAck, leader, true)
+			}
 		}
 	}
 }
@@ -75,7 +77,17 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		}
 		BlockLocations.Set(fileName, blockMap)
 
-		if mapping, ok := FileToBlocks.Get(ackSourceIp); ok { // IPaddr : [[blockidx, filename]]
+		mapping, ok := FileToBlocks.Get(ackSourceIp)
+		if ok { // IPaddr : [[blockidx, filename]]
+			
+			// TODO safety check and see if it already exists or not. If it does, don't re-add to list
+			for _, pair := range mapping {
+				if pair[0] == IncomingAck.BlockIndex && pair[1] == fileName {
+					fmt.Println("Recieved a duplicate write ack. Ignoring.")
+					return nil
+				}
+			}
+
 			mapping = append(mapping, [2]interface{}{IncomingAck.BlockIndex, fileName})
 			fmt.Println("Appending a new file+blockidx for ip addr ", ackSourceIp)
 			fmt.Println("mapping: ", mapping)
