@@ -246,7 +246,12 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 }
 
 func PutBlock(sdfsFilename string, blockIdx int64, ipDst string) {
+	fmt.Println("Entering put block")
+	
 	_, fileSize, fp, err := utils.GetFilePtr(sdfsFilename, fmt.Sprint(blockIdx), os.O_RDONLY)
+	if err != nil {
+		fmt.Println("Couldn't get file pointer", err)
+	}
 
 	blockWritingTask := utils.Task{
 		DataTargetIp:        utils.New19Byte(ipDst),
@@ -263,12 +268,14 @@ func PutBlock(sdfsFilename string, blockIdx int64, ipDst string) {
 	if ipDst == gossipUtils.Ip || !ok || member.State == gossipUtils.DOWN {
 		return
 	}
+	fmt.Println("Got member from ip target")
 
 	conn, err := utils.OpenTCPConnection(ipDst, utils.SDFS_PORT)
 	if err != nil {
 		fmt.Printf("error opening follower connection: %v\n", err)
 		return
 	}
+	fmt.Println("Opened connection to replication target")
 
 	marshalledBytesWritten, writeError := conn.Write(blockWritingTask.Marshal())
 	conn.Write([]byte{'\n'})
