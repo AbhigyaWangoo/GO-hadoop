@@ -129,7 +129,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 }
 
 func PutBlock(sdfsFilename string, blockIdx int64, ipDst string) {
-	_, fileSize, fp, err := utils.GetFilePtr(sdfsFilename, string(blockIdx), os.O_RDONLY)
+	_, fileSize, fp, err := utils.GetFilePtr(sdfsFilename, fmt.Sprint(blockIdx), os.O_RDONLY)
 
 	blockWritingTask := utils.Task{
 		DataTargetIp:        utils.New19Byte(ipDst),
