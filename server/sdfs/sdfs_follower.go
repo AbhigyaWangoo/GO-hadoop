@@ -29,7 +29,8 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	var flags int
 
 	if TargetIp != gossiputils.Ip {
-		fmt.Println("Recived replication request. Exiting for now.")
+		fmt.Println("Recived replication request. Attempting to put specified block to target ip.")
+		PutBlock(FileName, Task.BlockIndex, TargetIp)
 		return nil
 	}
 
