@@ -45,7 +45,7 @@ const MB = int64(KB * 1024)
 const SDFS_PORT = "3456"
 const SDFS_ACK_PORT = "9682"
 const FILESYSTEM_ROOT = "server/sdfs/sdfsFileSystemRoot/"
-const BLOCK_SIZE = int64(5 * MB)
+const BLOCK_SIZE = int64(20 * MB)
 const REPLICATION_FACTOR = int64(4)
 
 var MuLocalFs sync.Mutex
@@ -158,7 +158,7 @@ func BufferedWriteToConnection(conn net.Conn, fp *os.File, size, startIdx int64)
 	// Seek to the starting index in the source file
 	_, err := fp.Seek(startIdx, io.SeekStart)
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
 
 	// Create a LimitedReader to copy a specific number of bytes
@@ -170,7 +170,7 @@ func BufferedWriteToConnection(conn net.Conn, fp *os.File, size, startIdx int64)
 	// Use io.CopyN to copy the specified number of bytes to the connection
 	n, err := io.CopyN(bufio.NewWriter(conn), limitedReader, size)
 	if err != nil {
-		panic(err)
+		fmt.Println("Error in buffered write to connection:", err)
 	}
 	return n, err
 }
