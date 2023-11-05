@@ -18,11 +18,11 @@ type BlockOperation int
 
 // Potentially use send, receive, write, delete types instead types instead
 const (
-	READ   BlockOperation = 0
-	WRITE  BlockOperation = 1
-	DELETE BlockOperation = 2
-	GET_2D BlockOperation = 3
-	FOCE_GET BlockOperation = 4
+	READ      BlockOperation = 0
+	WRITE     BlockOperation = 1
+	DELETE    BlockOperation = 2
+	GET_2D    BlockOperation = 3
+	FORCE_GET BlockOperation = 4
 )
 
 const (

@@ -2,7 +2,9 @@ package sdfs
 
 import (
 	"fmt"
+	"log"
 	"net"
+	"time"
 
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
@@ -47,9 +49,9 @@ func HandleConnection(conn net.Conn) {
 		fmt.Println("Recieved new ack connection!")
 		machineType := gossiputils.MachineType()
 
-		if machineType == gossiputils.LEADER  && task.ConnectionOperation != utils.GET_2D {
+		if machineType == gossiputils.LEADER && task.ConnectionOperation != utils.GET_2D {
 			fmt.Printf("Recieved ack for %s at master\n", utils.BytesToString(task.FileName[:]))
-			
+
 			RouteToSubMasters(*task)
 		} else if machineType == gossiputils.SUB_LEADER {
 			fmt.Printf("Recieved ack for %s at SUBmaster\n", utils.BytesToString(task.FileName[:]))
@@ -61,9 +63,12 @@ func HandleConnection(conn net.Conn) {
 		HandleDeleteConnection(*task)
 	} else if task.ConnectionOperation == utils.WRITE || task.ConnectionOperation == utils.READ {
 		HandleStreamConnection(*task, conn)
-	} else if task.ConnectionOperation == utils.FOCE_GET {
+	} else if task.ConnectionOperation == utils.FORCE_GET {
+		startTime := time.Now()
 		fileName := utils.BytesToString(task.FileName[:])
 		InitiateGetCommand(fileName, fileName)
+		elapsedTime := time.Since(startTime)
+		log.Printf("Force GET completed in: %s", elapsedTime)
 	} else {
 		// fmt.Printf("Error: inbound task from ip %s has no specific type", )
 	}

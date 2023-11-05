@@ -355,7 +355,7 @@ func InitiateMultiRead(fileName string, ipsToInitiate []string) {
 		task := utils.Task{
 			DataTargetIp:        utils.New19Byte(""),
 			AckTargetIp:         utils.New19Byte(""),
-			ConnectionOperation: utils.FOCE_GET, // READ, WRITE, GET_2D, OR DELETE from sdfs utils
+			ConnectionOperation: utils.FORCE_GET, // READ, WRITE, GET_2D, OR DELETE from sdfs utils
 			FileName:            utils.New1024Byte(fileName),
 			OriginalFileSize:    0,
 			BlockIndex:          0,
