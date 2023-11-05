@@ -179,59 +179,15 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	elapsed := time.Since(start) // Calculate the elapsed time
 
 	fmt.Println("INIT PUT COMMAND TOOK :", elapsed.Seconds())
-
-	// 2. For i = 0; i < num_blocks; i ++
-	// 		2.a. Construct a List of FollowerTasks, with the ack target as the master and DataTargetIp as empty
-	// 		2.b. Open Connections to all ips in 2darr[i], and write tasks to all ips.
-	// 		2.c. buffered read localfilename[i:i+block_size] (4kb at a time should work, check utils for KB variable)
-	// 		2.d. IN BUFFERED READ FUNCTION -> for ip in 2darr[i]:
-	// 				2.d.a. Spawn a thread to write current read block to ip with connections previously opened
-
 }
 
 func InitiateGetCommand(sdfsFilename string, localfilename string, blockLocationArr [][]string) {
 	fmt.Printf("localfilename: %s sdfs: %s\n", localfilename, sdfsFilename)
 
-	// IF CONNECTION CLOSES WHILE READING, WE NEED TO REPICK AN IP ADDR TO READ FROM. Can have a seperate function to handle this on failure cases.
-
-	// 1. Query master for 2d array of ip addresses (2darr)
-	// 2. For i = 0; i < num_blocks; i ++
-	// 		### at the beginning of every loop, need to fseek(i*block_size) ###
-	// 		2.a. Randomly pick IP addresses from 2darr[i] until you can open a connection to one successfully. If impossible, re-request 2d array.
-	// 		2.b. Construct a FollowerTask with the operation=READ, blockidx=i, filename=sdfs_filename, acktarget=master, datatarget="" (IMPORTANT, IF DATATARGET IS EMPTY, IT MEANS JUST SEND DATA BACK ON THE SAME CONNECTION)
-	// 		2.c. buffered read from connection (4kb at a time should work, check utils for KB variable)
-	// 		2.d. IN BUFFERED READ FUNCTION -> write buffered array to localfilename.
-
 	fp, err := os.OpenFile(localfilename, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalln("unable to open local file, ", err)
 	}
-
-	// task := utils.Task{
-	// 	DataTargetIp:        utils.New19Byte("-1"),
-	// 	AckTargetIp:         utils.New19Byte("-1"),
-	// 	ConnectionOperation: utils.GET_2D,
-	// 	FileName:            utils.New1024Byte(sdfsFilename),
-	// 	OriginalFileSize:    0,
-	// 	BlockIndex:          0,
-	// 	DataSize:            0,
-	// 	IsAck:               true,
-	// }
-
-	// leaderIp := gossiputils.GetLeader()
-	// conn, err := utils.OpenTCPConnection(leaderIp, utils.SDFS_PORT)
-	// if err != nil {
-	// 	log.Fatalln("unable to open connection to master: ", err)
-	// }
-	// defer conn.Close()
-	// // buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
-
-	// utils.SendTaskOnExistingConnection(task, conn)
-	// blockLocationArr, BlockLocErr := utils.UnmarshalBlockLocationArr(conn)
-	// if BlockLocErr != nil {
-	// 	fmt.Printf("File probably dne on get command. returning.")
-	// 	return
-	// }
 
 	fmt.Println("Unmarshalled block location arr: ", blockLocationArr)
 	for blockIdx, replicas := range blockLocationArr {
@@ -279,7 +235,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string, blockLocation
 	}
 }
 
-func PutBlock(sdfsFilename string, blockIdx int64, ipDst string) {
+func PutBlock(sdfsFilename string, blockIdx int64, ipDst string, OriginalFileSize int64) {
 	fmt.Println("Entering put block")
 	_, fileSize, fp, err := utils.GetFilePtr(sdfsFilename, fmt.Sprint(blockIdx), os.O_RDONLY)
 	if err != nil {
@@ -291,7 +247,7 @@ func PutBlock(sdfsFilename string, blockIdx int64, ipDst string) {
 		AckTargetIp:         utils.New19Byte(utils.LEADER_IP),
 		ConnectionOperation: utils.WRITE,
 		FileName:            utils.New1024Byte(sdfsFilename),
-		OriginalFileSize:    int64(fileSize),
+		OriginalFileSize:    OriginalFileSize,
 		BlockIndex:          blockIdx,
 		DataSize:            int64(fileSize),
 		IsAck:               false,

@@ -14,6 +14,7 @@ import (
 var BlockLocations cmap.ConcurrentMap[string, [][]string] = cmap.New[[][]string]()           // filename : [[ip addr, ip addr, ], ], index 2d arr by block index
 var FileToOriginator cmap.ConcurrentMap[string, []string] = cmap.New[[]string]()             // filename : [ClientIpWhoCreatedFile, ClientCreationTime]
 var FileToBlocks cmap.ConcurrentMap[string, [][2]interface{}] = cmap.New[[][2]interface{}]() // IPaddr : [[blockidx, filename]]
+var FileToSize cmap.ConcurrentMap[string, int64] // sdfsfilename : size
 
 // Initializes a new entry in BlockLocations, so the leader can begin listening for block acks.
 func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
@@ -59,12 +60,18 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		fmt.Println("Got ack for write, filename is ", fileName)
 		fmt.Println("Got ack for write, File size is ", IncomingAck.OriginalFileSize)
 
+		FileToSize.Set(fileName, IncomingAck.OriginalFileSize)
+
 		if !BlockLocations.Has(fileName) {
 			fmt.Println("Never seen before filename, creating block locations entry")
 			InitializeBlockLocationsEntry(fileName, IncomingAck.OriginalFileSize)
 		}
 
 		blockMap, _ := BlockLocations.Get(fileName)
+		if IncomingAck.BlockIndex >= int64(len(blockMap)) {
+			fmt.Println("Map was not properly initiated. Actual blockmap: ", blockMap)
+		}
+
 		fmt.Println("Block map for file in write ack:", blockMap)
 		for i := int64(0); i < (utils.REPLICATION_FACTOR); i++ {
 
@@ -105,6 +112,8 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		fmt.Println("Got ack for delete, filename is ", fileName)
 		fmt.Println("Got ack for delete, File size is ", IncomingAck.OriginalFileSize)
 
+		FileToSize.Remove(fileName)
+
 		if !BlockLocations.Has(fileName) {
 			return errors.New("Never seen before filename, dropping delete operation")
 		}
@@ -119,7 +128,7 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 
 		allDeleted := true
 		for i := int64(0); i < int64(len(blockMap)); i++ { 
-			for j := int64(0); j < utils.REPLICATION_FACTOR; j++ { 
+			for j := int64(0); j < int64(len(blockMap[i])); j++ { 
 				if blockMap[i][j] != utils.DELETE_OP {
 					allDeleted = false
 				}
@@ -280,13 +289,17 @@ func HandleReReplication(DownIpAddr string) {
 							defer conn.Close()
 
 							fmt.Println("Openeed connection to ", ip)
+							ogFileSize, ok := FileToSize.Get(fileName)
+							if !ok {
+								log.Fatalln("This logic is impossible, you should have a file's size if a re replication is happening")
+							}
 
 							task := utils.Task{
 								DataTargetIp:        utils.New19Byte(replicationT),
 								AckTargetIp:         utils.New19Byte(gossiputils.Ip),
 								ConnectionOperation: utils.WRITE,
 								FileName:            utils.New1024Byte(fileName),
-								OriginalFileSize:    0,
+								OriginalFileSize:    ogFileSize,
 								BlockIndex:          blockIdx,
 								DataSize:            0,
 								IsAck:               false,
