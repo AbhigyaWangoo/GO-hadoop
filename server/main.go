@@ -77,26 +77,60 @@ func RunCLI() {
 			localfilename := strings.TrimSpace(parts[1])
 			sdfs_filename := strings.TrimSpace(parts[2])
 
+			locations, locationErr := sdfs_client.SdfsClientMain(sdfs_filename)
+			if locationErr != nil {
+				fmt.Println("Error with sdfsclient main. Aborting Put command: ", locationErr)
+				return
+			}
+
+			sdfs_client.InitiateDeleteCommand(sdfs_filename, locations)
+			time.Sleep(time.Second)
+
+			locations, locationErr = sdfs_client.SdfsClientMain(sdfs_filename)
+			if locationErr != nil {
+				fmt.Println("Error with sdfsclient main. Aborting Put command: ", locationErr)
+				return
+			}
+
+			fmt.Println("mappings detected after delete: ", locations)
 			sdfs_client.InitiatePutCommand(localfilename, sdfs_filename)
 
 		} else if strings.Contains(command, string(GET)) {
 			parts := strings.Split(command, " ")
-			sdfs_filename := strings.TrimSpace(parts[1])
-			localfilename := strings.TrimSpace(parts[2])
+			localfilename := strings.TrimSpace(parts[1])
+			sdfs_filename := strings.TrimSpace(parts[2])
 
-			sdfs_client.InitiateGetCommand(localfilename, sdfs_filename)
+			locations, locationErr := sdfs_client.SdfsClientMain(sdfs_filename)
+			if locationErr != nil {
+				fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
+				return
+			}
+
+			sdfs_client.InitiateGetCommand(sdfs_filename, localfilename, locations)
 
 		} else if strings.Contains(command, string(DELETE)) {
 			parts := strings.Split(command, " ")
 			sdfs_filename := strings.TrimSpace(parts[1])
 
-			sdfs_client.InitiateDeleteCommand(sdfs_filename)
+			mappings, mappingsErr := sdfs_client.SdfsClientMain(sdfs_filename)
+			if mappingsErr != nil {
+				fmt.Println("Error with sdfsclient main. Aborting Get command: ", mappingsErr)
+				return
+			}
+
+			sdfs_client.InitiateDeleteCommand(sdfs_filename, mappings)
 
 		} else if strings.Contains(command, string(LS)) {
 			parts := strings.Split(command, " ")
 			sdfs_filename := strings.TrimSpace(parts[1])
 
-			sdfs_client.InitiateLsCommand(sdfs_filename)
+			mappings, mappingsErr := sdfs_client.SdfsClientMain(sdfs_filename)
+			if mappingsErr != nil {
+				fmt.Println("Error with sdfsclient main. Aborting Get command: ", mappingsErr)
+				return
+			}
+
+			sdfs_client.InitiateLsCommand(sdfs_filename, mappings)
 
 		} else if strings.Contains(command, string(STORE)) {
 			sdfs_client.InitiateStoreCommand()
@@ -112,7 +146,6 @@ func RunCLI() {
 				ds # Disable suspicion
 				es # Disable suspicion
 				_____________________________________________________
-
 				_____________________________________________________
 				SDFS COMMANDS:
 				put <localfilename> <sdfs_filename> # put a file from your local machine into sdfs
