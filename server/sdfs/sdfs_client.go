@@ -44,7 +44,49 @@ func RequestBlockMappings(FileName string) ([][]string, error) {
 
 func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	fmt.Printf("localfilename: %s sdfs: %s\n", LocalFilename, SdfsFilename)
+
 	start := time.Now() // Record the start time
+	
+	// TODO move me into my own function, "Request2DArray"
+	task := utils.Task{
+		DataTargetIp:        utils.New19Byte("-1"),
+		AckTargetIp:         utils.New19Byte("-1"),
+		ConnectionOperation: utils.GET_2D,
+		FileName:            utils.New1024Byte(SdfsFilename),
+		OriginalFileSize:    0,
+		BlockIndex:          0,
+		DataSize:            0,
+		IsAck:               true,
+	}
+
+	leaderIp := gossiputils.GetLeader()
+	conn, err := utils.OpenTCPConnection(leaderIp, utils.SDFS_PORT)
+	if err != nil {
+		log.Fatalln("unable to open connection to master: ", err)
+	}
+	defer conn.Close()
+	// buffConn := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
+
+	utils.SendTaskOnExistingConnection(task, conn)
+	blockLocationArr, BlockLocErr := utils.UnmarshalBlockLocationArr(conn)
+	if BlockLocErr != nil {
+		fmt.Printf("File probably dne on get command. returning.")
+		return
+	}
+
+	isUpdate := false
+	for i := range blockLocationArr {
+		for j := range blockLocationArr[i] {
+			if blockLocationArr[i][j] != utils.WRITE_OP || blockLocationArr[i][j] != utils.DELETE_OP {
+				isUpdate = true
+			}
+		}
+	}
+
+	if isUpdate {
+		fmt.Println("File already exists, initiating update.")
+		InitiateDeleteCommand(SdfsFilename)
+	}
 
 	// IF CONNECTION CLOSES WHILE WRITING, WE NEED TO REPICK AN IP ADDR. Can have a seperate function to handle this on failure cases.
 	// Ask master when its ok to start writing
@@ -91,7 +133,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						continue
 					}
 
-					conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
+					connIp, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
 					if err != nil {
 						log.Fatalf("error opening follower connection: %v\n", err)
 						continue
@@ -110,21 +152,15 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 					fmt.Printf("start index: %d length to write: %d\n", startIdx, lengthToWrite)
 					fmt.Printf("Expecting size of: %d\n", blockWritingTask.DataSize)
 
-					// log.Printf(string(blockWritingTask.Marshal()))
-					// log.Printf(unsafe.Sizeof(blockWritingTask.Marshal()))
-					marshalledBytesWritten, writeError := conn.Write(blockWritingTask.Marshal())
-					conn.Write([]byte{'\n'})
+					marshalledBytesWritten, writeError := connIp.Write(blockWritingTask.Marshal())
+					connIp.Write([]byte{'\n'})
 					if writeError != nil {
 						log.Fatalf("Could not write struct to connection in client put: %v\n", writeError)
 					}
 
-					// log.Println("HEYEUEEYEYE")
-					// for {
+					utils.ReadSmallAck(connIp)
 
-					// }
-					utils.ReadSmallAck(conn)
-
-					totalBytesWritten, writeErr := utils.BufferedWriteToConnection(conn, file, lengthToWrite, startIdx)
+					totalBytesWritten, writeErr := utils.BufferedWriteToConnection(connIp, file, lengthToWrite, startIdx)
 					// utils.BufferedReadAndWrite(buffConn, file, lengthToWrite, true, startIdx)
 					fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
 					fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
@@ -133,7 +169,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						fmt.Println("connection broke early, rewrite block: ", writeErr)
 						continue
 					}
-					utils.ReadSmallAck(conn)
+					utils.ReadSmallAck(connIp)
 
 					break
 				}
@@ -247,7 +283,6 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 
 func PutBlock(sdfsFilename string, blockIdx int64, ipDst string) {
 	fmt.Println("Entering put block")
-	
 	_, fileSize, fp, err := utils.GetFilePtr(sdfsFilename, fmt.Sprint(blockIdx), os.O_RDONLY)
 	if err != nil {
 		fmt.Println("Couldn't get file pointer", err)
