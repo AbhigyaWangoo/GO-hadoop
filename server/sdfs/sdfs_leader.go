@@ -159,13 +159,13 @@ func Handle2DArrRequest(Filename string, conn net.Conn) {
 
 	if allDs {
 		BlockLocations.Remove(Filename)
-		fmt.Println("Block location filename dne. Continuing")
+		fmt.Printf("Block location filename %s made dne. Continuing\n", Filename)
 		var empty [][]string
 		arr = empty
 	}
 
 	if !exists {
-		fmt.Println("Block location filename dne. Continuing")
+		fmt.Printf("Block location filename %s dne. Continuing\n", Filename)
 	}
 
 	marshalledArray := utils.MarshalBlockLocationArr(arr)
