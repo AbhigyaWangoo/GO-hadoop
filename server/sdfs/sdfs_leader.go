@@ -65,7 +65,13 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		}
 
 		blockMap, _ := BlockLocations.Get(fileName)
-		for i := int64(0); i < utils.REPLICATION_FACTOR; i++ {
+		for i := int64(0); i < (utils.REPLICATION_FACTOR); i++ {
+
+			if i >= (int64(len(blockMap[IncomingAck.BlockIndex]))) {
+				fmt.Println("Map was not properly initiated. blockmap row: ", blockMap[IncomingAck.BlockIndex])
+				break
+			}
+
 			if blockMap[IncomingAck.BlockIndex][i] == utils.WRITE_OP {
 				blockMap[IncomingAck.BlockIndex][i] = ackSourceIp
 				break
