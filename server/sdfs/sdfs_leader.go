@@ -66,19 +66,22 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 
 		blockMap, _ := BlockLocations.Get(fileName)
 		for i := int64(0); i < utils.REPLICATION_FACTOR; i++ {
-			if blockMap[IncomingAck.BlockIndex][i] == utils.WRITE_OP {
+			if blockMap[IncomingAck.BlockIndex][i] == utils.WRITE_OP ||  blockMap[IncomingAck.BlockIndex][i] == utils.DELETE_OP {
 				blockMap[IncomingAck.BlockIndex][i] = ackSourceIp
 				break
 			}
 		}
 		BlockLocations.Set(fileName, blockMap)
+		fmt.Println("Set block locations")
 
 		if mapping, ok := FileToBlocks.Get(ackSourceIp); ok { // IPaddr : [[blockidx, filename]]
+			fmt.Println("Mapping ok, appending new value")
 			mapping = append(mapping, [2]interface{}{IncomingAck.BlockIndex, fileName})
 			fmt.Println("Appending a new file+blockidx for ip addr ", ackSourceIp)
 			fmt.Println("mapping: ", mapping)
 			FileToBlocks.Set(ackSourceIp, mapping)
 		} else {
+			fmt.Println("Mapping not ok, creating new value")
 			initialMapping := make([][2]interface{}, 1)
 			initialMapping[0] = [2]interface{}{IncomingAck.BlockIndex, fileName}
 
