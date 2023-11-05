@@ -140,7 +140,7 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 			BlockLocations.Remove(fileName)
 		}
 
-		if mapping, ok := FileToBlocks.Get(ackSourceIp); ok { // IPaddr : [[blockidx, filename]]
+		if mapping, ok := FileToBlocks.Get(ackSourceIp); ok && len(mapping) > 0 { // IPaddr : [[blockidx, filename]]
 			var idx uint
 
 			for i, pair := range mapping {
