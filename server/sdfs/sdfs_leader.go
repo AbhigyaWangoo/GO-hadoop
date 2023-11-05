@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -190,6 +191,9 @@ func HandleDown(DownIpAddr string) {
 }
 
 func HandleReReplication(DownIpAddr string) {
+	currentTime := time.Now()
+	formattedTime := currentTime.Format("2006-01-02 15:04:05.000")
+	fmt.Println("Current time after before: ", formattedTime)
 
 	// fmt.Println("Entering re replication.")
 

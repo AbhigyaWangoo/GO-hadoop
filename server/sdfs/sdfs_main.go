@@ -63,6 +63,9 @@ func HandleConnection(conn net.Conn) {
 		HandleDeleteConnection(*task)
 	} else if task.ConnectionOperation == utils.WRITE || task.ConnectionOperation == utils.READ {
 		HandleStreamConnection(*task, conn)
+		currentTime := time.Now()
+		formattedTime := currentTime.Format("2006-01-02 15:04:05.000")
+		fmt.Println("Current time after rereplication: ", formattedTime)
 	} else if task.ConnectionOperation == utils.FORCE_GET {
 		startTime := time.Now()
 		fileName := utils.BytesToString(task.FileName[:])
