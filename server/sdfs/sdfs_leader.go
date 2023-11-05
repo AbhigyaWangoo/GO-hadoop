@@ -73,7 +73,7 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 				break
 			}
 
-			if blockMap[IncomingAck.BlockIndex][i] == utils.WRITE_OP {
+			if blockMap[IncomingAck.BlockIndex][i] == utils.WRITE_OP || blockMap[IncomingAck.BlockIndex][i] == utils.DELETE_OP {
 				blockMap[IncomingAck.BlockIndex][i] = ackSourceIp
 				break
 			}
@@ -115,6 +115,19 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 			if row[i] == ackSourceIp {
 				blockMap[IncomingAck.BlockIndex][i] = utils.DELETE_OP
 			}
+		}
+
+		allDeleted := true
+		for i := int64(0); i < int64(len(blockMap)); i++ { 
+			for j := int64(0); j < utils.REPLICATION_FACTOR; j++ { 
+				if blockMap[i][j] != utils.DELETE_OP {
+					allDeleted = false
+				}
+			}
+		}
+
+		if allDeleted {
+			BlockLocations.Remove(fileName)
 		}
 
 		if mapping, ok := FileToBlocks.Get(ackSourceIp); ok { // IPaddr : [[blockidx, filename]]
