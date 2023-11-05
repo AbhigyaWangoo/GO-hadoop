@@ -65,6 +65,7 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		}
 
 		blockMap, _ := BlockLocations.Get(fileName)
+		fmt.Println("Block map for file in write ack:", blockMap)
 		for i := int64(0); i < (utils.REPLICATION_FACTOR); i++ {
 
 			if i >= (int64(len(blockMap[IncomingAck.BlockIndex]))) {
@@ -99,6 +100,11 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 	} else if IncomingAck.ConnectionOperation == utils.GET_2D {
 		Handle2DArrRequest(fileName, *conn)
 	} else if IncomingAck.ConnectionOperation == utils.DELETE {
+
+		fmt.Printf("Got ack for delete, the ack source is >{%s}<\n", ackSourceIp)
+		fmt.Println("Got ack for delete, filename is ", fileName)
+		fmt.Println("Got ack for delete, File size is ", IncomingAck.OriginalFileSize)
+
 		if !BlockLocations.Has(fileName) {
 			return errors.New("Never seen before filename, dropping delete operation")
 		}
