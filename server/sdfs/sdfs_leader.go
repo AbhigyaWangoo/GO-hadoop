@@ -70,6 +70,7 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		blockMap, _ := BlockLocations.Get(fileName)
 		if IncomingAck.BlockIndex >= int64(len(blockMap)) {
 			fmt.Println("Map was not properly initiated. Actual blockmap: ", blockMap)
+			return errors.New("Map was not properly initiated, didn't have enough rows")
 		}
 
 		fmt.Println("Block map for file in write ack:", blockMap)
