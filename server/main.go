@@ -28,6 +28,7 @@ const (
 	LEAVE     CLICommand = "leave"
 	EN_SUS    CLICommand = "enable_sus"
 	D_SUS     CLICommand = "disable_sus"
+	MULTIREAD CLICommand = "multiread"
 )
 
 // Send suspicion flip message to all machines
@@ -134,6 +135,13 @@ func RunCLI() {
 
 		} else if strings.Contains(command, string(STORE)) {
 			sdfs_client.InitiateStoreCommand()
+		} else if strings.Contains(command, string(MULTIREAD)) {
+			parts := strings.Split(command, " ")
+			for i, part := range parts {
+				part = strings.TrimSpace(part)
+				parts[i] = part
+			}
+			sdfs_client.InitiateMultiRead(parts[1], parts[2:])
 		} else {
 			error_msg := `
 			Command not understood. Available commands are as follows:
