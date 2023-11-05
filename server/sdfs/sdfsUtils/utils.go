@@ -18,10 +18,10 @@ type BlockOperation int
 
 // Potentially use send, receive, write, delete types instead types instead
 const (
-	READ   BlockOperation = 0
-	WRITE  BlockOperation = 1
-	DELETE BlockOperation = 2
-	GET_2D BlockOperation = 3
+	READ      BlockOperation = 0
+	WRITE     BlockOperation = 1
+	DELETE    BlockOperation = 2
+	GET_2D    BlockOperation = 3
 	FORCE_GET BlockOperation = 4
 )
 
@@ -43,8 +43,8 @@ type Task struct {
 
 const KB = int64(1024)
 const MB = int64(KB * 1024)
-const SDFS_PORT = "5342"
-const SDFS_ACK_PORT = "9682"
+const SDFS_PORT = "3920"
+const SDFS_ACK_PORT = "9692"
 const FILESYSTEM_ROOT = "server/sdfs/sdfsFileSystemRoot/"
 const BLOCK_SIZE = int64(20 * MB)
 const REPLICATION_FACTOR = int64(4)
