@@ -55,9 +55,9 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 
 	if IncomingAck.ConnectionOperation == utils.WRITE {
 
-		fmt.Printf("Got ack for write, the ack source is >{%s}<\n", ackSourceIp)
-		fmt.Println("Got ack for write, filename is ", fileName)
-		fmt.Println("Got ack for write, File size is ", IncomingAck.OriginalFileSize)
+		// fmt.Printf("Got ack for write, the ack source is >{%s}<\n", ackSourceIp)
+		// fmt.Println("Got ack for write, filename is ", fileName)
+		// fmt.Println("Got ack for write, File size is ", IncomingAck.OriginalFileSize)
 
 		// RouteToSubMasters(IncomingAck)
 
@@ -77,15 +77,15 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 
 		if mapping, ok := FileToBlocks.Get(ackSourceIp); ok { // IPaddr : [[blockidx, filename]]
 			mapping = append(mapping, [2]interface{}{IncomingAck.BlockIndex, fileName})
-			fmt.Println("Appending a new file+blockidx for ip addr ", ackSourceIp)
-			fmt.Println("mapping: ", mapping)
+			// fmt.Println("Appending a new file+blockidx for ip addr ", ackSourceIp)
+			// fmt.Println("mapping: ", mapping)
 			FileToBlocks.Set(ackSourceIp, mapping)
 		} else {
 			initialMapping := make([][2]interface{}, 1)
 			initialMapping[0] = [2]interface{}{IncomingAck.BlockIndex, fileName}
 
-			fmt.Println("Creating a new file+blockidx for ip addr ", ackSourceIp)
-			fmt.Println("mapping: ", initialMapping)
+			// fmt.Println("Creating a new file+blockidx for ip addr ", ackSourceIp)
+			// fmt.Println("mapping: ", initialMapping)
 
 			FileToBlocks.Set(ackSourceIp, initialMapping)
 		}
@@ -115,9 +115,9 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 			}
 			// TODO need to delete from IPaddr, the value [blockidx, filename].
 
-			fmt.Println("Mapping before delete: ", mapping)
+			// fmt.Println("Mapping before delete: ", mapping)
 			mapping = append(mapping[:idx], mapping[idx+1:]...)
-			fmt.Println("Mapping after delete: ", mapping)
+			// fmt.Println("Mapping after delete: ", mapping)
 
 			FileToBlocks.Set(ackSourceIp, mapping)
 		}
@@ -191,22 +191,22 @@ func HandleDown(DownIpAddr string) {
 
 func HandleReReplication(DownIpAddr string) {
 
-	fmt.Println("Entering re replication.")
+	// fmt.Println("Entering re replication.")
 
 	if blocksToRereplicate, ok := FileToBlocks.Get(DownIpAddr); ok {
 
-		fmt.Println("Handling re-replication on blocks: ", blocksToRereplicate)
+		// fmt.Println("Handling re-replication on blocks: ", blocksToRereplicate)
 
 		for _, blockMetadata := range blocksToRereplicate {
 
 			if fileName, ok := blockMetadata[1].(string); ok {
-				fmt.Println("Handling re-replication file: ", fileName)
+				// fmt.Println("Handling re-replication file: ", fileName)
 
 				if blockIdx, ok := blockMetadata[0].(int64); ok {
-					fmt.Println("Handling re-replication block: ", blockIdx)
+					// fmt.Println("Handling re-replication block: ", blockIdx)
 
 					if blockLocations, ok := BlockLocations.Get(fileName); ok {
-						fmt.Println("Block locations for found at", blockLocations[blockIdx])
+						// fmt.Println("Block locations for found at", blockLocations[blockIdx])
 
 						locations := blockLocations[blockIdx]
 						for _, ip := range locations {
@@ -243,7 +243,7 @@ func HandleReReplication(DownIpAddr string) {
 								}
 							}
 
-							fmt.Println("Replication Target ", replicationT)
+							// fmt.Println("Replication Target ", replicationT)
 
 							// TODO potential bug, if there is a connection that is down, we should try to pick a new one right away, not continue alltogether.
 							conn, err := utils.OpenTCPConnection(ip, utils.SDFS_PORT)
@@ -253,7 +253,7 @@ func HandleReReplication(DownIpAddr string) {
 							}
 							defer conn.Close()
 
-							fmt.Println("Openeed connection to ", ip)
+							// fmt.Println("Openeed connection to ", ip)
 
 							task := utils.Task{
 								DataTargetIp:        utils.New19Byte(replicationT),
@@ -279,7 +279,7 @@ func HandleReReplication(DownIpAddr string) {
 		}
 	}
 
-	fmt.Println("Cleaning downed node data.")
+	// fmt.Println("Cleaning downed node data.")
 	HandleDown(DownIpAddr)
-	fmt.Println("Cleaned downed node data.")
+	// fmt.Println("Cleaned downed node data.")
 }

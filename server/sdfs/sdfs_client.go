@@ -49,8 +49,8 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 	// IF CONNECTION CLOSES WHILE WRITING, WE NEED TO REPICK AN IP ADDR. Can have a seperate function to handle this on failure cases.
 	// Ask master when its ok to start writing
 
-	dir, _ := os.Getwd()
-	log.Println(dir)
+	// dir, _ := os.Getwd()
+	// log.Println(dir)
 
 	fileSize, _ := utils.GetFileSize(LocalFilename)
 
@@ -58,9 +58,9 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 
 	// locationsToWrite := InitializeBlockLocationsEntry(SdfsFilename, fileInfo.Size())
 
-	fmt.Println("Num blocks:", numberBlocks)
-	fmt.Println("file size:", fileSize)
-	fmt.Println("block size:", int64(utils.BLOCK_SIZE))
+	// fmt.Println("Num blocks:", numberBlocks)
+	// fmt.Println("file size:", fileSize)
+	// fmt.Println("block size:", int64(utils.BLOCK_SIZE))
 	// currentBlock := int64(0)
 	for currentBlock := int64(0); currentBlock < numberBlocks; currentBlock++ {
 
@@ -77,7 +77,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 		startIdx, lengthToWrite := utils.GetBlockPosition(currentBlock, fileSize)
 
 		for currentReplica := int64(0); currentReplica < utils.REPLICATION_FACTOR; currentReplica++ {
-			fmt.Printf("start index: %d length to write: %d\n", startIdx, lengthToWrite)
+			// fmt.Printf("start index: %d length to write: %d\n", startIdx, lengthToWrite)
 
 			for {
 				if remainingIps.Size() == 0 {
@@ -107,12 +107,12 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 						DataSize:            lengthToWrite,
 						IsAck:               false,
 					}
-					fmt.Printf("start index: %d length to write: %d\n", startIdx, lengthToWrite)
-					fmt.Printf("Expecting size of: %d\n", blockWritingTask.DataSize)
+					// fmt.Printf("start index: %d length to write: %d\n", startIdx, lengthToWrite)
+					// fmt.Printf("Expecting size of: %d\n", blockWritingTask.DataSize)
 
 					// log.Printf(string(blockWritingTask.Marshal()))
 					// log.Printf(unsafe.Sizeof(blockWritingTask.Marshal()))
-					marshalledBytesWritten, writeError := conn.Write(blockWritingTask.Marshal())
+					_, writeError := conn.Write(blockWritingTask.Marshal())
 					conn.Write([]byte{'\n'})
 					if writeError != nil {
 						log.Fatalf("Could not write struct to connection in client put: %v\n", writeError)
@@ -124,10 +124,10 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 					// }
 					utils.ReadSmallAck(conn)
 
-					totalBytesWritten, writeErr := utils.BufferedWriteToConnection(conn, file, lengthToWrite, startIdx)
+					_, writeErr := utils.BufferedWriteToConnection(conn, file, lengthToWrite, startIdx)
 					// utils.BufferedReadAndWrite(buffConn, file, lengthToWrite, true, startIdx)
-					fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
-					fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
+					// fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
+					// fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
 
 					if writeErr != nil { // If failure to write full block, redo loop
 						fmt.Println("connection broke early, rewrite block: ", writeErr)
@@ -199,7 +199,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 		return
 	}
 
-	fmt.Println("Unmarshalled block location arr: ", blockLocationArr)
+	// fmt.Println("Unmarshalled block location arr: ", blockLocationArr)
 	for blockIdx, replicas := range blockLocationArr {
 		for {
 			randomReplicaIp, err := PopRandomElementInArray(&replicas)
@@ -231,12 +231,12 @@ func InitiateGetCommand(sdfsFilename string, localfilename string) {
 			}
 
 			utils.ReadSmallAck(replicaConn)
-			log.Printf("Unmarshaling task\n")
+			// log.Printf("Unmarshaling task\n")
 
 			blockMetadata, _ := utils.Unmarshal(replicaConn)
 			utils.SendSmallAck(replicaConn)
 
-			log.Printf("Number of bytes to read from connection: ", blockMetadata.DataSize)
+			// log.Printf("Number of bytes to read from connection: ", blockMetadata.DataSize)
 			utils.BufferedReadFromConnection(replicaConn, fp, blockMetadata.DataSize)
 			replicaConn.Close()
 			// utils.BufferedReadAndWrite(replicaConnBuf, fp, blockMetadata.DataSize, false, 0)
@@ -254,7 +254,7 @@ func InitiateDeleteCommand(sdfsFilename string) {
 	if mappingsErr != nil {
 		fmt.Printf("File did not exist and thus cannot be deleted.")
 	}
-	fmt.Println("Mappings: ", mappings)
+	// fmt.Println("Mappings: ", mappings)
 
 	var task utils.Task
 	task.IsAck = false

@@ -22,7 +22,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 
 	utils.SendSmallAck(conn)
 
-	fmt.Println("Entering edit connection")
+	// fmt.Println("Entering edit connection")
 
 	var FileName string = utils.BytesToString(Task.FileName[:])
 	var TargetIp string = utils.BytesToString(Task.DataTargetIp[:])
@@ -58,13 +58,13 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 		utils.ReadSmallAck(conn)
 	}
 
-	fmt.Println("Amount of data to send back: ", Task.DataSize)
-	var nread int64
+	// fmt.Println("Amount of data to send back: ", Task.DataSize)
+	// var nread int64
 	var bufferedErr error
 	if !fromLocal { // PUT request
-		nread, bufferedErr = utils.BufferedReadFromConnection(conn, fp, Task.DataSize)
+		_, bufferedErr = utils.BufferedReadFromConnection(conn, fp, Task.DataSize)
 	} else { // GET request
-		nread, bufferedErr = utils.BufferedWriteToConnection(conn, fp, Task.DataSize, 0)
+		_, bufferedErr = utils.BufferedWriteToConnection(conn, fp, Task.DataSize, 0)
 	}
 	// utils.BufferedReadAndWrite(conn, fp, Task.DataSize, fromLocal, 0)
 
@@ -86,7 +86,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 		utils.SendSmallAck(conn)
 	}
 
-	log.Println("Nread: ", nread)
+	// log.Println("Nread: ", nread)
 
 	FileSet[localFilename] = false
 	utils.MuLocalFs.Unlock()
@@ -134,6 +134,6 @@ func HandleDeleteConnection(Task utils.Task) error {
 	utils.SendAckToMaster(Task)
 
 	// Used for delete command
-	fmt.Println("Recieved a request to delete some block on this node")
+	// fmt.Println("Recieved a request to delete some block on this node")
 	return nil
 }

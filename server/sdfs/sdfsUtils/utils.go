@@ -188,7 +188,7 @@ func BufferedReadFromConnection(conn net.Conn, fp *os.File, size int64) (int64, 
 	if err != nil && err != io.EOF {
 		panic(err)
 	}
-	log.Printf("Size: %d, Read: %d", size, n)
+	// log.Printf("Size: %d, Read: %d", size, n)
 	if n < size {
 		log.Printf("didn't read enough data from connection")
 	}
@@ -299,7 +299,7 @@ func SendTask(task Task, ipAddr string, ack bool) (*net.Conn, error) {
 	bufferConn.Write([]byte{'\n'})
 	bufferConn.Flush()
 
-	fmt.Println("Sent task to leader ip:", ipAddr)
+	// fmt.Println("Sent task to leader ip:", ipAddr)
 
 	return &conn, nil
 }
@@ -320,14 +320,14 @@ func SendTaskOnExistingConnection(task Task, conn net.Conn) error {
 func SendAckToMaster(task Task) *net.Conn {
 	leaderIp := gossiputils.GetLeader()
 
-	fmt.Printf("detected Leader ip: %s\n", leaderIp)
+	// fmt.Printf("detected Leader ip: %s\n", leaderIp)
 	task.AckTargetIp = New19Byte(gossiputils.Ip)
 	val, ok := gossiputils.MembershipMap.Get(leaderIp)
 	if ok && (val.State == gossiputils.ALIVE || val.State == gossiputils.SUSPECTED) {
 		conn, connectionError := SendTask(task, leaderIp, true)
 
 		if connectionError != nil {
-			fmt.Println("Pick")
+			// fmt.Println("Pick")
 			return SendAckToMaster(task)
 		}
 
