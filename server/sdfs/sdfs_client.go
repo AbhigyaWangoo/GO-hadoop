@@ -426,3 +426,24 @@ func PopRandomElementInArray(array *[]string) (string, error) {
 
 	// [randomIndex], append(array[:randomIndex], array[randomIndex+1:]...)
 }
+
+func InitiateMultiRead(fileName string, ipsToInitiate []string) {
+	for _, ip := range ipsToInitiate {
+		task := utils.Task{
+			DataTargetIp:        utils.New19Byte(""),
+			AckTargetIp:         utils.New19Byte(""),
+			ConnectionOperation: utils.FORCE_GET, // READ, WRITE, GET_2D, OR DELETE from sdfs utils
+			FileName:            utils.New1024Byte(fileName),
+			OriginalFileSize:    0,
+			BlockIndex:          0,
+			DataSize:            0,
+			IsAck:               false,
+		}
+
+		_, err := utils.SendTask(task, ip, false)
+		if err != nil {
+			log.Printf("Failed to send task on multiread with error: ", err)
+		}
+		// defer (*conn).Close()
+	}
+}
