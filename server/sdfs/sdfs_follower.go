@@ -30,7 +30,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 
 	if TargetIp != gossiputils.Ip {
 		fmt.Println("Recived replication request. Attempting to put specified block to target ip.")
-		PutBlock(FileName, Task.BlockIndex, TargetIp)
+		PutBlock(FileName, Task.BlockIndex, TargetIp, Task.OriginalFileSize)
 		return nil
 	}
 
