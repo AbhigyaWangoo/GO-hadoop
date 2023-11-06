@@ -247,6 +247,9 @@ func HandleReReplication(DownIpAddr string) {
 					fmt.Println("Handling re-replication block: ", blockIdx)
 
 					if blockLocations, ok := BlockLocations.Get(fileName); ok {
+						if blockIdx >= int64(len(blockLocations)) {
+							continue
+						}
 						fmt.Println("Block locations for found at", blockLocations[blockIdx])
 
 						locations := blockLocations[blockIdx]
