@@ -227,7 +227,7 @@ func HandleDown(DownIpAddr string) {
 
 func HandleReReplication(DownIpAddr string) {
 
-	fmt.Println("Entering re replication.")
+	fmt.Println("Entering re replication. DOWN IP ADDRESS: ", DownIpAddr)
 
 	if blocksToRereplicate, ok := FileToBlocks.Get(DownIpAddr); ok {
 
@@ -245,8 +245,12 @@ func HandleReReplication(DownIpAddr string) {
 						fmt.Println("Block locations for found at", blockLocations[blockIdx])
 
 						locations := blockLocations[blockIdx]
-						for _, ip := range locations {
+						for i, ip := range locations {
 							if ip == DownIpAddr || ip == utils.WRITE_OP || ip == utils.DELETE_OP {
+								if ip == DownIpAddr {
+									blockLocations[blockIdx][i] = utils.WRITE_OP
+								}
+								BlockLocations.Set(fileName, blockLocations)
 								continue
 							}
 
