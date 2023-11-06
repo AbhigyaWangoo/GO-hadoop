@@ -13,8 +13,9 @@ import (
 
 var FileSet map[string]bool
 
-// var nWritingThreads uint
-// var nReadingThreads uint
+var readWriteHistory int = 0
+var nActiveWriters uint
+var nActiveReaders uint
 
 func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	// TODO for rereplication, if the src in the conn object == master, then we have to open a new connection to send data over that connection. The
@@ -36,8 +37,10 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 
 	if Task.ConnectionOperation == utils.WRITE {
 		flags = os.O_CREATE | os.O_WRONLY
+		nActiveWriters++
 	} else if Task.ConnectionOperation == utils.READ {
 		flags = os.O_CREATE | os.O_RDONLY
+		nActiveReaders++
 	}
 
 	localFilename, fileSize, fp, err := utils.GetFilePtr(FileName, strconv.FormatInt(Task.BlockIndex, 10), flags)
@@ -46,12 +49,28 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	}
 	defer fp.Close()
 
+	isRead := Task.ConnectionOperation == utils.READ
+	isWrite := Task.ConnectionOperation == utils.WRITE
+
 	utils.MuLocalFs.Lock()
-	for FileSet[localFilename] {
+
+	// For a reading thread to continue: A = isRead && (nActiveWriters == 0 || (nActiveWriters > 0 && readWriteHistory < 3))
+	// For a writing thread to continue: B = isWrite && (nActiveReaders == 0 || (nActiveReaders > 0 && readWriteHistory > -3))
+	// For conflict file pointers: C = !FileSet[localFilename]
+	// All together: C && (A || B) -> !C || (!A && !B)
+
+	for FileSet[localFilename] || (!(isRead && (nActiveWriters == 0 || (nActiveWriters > 0 && readWriteHistory < 3))) && !(isWrite && (nActiveReaders == 0 || (nActiveReaders > 0 && readWriteHistory > -3)))) {
 		utils.CondLocalFs.Wait()
 	}
 
 	FileSet[localFilename] = true
+	
+	if isRead {
+		nActiveReaders++
+	} else if isWrite {
+		nActiveWriters++
+	}
+
 	fromLocal := Task.ConnectionOperation == utils.READ
 	if fromLocal {
 		Task.DataSize = int64(fileSize)
@@ -90,6 +109,26 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	log.Println("Nread: ", nread)
 
 	FileSet[localFilename] = false
+	
+	if isRead {
+		nActiveReaders--
+		
+		if readWriteHistory < 0 {
+			readWriteHistory = 0
+		} else {
+			readWriteHistory++
+		}
+
+	} else if isWrite {
+		nActiveWriters--
+		
+		if readWriteHistory > 0 {
+			readWriteHistory = 0
+		} else {
+			readWriteHistory--
+		}
+	}
+
 	utils.MuLocalFs.Unlock()
 	utils.CondLocalFs.Signal()
 
