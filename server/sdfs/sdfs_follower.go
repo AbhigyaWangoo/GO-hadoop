@@ -47,10 +47,16 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	}
 	defer fp.Close()
 
-	isRead := Task.ConnectionOperation == utils.READ
+	isRead := Task.ConnectionOperation == utils.READ || Task.ConnectionOperation == utils.FORCE_GET
 	isWrite := Task.ConnectionOperation == utils.WRITE
 
 	utils.MuLocalFs.Lock()
+	
+	if isRead {
+		nActiveReaders++
+	} else if isWrite {
+		nActiveWriters++
+	}
 
 	// For a reading thread to continue: A = isRead && (nActiveWriters == 0 || (nActiveWriters > 0 && readWriteHistory < 3))
 	// For a writing thread to continue: B = isWrite && (nActiveReaders == 0 || (nActiveReaders > 0 && readWriteHistory > -3))
@@ -62,12 +68,6 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	}
 
 	utils.FileSet[localFilename] = true
-	
-	if isRead {
-		nActiveReaders++
-	} else if isWrite {
-		nActiveWriters++
-	}
 
 	fromLocal := Task.ConnectionOperation == utils.READ
 	if fromLocal {
@@ -90,6 +90,25 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 		fmt.Println("Error:", bufferedErr)
 		utils.FileSet[localFilename] = false
 
+		if isRead {
+			nActiveReaders--
+			
+			if readWriteHistory < 0 {
+				readWriteHistory = 0
+			} else {
+				readWriteHistory++
+			}
+	
+		} else if isWrite {
+			nActiveWriters--
+			fmt.Println("Decrementing writer count in error flow, ", nActiveWriters)
+			if readWriteHistory > 0 {
+				readWriteHistory = 0
+			} else {
+				readWriteHistory--
+			}
+		}
+		
 		utils.MuLocalFs.Unlock()
 		utils.CondLocalFs.Signal()
 
@@ -118,7 +137,9 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 		}
 
 	} else if isWrite {
+		fmt.Println("Decrementing writer count, first ", nActiveWriters)
 		nActiveWriters--
+		fmt.Println("Decrementing writer count, second ", nActiveWriters)
 		
 		if readWriteHistory > 0 {
 			readWriteHistory = 0
@@ -147,6 +168,10 @@ func HandleDeleteConnection(Task utils.Task) error {
 	localFilename := utils.GetFileName(utils.BytesToString(Task.FileName[:]), fmt.Sprint(Task.BlockIndex))
 
 	utils.MuLocalFs.Lock()
+	
+	fmt.Println("This should be false: ", utils.FileSet[localFilename])
+	fmt.Printf("nreaders: %d nwriters: %d\n", nActiveReaders, nActiveWriters)
+
 	for utils.FileSet[localFilename] || !(nActiveWriters == 0 && nActiveReaders == 0) {
 		utils.CondLocalFs.Wait()
 	}
