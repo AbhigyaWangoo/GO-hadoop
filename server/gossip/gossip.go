@@ -8,6 +8,7 @@ import (
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
+	sdfsleader "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
 )
 
 // Our main entry point to begin gossiping
@@ -26,6 +27,7 @@ func InitializeGossip() {
 	// Index by hostname
 	utils.MembershipMap = cmap.New[utils.Member]()
 	utils.MembershipUpdateTimes = cmap.New[int64]()
+	utils.FailureHandler = cmap.New[bool]()
 
 	utils.MembershipMap.Set(utils.Ip, newMember)
 	utils.MembershipUpdateTimes.Set(utils.Ip, timestamp)
@@ -40,7 +42,7 @@ func InitializeGossip() {
 }
 
 func MemberPrint(m utils.Member) string {
-	return fmt.Sprintf("IP: %s, Port: %s, Timestamp: %d, State: %d", m.Ip, m.Port, m.CreationTimestamp, m.State)
+	return fmt.Sprintf("IP: %s, Port: %s, Timestamp: %d, State: %d, Type: %d", m.Ip, m.Port, m.CreationTimestamp, m.State, m.Type)
 }
 
 func GetOutboundIP() net.IP {
@@ -58,7 +60,7 @@ func GetOutboundIP() net.IP {
 // Check if nodes need to be degraded from ALIVE or DOWN statuses
 func PruneNodeMembers() {
 	for {
-
+		
 		// Go through all currently stored nodes and check their lastUpdatedTimes
 		for info := range utils.MembershipUpdateTimes.IterBuffered() {
 			nodeIp, lastUpdateTime := info.Key, info.Val
@@ -79,6 +81,16 @@ func PruneNodeMembers() {
 						utils.LogFile.WriteString(mssg)
 					}
 					node.State = utils.DOWN
+
+					val, ok := utils.FailureHandler.Get(node.Ip)
+					machineType := utils.MachineType()
+					if (!ok || !val) && machineType == utils.LEADER {
+						utils.FailureHandler.Set(node.Ip, false)
+						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
+						sdfsleader.HandleReReplication(node.Ip) // TODO UNTESTED
+						
+						utils.FailureHandler.Set(node.Ip, true)
+					}
 				} else if utils.ENABLE_SUSPICION && time.Now().UnixNano()-lastUpdateTime >= utils.Tfail { // If the time elasped since last updated is greater than Tfail, mark node as SUSPECTED
 					// If the node is not already suspicious, log it as so
 					if node.State != utils.SUSPECTED {
@@ -97,6 +109,16 @@ func PruneNodeMembers() {
 						utils.LogFile.WriteString(mssg)
 					}
 					node.State = utils.DOWN
+
+					val, ok := utils.FailureHandler.Get(node.Ip)
+					machineType := utils.MachineType()
+					if (!ok || !val ) && machineType == utils.LEADER {
+						utils.FailureHandler.Set(node.Ip, false)
+						fmt.Println("AT THE MASTER, NEED TO HANDLE NODE FAILURE FOR MEMBER", node.Ip)
+						sdfsleader.HandleReReplication(node.Ip) // TODO UNTESTED
+						
+						utils.FailureHandler.Set(node.Ip, true)
+					}
 				} else {
 					node.State = utils.ALIVE
 				}

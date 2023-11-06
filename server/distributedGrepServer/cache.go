@@ -8,12 +8,12 @@ import (
 
 type Cache struct {
 	Cache    orderedmap.OrderedMap
-	Capacity uint64
+	Capacity int64
 	mu       sync.Mutex
 }
 
 // Constructs and returns a cache object.
-func createCache(capacity uint64) *Cache {
+func createCache(capacity int64) *Cache {
 	cache := orderedmap.New()
 	rv := new(Cache)
 
@@ -30,7 +30,7 @@ func put(_cache *Cache, key string, val string) {
 
 	_cache.Cache.Set(key, val)
 
-	for uint64(_cache.Cache.Len()) > _cache.Capacity {
+	for int64(_cache.Cache.Len()) > _cache.Capacity {
 		lastKey := _cache.Cache.Oldest()
 		_cache.Cache.Delete(lastKey)
 	}
