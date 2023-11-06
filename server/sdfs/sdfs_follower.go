@@ -11,8 +11,6 @@ import (
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
-var FileSet map[string]bool
-
 var readWriteHistory int = 0
 var nActiveWriters uint
 var nActiveReaders uint
@@ -59,11 +57,11 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	// For conflict file pointers: C = !FileSet[localFilename]
 	// All together: C && (A || B) -> !C || (!A && !B)
 
-	for FileSet[localFilename] || (!(isRead && (nActiveWriters == 0 || (nActiveWriters > 0 && readWriteHistory < 3))) && !(isWrite && (nActiveReaders == 0 || (nActiveReaders > 0 && readWriteHistory > -3)))) {
+	for utils.FileSet[localFilename] || (!(isRead && (nActiveWriters == 0 || (nActiveWriters > 0 && readWriteHistory < 3))) && !(isWrite && (nActiveReaders == 0 || (nActiveReaders > 0 && readWriteHistory > -3)))) {
 		utils.CondLocalFs.Wait()
 	}
 
-	FileSet[localFilename] = true
+	utils.FileSet[localFilename] = true
 	
 	if isRead {
 		nActiveReaders++
@@ -90,7 +88,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 
 	if bufferedErr != nil {
 		fmt.Println("Error:", bufferedErr)
-		FileSet[localFilename] = false
+		utils.FileSet[localFilename] = false
 
 		utils.MuLocalFs.Unlock()
 		utils.CondLocalFs.Signal()
@@ -108,7 +106,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 
 	log.Println("Nread: ", nread)
 
-	FileSet[localFilename] = false
+	utils.FileSet[localFilename] = false
 	
 	if isRead {
 		nActiveReaders--
@@ -149,17 +147,17 @@ func HandleDeleteConnection(Task utils.Task) error {
 	localFilename := utils.GetFileName(utils.BytesToString(Task.FileName[:]), fmt.Sprint(Task.BlockIndex))
 
 	utils.MuLocalFs.Lock()
-	for FileSet[localFilename] {
+	for utils.FileSet[localFilename] || !(nActiveWriters == 0 && nActiveReaders == 0) {
 		utils.CondLocalFs.Wait()
 	}
-	FileSet[localFilename] = true
+	utils.FileSet[localFilename] = true
 
 	// On a failure case, like block dne, do not send the ack.
 	if err := os.Remove(localFilename); err != nil {
 		if !os.IsNotExist(err) {
 			fmt.Println("Error removing file:", err)
 
-			FileSet[localFilename] = false
+			utils.FileSet[localFilename] = false
 			utils.MuLocalFs.Unlock()
 			utils.CondLocalFs.Signal()
 
@@ -167,7 +165,7 @@ func HandleDeleteConnection(Task utils.Task) error {
 		}
 	}
 
-	FileSet[localFilename] = false
+	utils.FileSet[localFilename] = false
 	utils.MuLocalFs.Unlock()
 	utils.CondLocalFs.Signal()
 

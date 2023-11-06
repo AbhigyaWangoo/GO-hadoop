@@ -13,7 +13,7 @@ import (
 func InitializeSdfsProcess() {
 
 	// Initialize set of which files are being written/read from. This is to avoid concurrent access of file pointers.
-	FileSet = make(map[string]bool)
+	utils.FileSet = make(map[string]bool)
 
 	tcpConn, listenError := utils.ListenOnTCPConnection(utils.SDFS_PORT)
 	if listenError != nil {
@@ -75,7 +75,7 @@ func HandleConnection(conn net.Conn) {
 		elapsedTime := time.Since(startTime)
 		log.Printf("Force GET completed in: %s", elapsedTime)
 	} else {
-		// fmt.Printf("Error: inbound task from ip %s has no specific type", )
+		fmt.Printf("Error: inbound task from ip %s has no specific type\n", conn.RemoteAddr().String())
 	}
 	// conn.Close()
 }
