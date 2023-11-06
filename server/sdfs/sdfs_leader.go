@@ -120,10 +120,15 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		}
 
 		blockMap, _ := BlockLocations.Get(fileName)
-		row := blockMap[IncomingAck.BlockIndex]
-		for i := int64(0); i < utils.REPLICATION_FACTOR; i++ {
-			if row[i] == ackSourceIp {
-				blockMap[IncomingAck.BlockIndex][i] = utils.DELETE_OP
+
+		if IncomingAck.BlockIndex >= int64(len(blockMap)) {
+			fmt.Println("Block index exceeds block map length")
+		} else {
+			row := blockMap[IncomingAck.BlockIndex]
+			for i := int64(0); i < int64(len(row)); i++ {
+				if row[i] == ackSourceIp {
+					blockMap[IncomingAck.BlockIndex][i] = utils.DELETE_OP
+				}
 			}
 		}
 
@@ -259,9 +264,6 @@ func HandleReReplication(DownIpAddr string) {
 							for _, item := range locations {
 								locationSet[item] = true
 							}
-
-							// fmt.Println("All ips: ", allIps)
-							// fmt.Println("Current locations set: ", locationSet)
 
 							var replicationT string
 							for {
