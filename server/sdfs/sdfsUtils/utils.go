@@ -49,6 +49,8 @@ const FILESYSTEM_ROOT = "server/sdfs/sdfsFileSystemRoot/"
 const BLOCK_SIZE = int64(20 * MB)
 const REPLICATION_FACTOR = int64(4)
 
+var FileSet map[string]bool
+
 var MuLocalFs sync.Mutex
 var CondLocalFs = sync.NewCond(&MuLocalFs)
 var LEADER_IP string = "172.22.158.162"
