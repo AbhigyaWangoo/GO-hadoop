@@ -120,7 +120,8 @@ func RunCLI() {
 				fmt.Println("Error with sdfsclient main. Aborting Get command: ", mappingsErr)
 				return
 			}
-
+			fmt.Println("FOUND MAPPING: ", mappings)
+			
 			sdfs_client.InitiateDeleteCommand(sdfs_filename, mappings)
 
 		} else if strings.Contains(command, string(LS)) {

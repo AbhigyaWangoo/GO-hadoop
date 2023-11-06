@@ -11,10 +11,9 @@ import (
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
-var FileSet map[string]bool
-
-// var nWritingThreads uint
-// var nReadingThreads uint
+var readWriteHistory int = 0
+var nActiveWriters uint = 0
+var nActiveReaders uint = 0
 
 func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	// TODO for rereplication, if the src in the conn object == master, then we have to open a new connection to send data over that connection. The
@@ -36,8 +35,10 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 
 	if Task.ConnectionOperation == utils.WRITE {
 		flags = os.O_CREATE | os.O_WRONLY
+		nActiveWriters++
 	} else if Task.ConnectionOperation == utils.READ {
 		flags = os.O_CREATE | os.O_RDONLY
+		nActiveReaders++
 	}
 
 	localFilename, fileSize, fp, err := utils.GetFilePtr(FileName, strconv.FormatInt(Task.BlockIndex, 10), flags)
@@ -46,12 +47,22 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	}
 	defer fp.Close()
 
+	isRead := Task.ConnectionOperation == utils.READ || Task.ConnectionOperation == utils.FORCE_GET
+	isWrite := Task.ConnectionOperation == utils.WRITE
+
 	utils.MuLocalFs.Lock()
-	for FileSet[localFilename] {
+
+	// For a reading thread to continue: A = isRead && (nActiveWriters == 0 || (nActiveWriters > 0 && readWriteHistory < 3))
+	// For a writing thread to continue: B = isWrite && (nActiveReaders == 0 || (nActiveReaders > 0 && readWriteHistory > -3))
+	// For conflict file pointers: C = !FileSet[localFilename]
+	// All together: C && (A || B) -> !C || (!A && !B)
+
+	for utils.FileSet[localFilename] || (!(isRead && (nActiveWriters == 0 || (nActiveWriters > 0 && readWriteHistory < 3))) && !(isWrite && (nActiveReaders == 0 || (nActiveReaders > 0 && readWriteHistory > -3)))) {
 		utils.CondLocalFs.Wait()
 	}
 
-	FileSet[localFilename] = true
+	utils.FileSet[localFilename] = true
+
 	fromLocal := Task.ConnectionOperation == utils.READ
 	if fromLocal {
 		Task.DataSize = int64(fileSize)
@@ -71,8 +82,27 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 
 	if bufferedErr != nil {
 		fmt.Println("Error:", bufferedErr)
-		FileSet[localFilename] = false
+		utils.FileSet[localFilename] = false
 
+		if isRead {
+			nActiveReaders--
+			
+			if readWriteHistory < 0 {
+				readWriteHistory = 0
+			} else {
+				readWriteHistory++
+			}
+	
+		} else if isWrite {
+			nActiveWriters--
+			fmt.Println("Decrementing writer count in error flow, ", nActiveWriters)
+			if readWriteHistory > 0 {
+				readWriteHistory = 0
+			} else {
+				readWriteHistory--
+			}
+		}
+		
 		utils.MuLocalFs.Unlock()
 		utils.CondLocalFs.Signal()
 
@@ -89,7 +119,29 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 
 	log.Println("Nread: ", nread)
 
-	FileSet[localFilename] = false
+	utils.FileSet[localFilename] = false
+	
+	if isRead {
+		nActiveReaders--
+		
+		if readWriteHistory < 0 {
+			readWriteHistory = 0
+		} else {
+			readWriteHistory++
+		}
+
+	} else if isWrite {
+		fmt.Println("Decrementing writer count, first ", nActiveWriters)
+		nActiveWriters--
+		fmt.Println("Decrementing writer count, second ", nActiveWriters)
+		
+		if readWriteHistory > 0 {
+			readWriteHistory = 0
+		} else {
+			readWriteHistory--
+		}
+	}
+
 	utils.MuLocalFs.Unlock()
 	utils.CondLocalFs.Signal()
 
@@ -110,17 +162,21 @@ func HandleDeleteConnection(Task utils.Task) error {
 	localFilename := utils.GetFileName(utils.BytesToString(Task.FileName[:]), fmt.Sprint(Task.BlockIndex))
 
 	utils.MuLocalFs.Lock()
-	for FileSet[localFilename] {
+	
+	fmt.Println("This should be false: ", utils.FileSet[localFilename])
+	fmt.Printf("nreaders: %d nwriters: %d\n", nActiveReaders, nActiveWriters)
+
+	for utils.FileSet[localFilename] || !(nActiveWriters == 0 && nActiveReaders == 0) {
 		utils.CondLocalFs.Wait()
 	}
-	FileSet[localFilename] = true
+	utils.FileSet[localFilename] = true
 
 	// On a failure case, like block dne, do not send the ack.
 	if err := os.Remove(localFilename); err != nil {
 		if !os.IsNotExist(err) {
 			fmt.Println("Error removing file:", err)
 
-			FileSet[localFilename] = false
+			utils.FileSet[localFilename] = false
 			utils.MuLocalFs.Unlock()
 			utils.CondLocalFs.Signal()
 
@@ -128,7 +184,7 @@ func HandleDeleteConnection(Task utils.Task) error {
 		}
 	}
 
-	FileSet[localFilename] = false
+	utils.FileSet[localFilename] = false
 	utils.MuLocalFs.Unlock()
 	utils.CondLocalFs.Signal()
 
