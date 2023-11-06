@@ -12,8 +12,8 @@ import (
 )
 
 var readWriteHistory int = 0
-var nActiveWriters uint
-var nActiveReaders uint
+var nActiveWriters uint = 0
+var nActiveReaders uint = 0
 
 func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	// TODO for rereplication, if the src in the conn object == master, then we have to open a new connection to send data over that connection. The
@@ -51,14 +51,6 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	isWrite := Task.ConnectionOperation == utils.WRITE
 
 	utils.MuLocalFs.Lock()
-	
-	if isRead {
-		nActiveReaders++
-	} else if isWrite {
-		fmt.Println("Incrementing writer count, first: ", nActiveWriters)
-		nActiveWriters++
-		fmt.Println("Incrementing writer count, second: ", nActiveWriters)
-	}
 
 	// For a reading thread to continue: A = isRead && (nActiveWriters == 0 || (nActiveWriters > 0 && readWriteHistory < 3))
 	// For a writing thread to continue: B = isWrite && (nActiveReaders == 0 || (nActiveReaders > 0 && readWriteHistory > -3))
