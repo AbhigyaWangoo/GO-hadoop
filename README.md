@@ -1,5 +1,49 @@
 # cs425 mps
 
+## MP3
+
+### Usage
+
+In order to initialize the SDFS, you have to start the introducer node (currently hardcoded to ```172.22.158.162```, or ```fa23-cs425-4902.cs.illinois.edu```). 
+
+1. To do that, ssh into that server, and navigate to the directory 
+```
+~/cs425mps/server
+```
+2. (Optional) to setup grep, create a logfile with the following command
+```
+touch ../logs/machine.txt
+vi ../logs/machine.txt # Add the node num in this file. This is purely for distributed grep, and will not have an impact on gossip.
+```
+3. Start the introducer server with the command 
+```
+go run main.go
+```
+4. Repeat steps 1 and 3 for all other machines. Machines will automatically join the network through the hardcoded introcuder. See below for a list of commands you can provide any client (In addition to the gossip client):
+```
+put <localfilename> <sdfs_filename> # put a file from your local machine into sdfs
+
+get <sdfs_filename> <localfilename> # get a file from sdfs and write it to local machine
+
+delete <sdfs_filename> # delete a file from sdfs
+
+ls sdfs_filename # list all vm addresses where the file is stored
+
+store # at this machine, list all files paritally or fully stored at this machine
+
+multiread <sdfs_filename> [<ip1> <ip2> <ip3> ....] # Initiate a concurrent get on some file at all the specified ip addresses. They must be in the network.
+```
+
+Codes remain the same as in the gossip functionality. Additionally, the node 'Type' is determined as the following:
+
+```
+const (
+	LEADER     SdfsNodeType = 2
+	SUB_LEADER SdfsNodeType = 1
+	FOLLOWER   SdfsNodeType = 0
+)
+```
+
 ## MP2
 
 ### Usage
