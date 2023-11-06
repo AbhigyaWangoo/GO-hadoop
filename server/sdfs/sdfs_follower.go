@@ -55,7 +55,9 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	if isRead {
 		nActiveReaders++
 	} else if isWrite {
+		fmt.Println("Incrementing writer count, first: ", nActiveWriters)
 		nActiveWriters++
+		fmt.Println("Incrementing writer count, second: ", nActiveWriters)
 	}
 
 	// For a reading thread to continue: A = isRead && (nActiveWriters == 0 || (nActiveWriters > 0 && readWriteHistory < 3))
