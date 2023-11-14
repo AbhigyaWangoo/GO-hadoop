@@ -39,7 +39,7 @@ type Member struct {
 }
 
 const INTRODUCER_IP string = "172.22.158.162"
-const GOSSIP_PORT string = "9000"
+const GOSSIP_PORT string = "8000"
 const MLIST_SIZE int = 20480
 const ENABLE_SUSPICION_MSG = "enable"
 const DISABLE_SUSPICION_MSG = "disable"
@@ -155,7 +155,7 @@ func MachineType() SdfsNodeType {
 		if ok {
 			myMember.Type = LEADER
 		}
-		
+
 		MembershipMap.Set(Ip, myMember)
 		return LEADER
 	}
@@ -166,7 +166,7 @@ func MachineType() SdfsNodeType {
 			if ok {
 				myMember.Type = SUB_LEADER
 			}
-			
+
 			MembershipMap.Set(Ip, myMember)
 			return SUB_LEADER
 		}
@@ -176,16 +176,16 @@ func MachineType() SdfsNodeType {
 	if ok {
 		myMember.Type = FOLLOWER
 	}
-	
+
 	MembershipMap.Set(Ip, myMember)
 	return FOLLOWER
 }
 
 func GetKLeaders() []string {
-	
+
 	allKeys := MembershipMap.Keys()
 	allMembers := make([]Member, 0)
-	
+
 	for _, key := range allKeys {
 		member, _ := MembershipMap.Get(key)
 		if member.State != DOWN {
