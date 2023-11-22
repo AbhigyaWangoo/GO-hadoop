@@ -335,22 +335,14 @@ func InitiateDeleteCommand(sdfsFilename string, mappings [][]string) {
 }
 
 func InitiateLsCommand(sdfs_filename string, mappings [][]string) {
-
-	// 1. Query master for 2d array of ip addresses (2darr)
-	// IpAddrs := make(map[string]bool)
-	// var result []string
-
-	// for _, slice := range mappings {
-	// 	for _, str := range slice {
-	// 		if !IpAddrs[str] {
-	// 			IpAddrs[str] = true
-	// 			result = append(result, str)
-	// 		}
-	// 	}
-	// }
-
-	// fmt.Println(result)
 	fmt.Println(mappings)
+}
+
+func InitiateLsWithPrefix(sdfs_prefix string) []string {
+	// Returns a list of files with the matching prefix
+	var rv []string
+	
+	return rv
 }
 
 func InitiateStoreCommand() {

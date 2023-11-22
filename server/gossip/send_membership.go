@@ -63,7 +63,7 @@ func SendMembershipList() {
 
 	for {
 		// 1. Select k ip addrs, and send mlist to each
-		ipAddrs := utils.RandomKIpAddrs()
+		ipAddrs := utils.RandomKIpAddrs(utils.GOSSIP_K)
 
 		for ipAddr := range ipAddrs {
 			if ipAddrs[ipAddr] != utils.Ip {

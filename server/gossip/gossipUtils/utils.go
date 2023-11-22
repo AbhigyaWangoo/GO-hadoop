@@ -89,10 +89,10 @@ func RandomNumInclusive() float32 {
 	return float32(randomFloat)
 }
 
-func RandomKIpAddrs() []string {
+func RandomKIpAddrs(k int) []string {
 	keys := MembershipMap.Keys()
 
-	if len(keys) < GOSSIP_K {
+	if len(keys) < k {
 		return keys
 	}
 
@@ -100,8 +100,8 @@ func RandomKIpAddrs() []string {
 	max := len(keys) - 1
 
 	// Generate k random IP addrs from membership list
-	rv := make([]string, GOSSIP_K)
-	for i := 0; i < GOSSIP_K; i++ {
+	rv := make([]string, k)
+	for i := 0; i < k; i++ {
 		var val int64 = int64(max - min + 1)
 		randomNum, _ := rand.Int(rand.Reader, big.NewInt(val))
 		idx := randomNum.Int64() + int64(min)
