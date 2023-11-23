@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"time"
 
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -11,6 +12,9 @@ import (
 )
 
 func InitializeSdfsProcess() {
+	dirPath := "server/sdfs/sdfsFileSystemRoot"
+	os.RemoveAll(dirPath)
+	os.Mkdir(dirPath, os.ModePerm)
 
 	// Initialize set of which files are being written/read from. This is to avoid concurrent access of file pointers.
 	utils.FileSet = make(map[string]bool)

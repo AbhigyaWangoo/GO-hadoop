@@ -69,7 +69,7 @@ func SdfsClientMain(SdfsFilename string) ([][]string, error) {
 				}
 			}
 		}
-		
+
 		if WorkInProgress {
 			time.Sleep(time.Millisecond * 250)
 			fmt.Println("WAITING DURING UPDATE")
@@ -77,7 +77,7 @@ func SdfsClientMain(SdfsFilename string) ([][]string, error) {
 			break
 		}
 	}
-	
+
 	return blockLocationArr, nil
 }
 
@@ -194,7 +194,8 @@ func InitiateGetCommand(sdfsFilename string, localfilename string, blockLocation
 		for {
 			randomReplicaIp, err := PopRandomElementInArray(&replicas)
 			if err != nil {
-				log.Fatalf("All replicas down ):")
+				// log.Fatalf("All replicas down ):")
+				break
 			}
 			if randomReplicaIp == "w" {
 				continue
@@ -341,7 +342,7 @@ func InitiateLsCommand(sdfs_filename string, mappings [][]string) {
 func InitiateLsWithPrefix(sdfs_prefix string) []string {
 	// Returns a list of files with the matching prefix
 	var rv []string
-	
+
 	return rv
 }
 

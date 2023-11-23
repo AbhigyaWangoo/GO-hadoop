@@ -33,7 +33,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 		return nil
 	}
 
-	if Task.ConnectionOperation == utils.WRITE {
+	if Task.ConnectionOperation == utils.WRITE { // Put request
 		flags = os.O_CREATE | os.O_WRONLY
 		nActiveWriters++
 	} else if Task.ConnectionOperation == utils.READ {
@@ -86,13 +86,13 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 
 		if isRead {
 			nActiveReaders--
-			
+
 			if readWriteHistory < 0 {
 				readWriteHistory = 0
 			} else {
 				readWriteHistory++
 			}
-	
+
 		} else if isWrite {
 			nActiveWriters--
 			fmt.Println("Decrementing writer count in error flow, ", nActiveWriters)
@@ -102,7 +102,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 				readWriteHistory--
 			}
 		}
-		
+
 		utils.MuLocalFs.Unlock()
 		utils.CondLocalFs.Signal()
 
@@ -120,10 +120,10 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 	log.Println("Nread: ", nread)
 
 	utils.FileSet[localFilename] = false
-	
+
 	if isRead {
 		nActiveReaders--
-		
+
 		if readWriteHistory < 0 {
 			readWriteHistory = 0
 		} else {
@@ -134,7 +134,7 @@ func HandleStreamConnection(Task utils.Task, conn net.Conn) error {
 		fmt.Println("Decrementing writer count, first ", nActiveWriters)
 		nActiveWriters--
 		fmt.Println("Decrementing writer count, second ", nActiveWriters)
-		
+
 		if readWriteHistory > 0 {
 			readWriteHistory = 0
 		} else {
@@ -162,7 +162,7 @@ func HandleDeleteConnection(Task utils.Task) error {
 	localFilename := utils.GetFileName(utils.BytesToString(Task.FileName[:]), fmt.Sprint(Task.BlockIndex))
 
 	utils.MuLocalFs.Lock()
-	
+
 	fmt.Println("This should be false: ", utils.FileSet[localFilename])
 	fmt.Printf("nreaders: %d nwriters: %d\n", nActiveReaders, nActiveWriters)
 

@@ -329,7 +329,7 @@ func SendAckToMaster(task Task) *net.Conn {
 		conn, connectionError := SendTask(task, leaderIp, true)
 
 		if connectionError != nil {
-			fmt.Println("Pick")
+			log.Println("Pick")
 			return SendAckToMaster(task)
 		}
 
