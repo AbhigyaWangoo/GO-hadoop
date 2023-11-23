@@ -13,7 +13,8 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 
 	// 1. GET all sdfs files' names associated with SdfsPrefix (1 file per unique key), call it SdfsPrefixKeys
 	SdfsPrefixKeys := sdfs_client.InitiateLsWithPrefix(SdfsPrefix)
-
+	fmt.Println(SdfsPrefixKeys)
+	return
 	// 2. get an array of NJuices IPs from gossip memlist, call it JuiceDsts
 	JuiceDsts := gossiputils.RandomKIpAddrs(int(NJuices))
 

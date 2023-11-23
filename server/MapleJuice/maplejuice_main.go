@@ -19,7 +19,7 @@ func MapleJuiceMainListener() {
 	}
 	defer tcpConn.Close()
 
-	fmt.Println("sdfs client is listening on local machine")
+	fmt.Println("maplejuice client is listening on local machine")
 
 	for {
 		// Read data from the TCP connection
