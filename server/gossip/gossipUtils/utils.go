@@ -100,7 +100,7 @@ func RandomKIpAddrs(k int) []string {
 	max := len(keys) - 1
 
 	// Generate k random IP addrs from membership list
-	rv := make([]string, k)
+	rv := make([]string, 0)
 	for i := 0; i < k; i++ {
 		var val int64 = int64(max - min + 1)
 		randomNum, _ := rand.Int(rand.Reader, big.NewInt(val))
@@ -155,7 +155,7 @@ func MachineType() SdfsNodeType {
 		if ok {
 			myMember.Type = LEADER
 		}
-		
+
 		MembershipMap.Set(Ip, myMember)
 		return LEADER
 	}
@@ -166,7 +166,7 @@ func MachineType() SdfsNodeType {
 			if ok {
 				myMember.Type = SUB_LEADER
 			}
-			
+
 			MembershipMap.Set(Ip, myMember)
 			return SUB_LEADER
 		}
@@ -176,16 +176,16 @@ func MachineType() SdfsNodeType {
 	if ok {
 		myMember.Type = FOLLOWER
 	}
-	
+
 	MembershipMap.Set(Ip, myMember)
 	return FOLLOWER
 }
 
 func GetKLeaders() []string {
-	
+
 	allKeys := MembershipMap.Keys()
 	allMembers := make([]Member, 0)
-	
+
 	for _, key := range allKeys {
 		member, _ := MembershipMap.Get(key)
 		if member.State != DOWN {
