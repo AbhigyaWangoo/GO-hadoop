@@ -41,12 +41,14 @@ func InitiateMaplePhase(LocalExecFile string, NMaples uint32, SdfsPrefix string,
 		conn, exists := ipsToConnections[ip]
 		if !exists {
 			conn, _ = sdfsutils.OpenTCPConnection(ip, mapleutils.MAPLE_JUICE_PORT)
+			defer conn.Close()
 			ipsToConnections[ip] = conn
 			mapleTask := mapleutils.MapleJuiceTask{
 				Type:            mapleutils.MAPLE,
 				NodeDesignation: nodeDesignation,
 				SdfsPrefix:      SdfsPrefix,
 				SdfsExecFile:    LocalExecFile,
+				NumberOfMJTasks: NMaples,
 			}
 
 			conn.Write(mapleTask.Marshal())
@@ -55,10 +57,6 @@ func InitiateMaplePhase(LocalExecFile string, NMaples uint32, SdfsPrefix string,
 			nodeDesignation++
 		}
 		conn.Write([]byte(line))
-	}
-
-	for _, conn := range ipsToConnections {
-		conn.Close()
 	}
 
 	// Initiates the Maple phase via client command
