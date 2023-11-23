@@ -11,6 +11,7 @@ import (
 
 	maplejuice "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice"
 	maplejuiceclient "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/client"
+	maplejuiceutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
@@ -32,6 +33,7 @@ const (
 	D_SUS     CLICommand = "disable_sus"
 	MULTIREAD CLICommand = "multiread"
 	MAPLE     CLICommand = "maple"
+	JUICE     CLICommand = "juice"
 )
 
 // Send suspicion flip message to all machines
@@ -158,6 +160,23 @@ func RunCLI() {
 			maplejuiceclient.InitiateMaplePhase(parts[1], uint32(numMapleTasks), parts[3], parts[4])
 			// func InitiateMaplePhase(LocalExecFile string, NMaples uint32, SdfsPrefix string, SdfsSrcDataset string) {
 
+		} else if strings.Contains(command, string(JUICE)) {
+			parts := strings.Split(command, " ")
+			for i, part := range parts {
+				part = strings.TrimSpace(part)
+				parts[i] = part
+			}
+			numJuiceTasks, _ := strconv.ParseUint(parts[2], 10, 32)
+			deleteInput := parts[5] == string(0)
+			
+			var pt maplejuiceutils.PartitioningType
+			if parts[6] == "hash" {
+				pt = maplejuiceutils.HASH
+			} else if parts[6] == "range" {
+				pt = maplejuiceutils.RANGE
+			}
+			
+			maplejuiceclient.InitiateJuicePhase(parts[1], uint32(numJuiceTasks), parts[3], parts[4], deleteInput, pt)
 		} else {
 			error_msg := `
 			Command not understood. Available commands are as follows:
@@ -177,6 +196,11 @@ func RunCLI() {
 				delete <sdfsFileName> # delete a file from sdfs
 				ls sdfsFileName # list all vm addresses where the file is stored
 				store # at this machine, list all files paritally or fully stored at this machine
+				_____________________________________________________
+				_____________________________________________________
+				MAPLEJUICE COMMANDS:
+				maple <local_exec_file> <N maples> <sdfs prefix> <sdfs src dataset>
+				juice <local_exec_file> <N juices> <sdfs prefix> <sdfs dst dataset> <delete input 0 | 1> <HASH | RANGE>
 				_____________________________________________________
 			`
 			float, err_parse := strconv.ParseFloat(command[:len(command)-1], 32)

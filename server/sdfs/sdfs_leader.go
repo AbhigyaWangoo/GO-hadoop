@@ -1,10 +1,12 @@
 package sdfs
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net"
+	"regexp"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -14,7 +16,7 @@ import (
 var BlockLocations cmap.ConcurrentMap[string, [][]string] = cmap.New[[][]string]()           // filename : [[ip addr, ip addr, ], ], index 2d arr by block index
 var FileToOriginator cmap.ConcurrentMap[string, []string] = cmap.New[[]string]()             // filename : [ClientIpWhoCreatedFile, ClientCreationTime]
 var FileToBlocks cmap.ConcurrentMap[string, [][2]interface{}] = cmap.New[[][2]interface{}]() // IPaddr : [[blockidx, filename]]
-var FileToSize cmap.ConcurrentMap[string, int64] = cmap.New[int64]() // sdfsfilename : size
+var FileToSize cmap.ConcurrentMap[string, int64] = cmap.New[int64]()                         // sdfsfilename : size
 
 // Initializes a new entry in BlockLocations, so the leader can begin listening for block acks.
 func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
@@ -133,8 +135,8 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		}
 
 		allDeleted := true
-		for i := int64(0); i < int64(len(blockMap)); i++ { 
-			for j := int64(0); j < int64(len(blockMap[i])); j++ { 
+		for i := int64(0); i < int64(len(blockMap)); i++ {
+			for j := int64(0); j < int64(len(blockMap[i])); j++ {
 				if blockMap[i][j] != utils.DELETE_OP {
 					allDeleted = false
 				}
@@ -162,6 +164,13 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 
 			FileToBlocks.Set(ackSourceIp, mapping)
 		}
+	} else if IncomingAck.ConnectionOperation == utils.GET_PREFIX {
+		err := HandleGetPrefixList(fileName, conn)
+		if err != nil {
+			return err
+		}
+		
+		fmt.Println("Successfully handled get prefix request")
 	}
 
 	// 1. Ack for Write operation
@@ -171,6 +180,33 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 	// 2. Ack for Delete operation
 	// 		2.a. Forward ack to submaster
 	// 		2.b. Navigate to entry in fname:2darr mapping given the IncomingAck.filename and IncomingAck.blockidx, and src IP from IncomingAck.DataTargetIp, and delete IP. Replace deleted IP with DELETE_OP constant.
+
+	return nil
+}
+
+func HandleGetPrefixList(SdfsPrefix string, conn *net.Conn) error {
+	pattern := SdfsPrefix + "*"
+
+	// Compile the regular expression
+	regex, err := regexp.Compile(pattern)
+	if err != nil {
+		fmt.Println("Error compiling regex:", err)
+		return err
+	}
+
+	var rv []string
+	for _, val := range FileToBlocks.Keys() {
+		if regex.MatchString(val) {
+			rv = append(rv, val)
+		}
+	}
+
+	encoder := json.NewEncoder(*conn)
+	err = encoder.Encode(rv)
+	if err != nil {
+		fmt.Println("Error encoding and sending data:", err)
+		return err
+	}
 
 	return nil
 }
