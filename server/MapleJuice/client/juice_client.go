@@ -1,6 +1,8 @@
 package maplejuice
 
 import (
+	"fmt"
+
 	maplejuiceutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	sdfs_client "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
@@ -22,8 +24,10 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 	for IpAddr, sdfsKeyFiles := range PartitionedKeys {
 
 		// 5. SendJuiceTask(IpAddr, [sdfsKeyFiles])
-		SendJuiceTask(IpAddr, sdfsKeyFiles)
-
+		err := SendJuiceTask(IpAddr, sdfsKeyFiles)
+		if err != nil {
+			fmt.Printf("Error with sending juice task to ip addr %s, %v\n", IpAddr, err)
+		}
 	}
 }
 
@@ -33,6 +37,6 @@ func PartitionKeys(SdfsPrefixKeys []string, JuiceDsts []string) map[string][]str
 	return rv
 }
 
-func SendJuiceTask(Dst string, SdfsKeyFiles []string) error {
+func SendJuiceTask(ipDest string, sdfsKeyFiles []string) error {
 	return nil
 }

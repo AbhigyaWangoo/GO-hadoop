@@ -3,6 +3,7 @@ package sdfs
 import (
 	"bufio"
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -343,15 +344,21 @@ func InitiateLsCommand(sdfs_filename string, mappings [][]string) {
 
 func InitiateLsWithPrefix(SdfsPrefix string) []string {
 	// Returns a list of files with the matching prefix
-	var rv []string
+	var recvData []string
 	var task utils.Task
 	task.ConnectionOperation = utils.GET_PREFIX
 	task.FileName = utils.New1024Byte(SdfsPrefix)
 	task.IsAck = true
 
-	utils.SendAckToMaster(task)
+	conn := utils.SendAckToMaster(task)	
+	decoder := json.NewDecoder(*conn)
+	err := decoder.Decode(&recvData)
+	if err != nil {
+		fmt.Println("Error decoding data:", err)
+		return recvData
+	}
 
-	return rv
+	return recvData
 }
 
 func InitiateStoreCommand() {
