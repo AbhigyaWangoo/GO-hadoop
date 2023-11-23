@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 
 	maplejuiceutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -20,6 +21,8 @@ func HandleMapleRequest(Task *maplejuiceutils.MapleJuiceTask, MapleConn net.Conn
 	blockIdx := Task.NodeDesignation
 	numMJTasks := Task.NumberOfMJTasks
 	execOutputFp.Seek(0, 0)
+
+	log.Println("Block idx: ", blockIdx)
 
 	putAcksToSend := readAndStoreKeyValues(execOutputFp, blockIdx, Task.SdfsPrefix, numMJTasks)
 
@@ -43,15 +46,15 @@ func readAndStoreKeyValues(inputFp *os.File, blockIdx uint32, sdfsPrefix string,
 	for scanner.Scan() {
 		line := scanner.Text()
 		key, value := getKeyValueFromLine(line)
-		if fp, exists := keyToFp[key]; exists {
-			keyValFormatted := "[" + key + ": " + value + "]"
-			fp.Write([]byte(keyValFormatted))
-			fp.Write([]byte{'\n'})
-		} else {
-			blockToOpenPath := "server/sdfs/sdfsFileSystemRoot/" + string(blockIdx) + "_" + sdfsPrefix + key
+		_, exists := keyToFp[key]
+		if !exists {
+			blockToOpenPath := "server/sdfs/sdfsFileSystemRoot/" + strconv.Itoa(int(blockIdx)) + "_" + sdfsPrefix + key
 			keyToFp[key] = maplejuiceutils.OpenFile(blockToOpenPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC)
 			defer keyToFp[key].Close()
 		}
+		keyValFormatted := "[" + key + ": " + value + "]"
+		keyToFp[key].Write([]byte(keyValFormatted))
+		keyToFp[key].Write([]byte{'\n'})
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -69,7 +72,7 @@ func readAndStoreKeyValues(inputFp *os.File, blockIdx uint32, sdfsPrefix string,
 		// 	DataSize            int64 // TODO change me to int64
 		// 	IsAck               bool
 		// }
-		fileName := string(blockIdx) + "_" + sdfsPrefix + key
+		fileName := sdfsPrefix + key
 		task := sdfsutils.Task{
 			DataTargetIp:        sdfsutils.New19Byte(gossiputils.Ip),
 			AckTargetIp:         sdfsutils.New19Byte(gossiputils.Ip),
@@ -113,19 +116,35 @@ func getExecutableOutput(conn net.Conn, sdfsPrefix string, executableFileName st
 	execOutputFileName := sdfsPrefix + "_execOutput"
 	execOutputFp := maplejuiceutils.OpenFile(execOutputFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC)
 
-	originalStdout := os.Stdout
-	os.Stdout = execOutputFp
-
 	maplejuiceutils.ReadAllDataFromConn(conn, sdfsPrefix)
 
-	cmd := exec.Command("./"+executableFileName, sdfsPrefix)
+	cmd := exec.Command("python3", executableFileName+".py", sdfsPrefix)
 
-	err := cmd.Run()
+	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
-		log.Fatalf("Error:", err)
+		log.Println("Error creating stdout pipe:", err)
 	}
 
-	os.Stdout = originalStdout
+	err = cmd.Start()
+	if err != nil {
+		log.Println("Error starting command:", err)
+	}
+
+	scanner := bufio.NewScanner(stdoutPipe)
+	for scanner.Scan() {
+		line := scanner.Text()
+		execOutputFp.Write([]byte(line))
+		execOutputFp.Write([]byte{'\n'})
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading from stdout pipe:", err)
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		fmt.Println("Error waiting for command to finish:", err)
+	}
 
 	return execOutputFp
 }

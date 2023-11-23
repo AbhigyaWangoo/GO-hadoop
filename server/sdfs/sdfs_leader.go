@@ -14,7 +14,7 @@ import (
 var BlockLocations cmap.ConcurrentMap[string, [][]string] = cmap.New[[][]string]()           // filename : [[ip addr, ip addr, ], ], index 2d arr by block index
 var FileToOriginator cmap.ConcurrentMap[string, []string] = cmap.New[[]string]()             // filename : [ClientIpWhoCreatedFile, ClientCreationTime]
 var FileToBlocks cmap.ConcurrentMap[string, [][2]interface{}] = cmap.New[[][2]interface{}]() // IPaddr : [[blockidx, filename]]
-var FileToSize cmap.ConcurrentMap[string, int64] = cmap.New[int64]() // sdfsfilename : size
+var FileToSize cmap.ConcurrentMap[string, int64] = cmap.New[int64]()                         // sdfsfilename : size
 
 // Initializes a new entry in BlockLocations, so the leader can begin listening for block acks.
 func InitializeBlockLocationsEntry(Filename string, FileSize int64) {
@@ -133,8 +133,8 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		}
 
 		allDeleted := true
-		for i := int64(0); i < int64(len(blockMap)); i++ { 
-			for j := int64(0); j < int64(len(blockMap[i])); j++ { 
+		for i := int64(0); i < int64(len(blockMap)); i++ {
+			for j := int64(0); j < int64(len(blockMap[i])); j++ {
 				if blockMap[i][j] != utils.DELETE_OP {
 					allDeleted = false
 				}
@@ -202,7 +202,18 @@ func Handle2DArrRequest(Filename string, conn net.Conn) {
 		fmt.Printf("Block location filename %s dne. Continuing\n", Filename)
 	}
 
-	marshalledArray := utils.MarshalBlockLocationArr(arr)
+	returningArr := make([][]string, 0)
+	for i := 0; i < len(arr); i++ {
+		replicaArr := make([]string, 0)
+		for j := 0; j < len(arr[i]); j++ {
+			if arr[i][j] != utils.WRITE_OP && arr[i][j] != utils.DELETE_OP {
+				replicaArr = append(replicaArr, arr[i][j])
+			}
+		}
+		returningArr = append(returningArr, replicaArr)
+	}
+
+	marshalledArray := utils.MarshalBlockLocationArr(returningArr)
 	_, err := conn.Write(marshalledArray)
 	if err != nil {
 		log.Fatalf("Error writing 2d arr to conn: %v\n", err)

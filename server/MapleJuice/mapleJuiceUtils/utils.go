@@ -3,7 +3,6 @@ package maplejuiceutils
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -61,9 +60,10 @@ func UnmarshalMapleJuiceTask(conn net.Conn) (*MapleJuiceTask, int64) {
 func ReadAllDataFromConn(conn net.Conn, outputFileName string) {
 	fp := OpenFile(outputFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC)
 	defer fp.Close()
-	_, err := io.Copy(fp, conn)
+	n, err := io.Copy(fp, conn)
+	log.Println("Number of bytes read: ", n)
 	if err != nil {
-		fmt.Println("Error copying data:", err)
+		log.Println("Error copying data:", err)
 	}
 
 	log.Println("Data copied successfully")

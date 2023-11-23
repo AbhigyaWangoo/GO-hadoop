@@ -9,11 +9,13 @@ def process_file(input_file):
                 line = line.strip()
                 line = line.split(' ')
                 line[0], line[1] = line[0].strip(), line[1].strip()
-                print('[' + line[0] + ': ' + line[1] + ']')
+                sys.stdout.write('[' + line[0] + ': ' + line[1] + ']\n')
+                # print('[' + line[0] + ': ' + line[1] + ']')
     except FileNotFoundError:
         print(f"Error: File '{input_file}' not found.")
     except Exception as e:
         print(f"Error: {e}")
+    sys.stdout.flush()
 
 if __name__ == "__main__":
     # Check if the correct number of command-line arguments is provided

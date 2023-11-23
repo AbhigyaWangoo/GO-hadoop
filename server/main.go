@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	maplejuice "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice"
 	maplejuiceclient "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/client"
 	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -193,6 +194,7 @@ func RunCLI() {
 func main() {
 	go gossip.InitializeGossip()
 	go sdfs.InitializeSdfsProcess()
+	go maplejuice.MapleJuiceMainListener()
 
 	RunCLI()
 }
