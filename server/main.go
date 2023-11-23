@@ -9,10 +9,11 @@ import (
 	"strings"
 	"time"
 
+	maplejuiceclient "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/client"
 	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
-	sdfs_client "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
+	sdfsclient "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
 )
 
 type CLICommand string
@@ -29,6 +30,7 @@ const (
 	EN_SUS    CLICommand = "enable_sus"
 	D_SUS     CLICommand = "disable_sus"
 	MULTIREAD CLICommand = "multiread"
+	MAPLE     CLICommand = "maple"
 )
 
 // Send suspicion flip message to all machines
@@ -76,9 +78,9 @@ func RunCLI() {
 		} else if strings.Contains(command, string(PUT)) {
 			parts := strings.Split(command, " ")
 			localfilename := strings.TrimSpace(parts[1])
-			sdfs_filename := strings.TrimSpace(parts[2])
+			sdfsFileName := strings.TrimSpace(parts[2])
 
-			locations, locationErr := sdfs_client.SdfsClientMain(sdfs_filename)
+			locations, locationErr := sdfsclient.SdfsClientMain(sdfsFileName)
 			if locationErr != nil {
 				fmt.Println("Error with sdfsclient main. Aborting Put command: ", locationErr)
 				return
@@ -86,9 +88,9 @@ func RunCLI() {
 
 			if len(locations) != 0 {
 				time.Sleep(time.Second)
-				sdfs_client.InitiateDeleteCommand(sdfs_filename, locations)
-	
-				locations, locationErr = sdfs_client.SdfsClientMain(sdfs_filename)
+				sdfsclient.InitiateDeleteCommand(sdfsFileName, locations)
+
+				locations, locationErr = sdfsclient.SdfsClientMain(sdfsFileName)
 				if locationErr != nil {
 					fmt.Println("Error with sdfsclient main. Aborting Put command: ", locationErr)
 					return
@@ -96,55 +98,65 @@ func RunCLI() {
 				fmt.Println("mappings detected after delete: ", locations)
 			}
 
-			sdfs_client.InitiatePutCommand(localfilename, sdfs_filename)
+			sdfsclient.InitiatePutCommand(localfilename, sdfsFileName)
 
 		} else if strings.Contains(command, string(GET)) {
 			parts := strings.Split(command, " ")
 			localfilename := strings.TrimSpace(parts[1])
-			sdfs_filename := strings.TrimSpace(parts[2])
+			sdfsFileName := strings.TrimSpace(parts[2])
 
-			locations, locationErr := sdfs_client.SdfsClientMain(sdfs_filename)
+			locations, locationErr := sdfsclient.SdfsClientMain(sdfsFileName)
 			if locationErr != nil {
 				fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
 				return
 			}
 
-			sdfs_client.InitiateGetCommand(sdfs_filename, localfilename, locations)
+			sdfsclient.InitiateGetCommand(sdfsFileName, localfilename, locations)
 
 		} else if strings.Contains(command, string(DELETE)) {
 			parts := strings.Split(command, " ")
-			sdfs_filename := strings.TrimSpace(parts[1])
+			sdfsFileName := strings.TrimSpace(parts[1])
 
-			mappings, mappingsErr := sdfs_client.SdfsClientMain(sdfs_filename)
+			mappings, mappingsErr := sdfsclient.SdfsClientMain(sdfsFileName)
 			if mappingsErr != nil {
 				fmt.Println("Error with sdfsclient main. Aborting Get command: ", mappingsErr)
 				return
 			}
 			fmt.Println("FOUND MAPPING: ", mappings)
-			
-			sdfs_client.InitiateDeleteCommand(sdfs_filename, mappings)
+
+			sdfsclient.InitiateDeleteCommand(sdfsFileName, mappings)
 
 		} else if strings.Contains(command, string(LS)) {
 			parts := strings.Split(command, " ")
-			sdfs_filename := strings.TrimSpace(parts[1])
+			sdfsFileName := strings.TrimSpace(parts[1])
 
-			mappings, mappingsErr := sdfs_client.SdfsClientMain(sdfs_filename)
+			mappings, mappingsErr := sdfsclient.SdfsClientMain(sdfsFileName)
 			if mappingsErr != nil {
 				fmt.Println("Error with sdfsclient main. Aborting Get command: ", mappingsErr)
 				return
 			}
 
-			sdfs_client.InitiateLsCommand(sdfs_filename, mappings)
+			sdfsclient.InitiateLsCommand(sdfsFileName, mappings)
 
 		} else if strings.Contains(command, string(STORE)) {
-			sdfs_client.InitiateStoreCommand()
+			sdfsclient.InitiateStoreCommand()
 		} else if strings.Contains(command, string(MULTIREAD)) {
 			parts := strings.Split(command, " ")
 			for i, part := range parts {
 				part = strings.TrimSpace(part)
 				parts[i] = part
 			}
-			sdfs_client.InitiateMultiRead(parts[1], parts[2:])
+			sdfsclient.InitiateMultiRead(parts[1], parts[2:])
+		} else if strings.Contains(command, string(MAPLE)) {
+			parts := strings.Split(command, " ")
+			for i, part := range parts {
+				part = strings.TrimSpace(part)
+				parts[i] = part
+			}
+			numMapleTasks, _ := strconv.ParseUint(parts[2], 10, 32)
+			maplejuiceclient.InitiateMaplePhase(parts[1], uint32(numMapleTasks), parts[3], parts[4])
+			// func InitiateMaplePhase(LocalExecFile string, NMaples uint32, SdfsPrefix string, SdfsSrcDataset string) {
+
 		} else {
 			error_msg := `
 			Command not understood. Available commands are as follows:
@@ -159,10 +171,10 @@ func RunCLI() {
 				_____________________________________________________
 				_____________________________________________________
 				SDFS COMMANDS:
-				put <localfilename> <sdfs_filename> # put a file from your local machine into sdfs
-				get <sdfs_filename> <localfilename> # get a file from sdfs and write it to local machine
-				delete <sdfs_filename> # delete a file from sdfs
-				ls sdfs_filename # list all vm addresses where the file is stored
+				put <localfilename> <sdfsFileName> # put a file from your local machine into sdfs
+				get <sdfsFileName> <localfilename> # get a file from sdfs and write it to local machine
+				delete <sdfsFileName> # delete a file from sdfs
+				ls sdfsFileName # list all vm addresses where the file is stored
 				store # at this machine, list all files paritally or fully stored at this machine
 				_____________________________________________________
 			`
