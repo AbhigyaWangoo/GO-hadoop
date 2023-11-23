@@ -148,6 +148,7 @@ func RunCLI() {
 			}
 			sdfsclient.InitiateMultiRead(parts[1], parts[2:])
 		} else if strings.Contains(command, string(MAPLE)) {
+			fmt.Println("GOT MAPLE")
 			parts := strings.Split(command, " ")
 			for i, part := range parts {
 				part = strings.TrimSpace(part)

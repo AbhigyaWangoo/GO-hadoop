@@ -36,8 +36,8 @@ func HandleMapleRequest(Task *maplejuiceutils.MapleJuiceTask, MapleConn net.Conn
 
 func readAndStoreKeyValues(inputFp *os.File, blockIdx uint32, sdfsPrefix string, numberOfMJTasks uint32) []sdfsutils.Task {
 	// Create a scanner to read the file line by line
-	var keyToFp map[string]*os.File
-	var putAcksToSend []sdfsutils.Task
+	keyToFp := make(map[string]*os.File)
+	putAcksToSend := make([]sdfsutils.Task, 1)
 
 	scanner := bufio.NewScanner(inputFp)
 	for scanner.Scan() {

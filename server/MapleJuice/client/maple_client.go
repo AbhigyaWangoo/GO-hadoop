@@ -10,21 +10,20 @@ import (
 
 	mapleutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
-	sdfsclient "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
 	sdfsutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
 func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string, SdfsSrcDataset string) {
 
-	locations, locationErr := sdfsclient.SdfsClientMain(SdfsSrcDataset)
-	if locationErr != nil {
-		fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
-		return
-	}
+	// locations, locationErr := sdfsclient.SdfsClientMain(SdfsSrcDataset)
+	// if locationErr != nil {
+	// 	fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
+	// 	return
+	// }
 
-	var ipsToConnections map[string]net.Conn
+	ipsToConnections := make(map[string]net.Conn)
 
-	sdfsclient.InitiateGetCommand(SdfsSrcDataset, SdfsSrcDataset, locations)
+	// sdfsclient.InitiateGetCommand(SdfsSrcDataset, SdfsSrcDataset, locations)
 	mapleIps := getMapleIps(nMaples)
 
 	entries, err := os.ReadDir(SdfsSrcDataset)
