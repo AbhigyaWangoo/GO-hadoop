@@ -341,9 +341,15 @@ func InitiateLsCommand(sdfs_filename string, mappings [][]string) {
 	fmt.Println(mappings)
 }
 
-func InitiateLsWithPrefix(sdfs_prefix string) []string {
+func InitiateLsWithPrefix(SdfsPrefix string) []string {
 	// Returns a list of files with the matching prefix
 	var rv []string
+	var task utils.Task
+	task.ConnectionOperation = utils.GET_PREFIX
+	task.FileName = utils.New1024Byte(SdfsPrefix)
+	task.IsAck = true
+
+	utils.SendAckToMaster(task)
 
 	return rv
 }
