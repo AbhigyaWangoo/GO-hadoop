@@ -195,12 +195,14 @@ func HandleGetPrefixList(SdfsPrefix string, conn *net.Conn) error {
 	}
 
 	var rv []string
-	for _, val := range FileToBlocks.Keys() {
+	fmt.Println(BlockLocations.Keys())
+	for _, val := range BlockLocations.Keys() {
 		if regex.MatchString(val) {
 			rv = append(rv, val)
 		}
 	}
-
+	
+	fmt.Println(rv)
 	encoder := json.NewEncoder(*conn)
 	err = encoder.Encode(rv)
 	if err != nil {
