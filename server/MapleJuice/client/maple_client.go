@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"hash/crc32"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -45,6 +46,10 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		ipsToConnections = sendAllLinesInAFile(mapleIps, ipsToConnections, fp, nMaples, SdfsPrefix, LocalExecFile)
 	}
 
+	for _, conn := range ipsToConnections {
+		conn.Close()
+	}
+
 	// Initiates the Maple phase via client command
 
 	// 1. GET SdfsSrcDataset -> dataset.txt
@@ -60,9 +65,10 @@ func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn
 	nodeDesignation := uint32(0)
 	for scanner.Scan() {
 		line := scanner.Text()
-		ip := getPartitionIp(line, mapleIps, nMaples)
+		ip := getPartitionIp(line, mapleIps)
 		conn, exists := ipsToConnections[ip]
 		if !exists {
+			log.Printf(ip)
 			conn, _ = sdfsutils.OpenTCPConnection(ip, mapleutils.MAPLE_JUICE_PORT)
 			ipsToConnections[ip] = conn
 			mapleTask := mapleutils.MapleJuiceTask{
@@ -77,20 +83,25 @@ func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn
 			conn.Write([]byte{'\n'})
 
 			nodeDesignation++
+			sdfsutils.ReadSmallAck(conn)
 		}
 		conn.Write([]byte(line))
+		conn.Write([]byte{'\n'})
+		// log.Println(line)
 	}
-
 	return ipsToConnections
 }
 
 func getMapleIps(nMaples uint32) []string {
 	kRandomIpAddrs := gossiputils.RandomKIpAddrs(int(nMaples))
-	return kRandomIpAddrs
+	// log.Println(len(kRandomIpAddrs))
+	// log.Println(kRandomIpAddrs[1])
+	return []string{kRandomIpAddrs[1]}
 }
 
-func getPartitionIp(key string, ips []string, nMaples uint32) string {
-	numPartitions := uint32(len(ips)) //
+func getPartitionIp(key string, ips []string) string {
+	// log.Println(ips[0], ips[1])
+	numPartitions := uint32(len(ips))
 	return ips[hashFunction(key, numPartitions)]
 }
 
@@ -98,3 +109,5 @@ func hashFunction(key string, numPartitions uint32) uint32 {
 	hash := crc32.ChecksumIEEE([]byte(key))
 	return uint32(hash) % numPartitions
 }
+
+// maple map_executable 1 prefix mapTestDir

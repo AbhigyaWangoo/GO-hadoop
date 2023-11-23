@@ -44,6 +44,8 @@ func RequestBlockMappings(FileName string) ([][]string, error) {
 
 // Client main function, becomes the entry point for all client operations. This function continuously requests from the master until an operation is finished
 func SdfsClientMain(SdfsFilename string) ([][]string, error) {
+	// var blockLocationArr [][]string
+	// blockLocationArr, _ = RequestBlockMappings(SdfsFilename)
 	var blockLocationArr [][]string
 	WorkInProgress := true
 	var blockErr error
