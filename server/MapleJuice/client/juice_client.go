@@ -2,8 +2,8 @@ package maplejuice
 
 import (
 	maplejuiceutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
-	sdfs_client "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
+	sdfs_client "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
 )
 
 func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string, SdfsDst string, DeleteInput bool, Partition maplejuiceutils.PartitioningType) {
@@ -20,18 +20,19 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 
 	// 4. For each IpAddr in above map:
 	for IpAddr, sdfsKeyFiles := range PartitionedKeys {
-		
+
 		// 5. SendJuiceTask(IpAddr, [sdfsKeyFiles])
-		err := SendJuiceTask(IpAddr, sdfsKeyFiles)
+		SendJuiceTask(IpAddr, sdfsKeyFiles)
+
 	}
 }
 
 func PartitionKeys(SdfsPrefixKeys []string, JuiceDsts []string) map[string][]string {
 	rv := make(map[string][]string)
-	
+
 	return rv
 }
 
-func SendJuiceTask(Dst string, SdfsKeyFiles [string]) error {
+func SendJuiceTask(Dst string, SdfsKeyFiles []string) error {
 	return nil
 }

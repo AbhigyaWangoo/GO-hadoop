@@ -104,7 +104,7 @@ func getKeyValueFromLine(line string) (key string, value string) {
 
 		return k, v
 	} else {
-		log.Fatalf("No match found.")
+		log.Printf("No match found.")
 		return "", ""
 	}
 }
