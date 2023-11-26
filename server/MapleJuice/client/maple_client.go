@@ -93,8 +93,7 @@ func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn
 }
 
 func getMapleIps(nMaples uint32) []string {
-	kRandomIpAddrs := gossiputils.RandomKIpAddrs(int(nMaples))
-	// log.Println(kRandomIpAddrs[1])
+	kRandomIpAddrs := gossiputils.RandomKIpAddrs(int(nMaples), true)
 	return kRandomIpAddrs
 }
 

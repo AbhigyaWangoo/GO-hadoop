@@ -89,7 +89,7 @@ func RandomNumInclusive() float32 {
 	return float32(randomFloat)
 }
 
-func RandomKIpAddrs(k int) []string {
+func RandomKIpAddrs(k int, repeats bool) []string {
 	keys := MembershipMap.Keys()
 
 	if len(keys) < k {
@@ -102,7 +102,9 @@ func RandomKIpAddrs(k int) []string {
 	// Generate k random IP addrs from membership list
 	rv := make([]string, k)
 	var tracked map[string]bool
-	tracked = make(map[string]bool)
+	if repeats {
+		tracked = make(map[string]bool)
+	}
 	for i := 0; i < k; i++ {
 		var val int64 = int64(max - min + 1)
 		randomNum, _ := rand.Int(rand.Reader, big.NewInt(val))
@@ -113,11 +115,13 @@ func RandomKIpAddrs(k int) []string {
 			panic("Race condition in random k selection")
 		}
 
-		if tracked[keys[idx]] || keys[idx] == Ip || node.State == DOWN || node.State == LEFT { // skip a certain selection if it's down, has left, is the current node, or has been selected before
+		if (repeats && tracked[keys[idx]]) || keys[idx] == Ip || node.State == DOWN || node.State == LEFT { // skip a certain selection if it's down, has left, is the current node, or has been selected before
 			i--
 		} else {
 			rv = append(rv, keys[idx])
-			tracked[keys[idx]] = true
+			if repeats {
+				tracked[keys[idx]] = true
+			}
 		}
 	}
 

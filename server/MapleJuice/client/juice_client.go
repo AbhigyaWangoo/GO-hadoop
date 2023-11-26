@@ -21,7 +21,7 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 	fmt.Println(SdfsPrefixKeys)
 
 	// 2. get an array of NJuices IPs from gossip memlist, call it JuiceDsts
-	JuiceDsts := gossiputils.RandomKIpAddrs(int(NJuices))
+	JuiceDsts := gossiputils.RandomKIpAddrs(int(NJuices), true)
 	fmt.Println(JuiceDsts)
 
 	// 3. Call PartitionKeys(SdfsPrefixKeys, JuiceDsts) that returns a map of IPAddr:[sdfsKeyFile]
