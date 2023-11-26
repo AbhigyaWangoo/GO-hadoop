@@ -71,7 +71,7 @@ func InitiateMaplePhase(LocalExecFile string, NMaples uint32, SdfsPrefix string,
 }
 
 func getMapleIps(nMaples uint32) []string {
-	kRandomIpAddrs := gossiputils.RandomKIpAddrs(int(nMaples))
+	kRandomIpAddrs := gossiputils.RandomKIpAddrs(int(nMaples), true)
 	return kRandomIpAddrs
 }
 
