@@ -83,26 +83,7 @@ func RunCLI() {
 			localfilename := strings.TrimSpace(parts[1])
 			sdfsFileName := strings.TrimSpace(parts[2])
 
-			locations, locationErr := sdfsclient.SdfsClientMain(sdfsFileName)
-			if locationErr != nil {
-				fmt.Println("Error with sdfsclient main. Aborting Put command: ", locationErr)
-				return
-			}
-
-			if len(locations) != 0 {
-				time.Sleep(time.Second)
-				sdfsclient.InitiateDeleteCommand(sdfsFileName, locations)
-
-				locations, locationErr = sdfsclient.SdfsClientMain(sdfsFileName)
-				if locationErr != nil {
-					fmt.Println("Error with sdfsclient main. Aborting Put command: ", locationErr)
-					return
-				}
-				fmt.Println("mappings detected after delete: ", locations)
-			}
-
-			sdfsclient.InitiatePutCommand(localfilename, sdfsFileName)
-
+			sdfsclient.CLIPut(localfilename, sdfsFileName)
 		} else if strings.Contains(command, string(GET)) {
 			parts := strings.Split(command, " ")
 			localfilename := strings.TrimSpace(parts[1])

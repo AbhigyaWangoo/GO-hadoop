@@ -100,7 +100,9 @@ func RandomKIpAddrs(k int) []string {
 	max := len(keys) - 1
 
 	// Generate k random IP addrs from membership list
-	rv := make([]string, 0)
+	rv := make([]string, k)
+	var tracked map[string]bool
+	tracked = make(map[string]bool)
 	for i := 0; i < k; i++ {
 		var val int64 = int64(max - min + 1)
 		randomNum, _ := rand.Int(rand.Reader, big.NewInt(val))
@@ -111,10 +113,11 @@ func RandomKIpAddrs(k int) []string {
 			panic("Race condition in random k selection")
 		}
 
-		if keys[idx] == Ip || node.State == DOWN || node.State == LEFT { // skip a certain selection if it's down, has left, or is the current node
+		if tracked[keys[idx]] || keys[idx] == Ip || node.State == DOWN || node.State == LEFT { // skip a certain selection if it's down, has left, is the current node, or has been selected before
 			i--
 		} else {
 			rv = append(rv, keys[idx])
+			tracked[keys[idx]] = true
 		}
 	}
 

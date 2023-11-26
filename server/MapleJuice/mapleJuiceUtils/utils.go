@@ -2,9 +2,11 @@ package maplejuiceutils
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"encoding/json"
 	"io"
 	"log"
+	"math/big"
 	"net"
 	"os"
 )
@@ -26,6 +28,25 @@ type MapleJuiceTask struct {
 	SdfsExecFile    string // The name of the executable that exists in sdfs
 	NumberOfMJTasks uint32
 	// We also need to somehow track
+}
+
+func CalculateSHA256(input string) *big.Int {
+	// Convert the string to a byte slice
+	data := []byte(input)
+
+	// Create a new SHA-256 hash object
+	hasher := sha256.New()
+
+	// Write data to the hash object
+	hasher.Write(data)
+
+	// Get the hashed result as a byte slice
+	hashedResult := hasher.Sum(nil)
+
+	// Convert the hashed result to a big.Int
+	hashedInt := new(big.Int).SetBytes(hashedResult)
+
+	return hashedInt
 }
 
 func (task MapleJuiceTask) Marshal() []byte {
