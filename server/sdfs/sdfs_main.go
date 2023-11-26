@@ -83,3 +83,25 @@ func HandleConnection(conn net.Conn) {
 	}
 	// conn.Close()
 }
+
+func CLIPut(localfilename string, sdfsFileName string) {
+	locations, locationErr := SdfsClientMain(sdfsFileName)
+	if locationErr != nil {
+		fmt.Println("Error with sdfsclient main. Aborting Put command: ", locationErr)
+		return
+	}
+
+	if len(locations) != 0 {
+		time.Sleep(time.Second)
+		InitiateDeleteCommand(sdfsFileName, locations)
+
+		locations, locationErr = SdfsClientMain(sdfsFileName)
+		if locationErr != nil {
+			fmt.Println("Error with sdfsclient main. Aborting Put command: ", locationErr)
+			return
+		}
+		fmt.Println("mappings detected after delete: ", locations)
+	}
+
+	InitiatePutCommand(localfilename, sdfsFileName)
+}

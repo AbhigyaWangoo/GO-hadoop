@@ -37,7 +37,12 @@ func MapleJuiceMainListener() {
 
 func HandleConnection(conn net.Conn) {
 	mapleJuiceTask, _ := maplejuiceutils.UnmarshalMapleJuiceTask(conn)
+
 	if mapleJuiceTask.Type == maplejuiceutils.MAPLE {
 		followerutils.HandleMapleRequest(mapleJuiceTask, conn)
+	} else if mapleJuiceTask.Type == maplejuiceutils.JUICE {
+		followerutils.HandleJuiceRequest(mapleJuiceTask, &conn)
 	}
+
+	conn.Close()
 }
