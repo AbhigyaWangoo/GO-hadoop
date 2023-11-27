@@ -1,8 +1,9 @@
 package maplejuice
 
 import (
+	"encoding/hex"
+	"errors"
 	"fmt"
-	"math/big"
 	"sort"
 
 	// "strconv"
@@ -28,6 +29,10 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 	PartitionedKeys := PartitionKeys(SdfsPrefixKeys, JuiceDsts, Partition)
 	fmt.Println(PartitionedKeys)
 
+	// Add localexec file to sdfs. TODO this can be send directly to avoid time wasted.
+	sdfs_client.CLIPut(LocalExecFile, LocalExecFile)
+	fmt.Println("Put exec file into sdfs")
+
 	// 4. For each IpAddr in above map:
 	var i uint32 = 0
 	for IpAddr, sdfsKeyFiles := range PartitionedKeys {
@@ -44,7 +49,6 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 
 func PartitionKeys(SdfsPrefixKeys []string, JuiceDsts []string, Partition maplejuiceUtils.PartitioningType) map[string][]string {
 	rv := make(map[string][]string)
-	nJuices := int64(len(JuiceDsts))
 	// nKeys := len(SdfsPrefixKeys)
 
 	if Partition == maplejuiceUtils.RANGE {
@@ -67,14 +71,17 @@ func PartitionKeys(SdfsPrefixKeys []string, JuiceDsts []string, Partition maplej
 
 		if Partition == maplejuiceUtils.HASH {
 			hash := maplejuiceUtils.CalculateSHA256(key)
-			modulus := big.NewInt(nJuices)
-
-			// Perform modular arithmetic
-			idx := new(big.Int).Mod(hash, modulus)
-			ipaddr = JuiceDsts[idx.Int64()]
-
-		} else if Partition == maplejuiceUtils.RANGE {
+			hashint, err := hex.DecodeString(hash)
+			if err != nil {
+				fmt.Printf("Error in key partitioning, cant get hash of %s: %v\n", hash, err)
+			}
+			intHash := int(hashint[0])
 			
+			// Perform modular arithmetic
+			idx := intHash % len(JuiceDsts)
+			ipaddr = JuiceDsts[idx]
+		} else if Partition == maplejuiceUtils.RANGE {
+
 		}
 
 		val, exists := rv[ipaddr]
@@ -86,31 +93,38 @@ func PartitionKeys(SdfsPrefixKeys []string, JuiceDsts []string, Partition maplej
 			rv[ipaddr] = append(val, key)
 		}
 	}
-	
-	// fmt.Println(rv)
+
 	return rv
 }
 
-func SendJuiceTask(ipDest string, sdfsKeyFiles []string, nodeIdx uint32, sdfsPrefix string, localExecFile string, nJuices uint32) error {
+func SendJuiceTask(ipDest string, sdfsKeyFiles []string, nodeIdx uint32, localExecFile string, sdfsPrefix string, nJuices uint32) error {
+	if ipDest == "" {
+		return errors.New("Ip destination was empty for sending juice task")
+	}
+
 	conn, err := sdfsutils.OpenTCPConnection(ipDest, maplejuiceUtils.MAPLE_JUICE_PORT)
 	if err != nil {
 		return err
 	}
-
-	// Add localexec file to sdfs. TODO this can be send directly to avoid time wasted.
-	sdfs_client.CLIPut(localExecFile, localExecFile)
+	defer conn.Close()
 
 	Task := maplejuiceUtils.MapleJuiceTask{
-		Type: maplejuiceUtils.JUICE,
+		Type:            maplejuiceUtils.JUICE,
 		NodeDesignation: nodeIdx,
-		SdfsPrefix: sdfsPrefix,
-		SdfsExecFile: localExecFile,
+		SdfsPrefix:      sdfsPrefix,
+		SdfsExecFile:    localExecFile,
 		NumberOfMJTasks: nJuices,
 	}
 
 	arr := Task.Marshal()
 	_, err = conn.Write(arr)
+	fmt.Println("Sent juice task to end node ", ipDest)
 	if err != nil {
+		return err
+	}
+
+	n, err := conn.Write([]byte("\n"))
+	if err != nil || n != 1 {
 		return err
 	}
 
