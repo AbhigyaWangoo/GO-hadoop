@@ -108,24 +108,27 @@ func SendJuiceTask(ipDest string, sdfsKeyFiles []string, nodeIdx uint32, localEx
 	}
 	defer conn.Close()
 
-	Task := maplejuiceUtils.MapleJuiceTask{
-		Type:            maplejuiceUtils.JUICE,
-		NodeDesignation: nodeIdx,
-		SdfsPrefix:      sdfsPrefix,
-		SdfsExecFile:    localExecFile,
-		NumberOfMJTasks: nJuices,
-	}
+	for _, sdfsKeyFile := range sdfsKeyFiles {
 
-	arr := Task.Marshal()
-	_, err = conn.Write(arr)
-	fmt.Println("Sent juice task to end node ", ipDest)
-	if err != nil {
-		return err
-	}
-
-	n, err := conn.Write([]byte("\n"))
-	if err != nil || n != 1 {
-		return err
+		Task := maplejuiceUtils.MapleJuiceTask{
+			Type:            maplejuiceUtils.JUICE,
+			NodeDesignation: nodeIdx,
+			SdfsPrefix:      sdfsKeyFile,
+			SdfsExecFile:    localExecFile,
+			NumberOfMJTasks: nJuices,
+		}
+	
+		arr := Task.Marshal()
+		_, err = conn.Write(arr)
+		fmt.Println("Sent juice task to end node ", ipDest)
+		if err != nil {
+			return err
+		}
+	
+		n, err := conn.Write([]byte("\n"))
+		if err != nil || n != 1 {
+			return err
+		}
 	}
 
 	return nil
