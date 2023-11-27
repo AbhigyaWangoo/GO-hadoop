@@ -100,7 +100,7 @@ func RandomKIpAddrs(k int, repeats bool) []string {
 	max := len(keys) - 1
 
 	// Generate k random IP addrs from membership list
-	rv := make([]string, k)
+	var rv []string
 	var tracked map[string]bool
 	if repeats {
 		tracked = make(map[string]bool)

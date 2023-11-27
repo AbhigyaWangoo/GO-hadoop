@@ -3,10 +3,10 @@ package maplejuiceutils
 import (
 	"bufio"
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"log"
-	"math/big"
 	"net"
 	"os"
 )
@@ -30,23 +30,20 @@ type MapleJuiceTask struct {
 	// We also need to somehow track
 }
 
-func CalculateSHA256(input string) *big.Int {
-	// Convert the string to a byte slice
-	data := []byte(input)
-
-	// Create a new SHA-256 hash object
+func CalculateSHA256(input string) string {
+	// Create a new SHA-256 hash
 	hasher := sha256.New()
 
-	// Write data to the hash object
-	hasher.Write(data)
+	// Write the string to the hash
+	hasher.Write([]byte(input))
 
-	// Get the hashed result as a byte slice
-	hashedResult := hasher.Sum(nil)
+	// Get the hashed bytes
+	hashedBytes := hasher.Sum(nil)
 
-	// Convert the hashed result to a big.Int
-	hashedInt := new(big.Int).SetBytes(hashedResult)
+	// Convert the bytes to a hexadecimal string
+	hashedString := hex.EncodeToString(hashedBytes)
 
-	return hashedInt
+	return hashedString
 }
 
 func (task MapleJuiceTask) Marshal() []byte {
