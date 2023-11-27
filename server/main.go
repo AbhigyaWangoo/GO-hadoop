@@ -89,14 +89,7 @@ func RunCLI() {
 			localfilename := strings.TrimSpace(parts[1])
 			sdfsFileName := strings.TrimSpace(parts[2])
 
-			locations, locationErr := sdfsclient.SdfsClientMain(sdfsFileName)
-			if locationErr != nil {
-				fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
-				return
-			}
-
-			sdfsclient.InitiateGetCommand(sdfsFileName, localfilename, locations)
-
+			sdfs.CLIGet(sdfsFileName, localfilename)
 		} else if strings.Contains(command, string(DELETE)) {
 			parts := strings.Split(command, " ")
 			sdfsFileName := strings.TrimSpace(parts[1])

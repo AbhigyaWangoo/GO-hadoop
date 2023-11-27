@@ -105,3 +105,13 @@ func CLIPut(localfilename string, sdfsFileName string) {
 
 	InitiatePutCommand(localfilename, sdfsFileName)
 }
+
+func CLIGet(sdfsFileName string, localfilename string) {
+	locations, locationErr := SdfsClientMain(sdfsFileName)
+	if locationErr != nil {
+		fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
+		return
+	}
+
+	InitiateGetCommand(sdfsFileName, localfilename, locations)
+}
