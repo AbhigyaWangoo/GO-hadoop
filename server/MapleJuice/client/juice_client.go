@@ -29,10 +29,6 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 	PartitionedKeys := PartitionKeys(SdfsPrefixKeys, JuiceDsts, Partition)
 	fmt.Println(PartitionedKeys)
 
-	// Add localexec file to sdfs. TODO this can be send directly to avoid time wasted.
-	sdfs_client.CLIPut(LocalExecFile, LocalExecFile)
-	fmt.Println("Put exec file into sdfs")
-
 	// 4. For each IpAddr in above map:
 	var i uint32 = 0
 	for IpAddr, sdfsKeyFiles := range PartitionedKeys {

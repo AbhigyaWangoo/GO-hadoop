@@ -62,23 +62,23 @@ func SdfsClientMain(SdfsFilename string) ([][]string, error) {
 			return blockLocationArr, nil
 		}
 
-		// WorkInProgress = false
-		// for i := range blockLocationArr {
-		// 	for j := range blockLocationArr[i] {
-		// 		if blockLocationArr[i][j] == utils.WRITE_OP || blockLocationArr[i][j] == utils.DELETE_OP {
-		// 			fmt.Printf("Found WIP Op here: %d %d \n", i, j)
-		// 			WorkInProgress = true
-		// 			break
-		// 		}
-		// 	}
-		// }
+		WorkInProgress = false
+		for i := range blockLocationArr {
+			for j := range blockLocationArr[i] {
+				if blockLocationArr[i][j] == utils.WRITE_OP || blockLocationArr[i][j] == utils.DELETE_OP {
+					fmt.Printf("Found WIP Op here: %d %d \n", i, j)
+					WorkInProgress = true
+					break
+				}
+			}
+		}
 
-		// if WorkInProgress {
-		// 	time.Sleep(time.Millisecond * 250)
-		// 	fmt.Println("WAITING DURING UPDATE")
-		// } else {
-		// 	break
-		// }
+		if WorkInProgress {
+			time.Sleep(time.Millisecond * 250)
+			fmt.Println("WAITING DURING UPDATE")
+		} else {
+			break
+		}
 	}
 
 	return blockLocationArr, nil
