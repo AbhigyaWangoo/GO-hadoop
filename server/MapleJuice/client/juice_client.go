@@ -88,7 +88,8 @@ func PartitionKeys(SdfsPrefixKeys []string, JuiceDsts []string, Partition maplej
 		} else {
 			rv[ipaddr] = append(val, key)
 		}
-	}
+	} 
+	// juice juice 2 mb dst 0 hash
 
 	return rv
 }

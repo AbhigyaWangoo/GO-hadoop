@@ -17,27 +17,27 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 	fmt.Println("Entering handle juice request for ", Task.SdfsPrefix)
 	SdfsFilename := Task.SdfsPrefix // SdfsFilename is the one to pull from SDFS, and run the juice task on.
 	juice_exec := Task.SdfsExecFile
-
-	// dst_file := Task.SdfsDst
+	dst_file := Task.SdfsDst
 
 	// CLI GET file locally
 	sdfs.CLIGet(SdfsFilename, SdfsFilename)
 
 	// Run exec file on input file
 	cmd := exec.Command(juice_exec, "-i", SdfsFilename)
-	// output, err := cmd.CombinedOutput()
-	_, err := cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
+	// _, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println("Error running command:", err)
 		return
 	}
 
-	// ParseOutput(Task.NodeDesignation, string(output), dst_file)
+	ParseOutput(Task.NodeDesignation, string(output), dst_file)
 }
 
 func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) {
 	// Take the output, and append it to the dst sdfs file.
 	oFileName := sdfsutils.FILESYSTEM_ROOT + string(nodeIdx) + "_" + dstSdfsFile
+	fmt.Println("Writing juice node to loacl fs: ", oFileName)
 	file, err := os.Create(oFileName)
 	if err != nil {
 		fmt.Println("Error creating file:", err)
