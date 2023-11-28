@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"strconv"
 
 	maplejuiceutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -36,7 +37,8 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 
 func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) {
 	// Take the output, and append it to the dst sdfs file.
-	oFileName := sdfsutils.FILESYSTEM_ROOT + string(nodeIdx) + "_" + dstSdfsFile
+	nodeIdxStr := strconv.FormatUint(uint64(nodeIdx), 10)
+	oFileName := sdfsutils.FILESYSTEM_ROOT + nodeIdxStr + "_" + dstSdfsFile
 	fmt.Println("Writing juice node to loacl fs: ", oFileName)
 	file, err := os.Create(oFileName)
 	if err != nil {
@@ -44,6 +46,7 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) {
 		return
 	}
 	defer file.Close()
+	fmt.Println("Created local file")
 
 	writer := bufio.NewWriter(file)
 
@@ -53,6 +56,7 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) {
 		fmt.Println("Error writing to file:", err)
 		return
 	}
+	fmt.Println("wrote local juice data to file")
 
 	// Flush the writer to ensure all data is written to the file
 	err = writer.Flush()
@@ -74,4 +78,5 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) {
 	}
 
 	sdfsutils.SendAckToMaster(SdfsAck)
+	fmt.Println("Sent ack to master from juice follower")
 }
