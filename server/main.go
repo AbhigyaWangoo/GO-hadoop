@@ -113,8 +113,6 @@ func RunCLI() {
 				return
 			}
 
-			log.Fatalf("Received Maps")
-
 			sdfsclient.InitiateLsCommand(sdfsFileName, mappings)
 
 		} else if strings.Contains(command, string(STORE)) {
