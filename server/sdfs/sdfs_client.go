@@ -3,6 +3,7 @@ package sdfs
 import (
 	"bufio"
 	"crypto/rand"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +17,35 @@ import (
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
+
+func GetFileSizeByPrefix(Prefix string) (uint32, error) {
+	// SIZE_BY_PREFIX
+
+	var task utils.Task
+	task.DataTargetIp = utils.New19Byte("127.0.0.1")
+	task.AckTargetIp = utils.New19Byte("127.0.0.1")
+	task.OriginalFileSize = 0
+	task.BlockIndex = 0
+	task.DataSize = 0
+	task.ConnectionOperation = utils.SIZE_BY_PREFIX
+	task.FileName = utils.New1024Byte(Prefix)
+	task.IsAck = true
+	task.AckTargetIp = utils.New19Byte("127.0.0.1")
+
+	conn := utils.SendAckToMaster(task)
+	defer (*conn).Close()
+
+	buf := make([]byte, 4)
+	_, err := (*conn).Read(buf)
+	if err != nil {
+		return 0, err
+	}
+
+	// Convert the byte slice to a uint32
+	totalSize := binary.BigEndian.Uint32(buf)
+
+	return totalSize, nil
+}
 
 func RequestBlockMappings(FileName string) ([][]string, error) {
 	// 1. Create a task with the GET_2D block operation, and send to current master. If timeout/ doesn't work, send to 1st submaster, second, and so on.
@@ -350,7 +380,7 @@ func InitiateLsWithPrefix(SdfsPrefix string) []string {
 	task.FileName = utils.New1024Byte(SdfsPrefix)
 	task.IsAck = true
 
-	conn := utils.SendAckToMaster(task)	
+	conn := utils.SendAckToMaster(task)
 	decoder := json.NewDecoder(*conn)
 	err := decoder.Decode(&recvData)
 	if err != nil {

@@ -53,7 +53,7 @@ func HandleConnection(conn net.Conn) {
 		fmt.Println("Recieved new ack connection!")
 		machineType := gossiputils.MachineType()
 
-		if machineType == gossiputils.LEADER && task.ConnectionOperation != utils.GET_2D && task.ConnectionOperation != utils.GET_PREFIX {
+		if machineType == gossiputils.LEADER && task.ConnectionOperation != utils.GET_2D && task.ConnectionOperation != utils.GET_PREFIX && task.ConnectionOperation != utils.SIZE_BY_PREFIX {
 			fmt.Printf("Recieved ack for %s at master\n", utils.BytesToString(task.FileName[:]))
 
 			RouteToSubMasters(*task)

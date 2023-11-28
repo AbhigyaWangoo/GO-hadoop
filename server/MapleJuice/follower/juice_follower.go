@@ -2,11 +2,13 @@ package maplejuice
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 
 	maplejuiceutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -35,7 +37,7 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 	ParseOutput(Task.NodeDesignation, string(output), dst_file)
 }
 
-func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) {
+func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) error {
 	// Take the output, and append it to the dst sdfs file.
 	nodeIdxStr := strconv.FormatUint(uint64(nodeIdx), 10)
 	oFileName := sdfsutils.FILESYSTEM_ROOT + nodeIdxStr + "_" + dstSdfsFile
@@ -43,7 +45,7 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) {
 	file, err := os.Create(oFileName)
 	if err != nil {
 		fmt.Println("Error creating file:", err)
-		return
+		return err
 	}
 	defer file.Close()
 	fmt.Println("Created local file")
@@ -54,7 +56,7 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) {
 	_, err = writer.WriteString(output)
 	if err != nil {
 		fmt.Println("Error writing to file:", err)
-		return
+		return err
 	}
 	fmt.Println("wrote local juice data to file")
 
@@ -62,8 +64,20 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) {
 	err = writer.Flush()
 	if err != nil {
 		fmt.Println("Error flushing writer:", err)
-		return
+		return err
 	}
+
+	var resultString string
+	lastUnderscoreIndex := strings.LastIndex(dstSdfsFile, "_")
+	if lastUnderscoreIndex != -1 {
+		// Remove characters starting from the last '_'
+		resultString := dstSdfsFile[:lastUnderscoreIndex]
+		fmt.Println(resultString)
+	} else {
+		// If '_' is not found, error out
+		return errors.New("No underscored found on the dstSdfsFile")
+	}
+	FileSize, err := sdfs.GetFileSizeByPrefix(resultString)
 
 	// Send ack to master
 	SdfsAck := sdfsutils.Task{
@@ -71,12 +85,14 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) {
 		AckTargetIp:         sdfsutils.New19Byte(sdfsutils.LEADER_IP),
 		ConnectionOperation: sdfsutils.WRITE,
 		FileName:            sdfsutils.New1024Byte(oFileName),
-		// OriginalFileSize:    fileSize, // TODO not sure how I could even assign this info...
-		BlockIndex: int64(nodeIdx),
-		DataSize:   int64(len(output)),
-		IsAck:      true,
+		OriginalFileSize:    int64(FileSize), // TODO not sure how I could even assign this info...
+		BlockIndex:          int64(nodeIdx),
+		DataSize:            int64(len(output)),
+		IsAck:               true,
 	}
 
 	sdfsutils.SendAckToMaster(SdfsAck)
 	fmt.Println("Sent ack to master from juice follower")
+	
+	return nil
 }

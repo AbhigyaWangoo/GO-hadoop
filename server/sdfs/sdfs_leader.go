@@ -1,6 +1,7 @@
 package sdfs
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -169,8 +170,15 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 		if err != nil {
 			return err
 		}
-		
+
 		fmt.Println("Successfully handled get prefix request")
+	} else if IncomingAck.ConnectionOperation == utils.SIZE_BY_PREFIX {
+		err := HandleGetFileSizeByPrefix(fileName, conn)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("Successfully handled get size by prefix")
 	}
 
 	// 1. Ack for Write operation
@@ -184,24 +192,58 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 	return nil
 }
 
-func HandleGetPrefixList(SdfsPrefix string, conn *net.Conn) error {
+func PrefixList(SdfsPrefix string) ([]string, error) {
 	pattern := SdfsPrefix + "*"
 
 	// Compile the regular expression
 	regex, err := regexp.Compile(pattern)
+	var rv []string
 	if err != nil {
-		fmt.Println("Error compiling regex:", err)
-		return err
+		return rv, err
 	}
 
-	var rv []string
 	fmt.Println(BlockLocations.Keys())
 	for _, val := range BlockLocations.Keys() {
 		if regex.MatchString(val) {
 			rv = append(rv, val)
 		}
 	}
+
+	return rv, nil
+}
+
+func HandleGetFileSizeByPrefix(SdfsPrefix string, conn *net.Conn) error {
+	rv, err := PrefixList(SdfsPrefix)
+	if err != nil {
+		return err
+	}
+
+	sizes := int64(0)
+	for _, val := range rv {
+		size, exists := FileToSize.Get(val)
+		if exists {
+			sizes += size
+		}
+	}
+
+	sizesUint := uint32(sizes)
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, sizesUint)
 	
+	_, err = (*conn).Write(buf)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func HandleGetPrefixList(SdfsPrefix string, conn *net.Conn) error {
+	rv, err := PrefixList(SdfsPrefix)
+	if err != nil {
+		return err
+	}
+
 	fmt.Println(rv)
 	encoder := json.NewEncoder(*conn)
 	err = encoder.Encode(rv)

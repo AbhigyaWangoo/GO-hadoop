@@ -48,7 +48,7 @@ func readAndStoreKeyValues(inputFp *os.File, blockIdx uint32, sdfsPrefix string,
 		key, value := getKeyValueFromLine(line)
 		_, exists := keyToFp[key]
 		if !exists {
-			blockToOpenPath := "server/sdfs/sdfsFileSystemRoot/" + strconv.Itoa(int(blockIdx)) + "_" + sdfsPrefix + key
+			blockToOpenPath := "server/sdfs/sdfsFileSystemRoot/" + strconv.Itoa(int(blockIdx)) + "_" + sdfsPrefix + "_" + key
 			keyToFp[key] = maplejuiceutils.OpenFile(blockToOpenPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC)
 			defer keyToFp[key].Close()
 		}
@@ -72,7 +72,7 @@ func readAndStoreKeyValues(inputFp *os.File, blockIdx uint32, sdfsPrefix string,
 		// 	DataSize            int64 // TODO change me to int64
 		// 	IsAck               bool
 		// }
-		fileName := sdfsPrefix + key
+		fileName := sdfsPrefix + "_" + key
 		task := sdfsutils.Task{
 			DataTargetIp:        sdfsutils.New19Byte(gossiputils.Ip),
 			AckTargetIp:         sdfsutils.New19Byte(gossiputils.Ip),
