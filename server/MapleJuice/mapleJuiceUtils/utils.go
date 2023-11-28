@@ -27,6 +27,7 @@ type MapleJuiceTask struct {
 	SdfsPrefix      string
 	SdfsExecFile    string // The name of the executable that exists in sdfs
 	NumberOfMJTasks uint32
+	SdfsDst         string
 	// We also need to somehow track
 }
 

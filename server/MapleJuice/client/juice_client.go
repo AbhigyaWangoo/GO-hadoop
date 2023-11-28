@@ -38,7 +38,7 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 	for IpAddr, sdfsKeyFiles := range PartitionedKeys {
 
 		// 5. SendJuiceTask(IpAddr, [sdfsKeyFiles])
-		err := SendJuiceTask(IpAddr, sdfsKeyFiles, i, SdfsPrefix, LocalExecFile, NJuices)
+		err := SendJuiceTask(IpAddr, sdfsKeyFiles, i, SdfsPrefix, LocalExecFile, NJuices, SdfsDst)
 		if err != nil {
 			fmt.Printf("Error with sending juice task to ip addr %s, %v\n", IpAddr, err)
 		}
@@ -76,7 +76,7 @@ func PartitionKeys(SdfsPrefixKeys []string, JuiceDsts []string, Partition maplej
 				fmt.Printf("Error in key partitioning, cant get hash of %s: %v\n", hash, err)
 			}
 			intHash := int(hashint[0])
-			
+
 			// Perform modular arithmetic
 			idx := intHash % len(JuiceDsts)
 			ipaddr = JuiceDsts[idx]
@@ -97,7 +97,7 @@ func PartitionKeys(SdfsPrefixKeys []string, JuiceDsts []string, Partition maplej
 	return rv
 }
 
-func SendJuiceTask(ipDest string, sdfsKeyFiles []string, nodeIdx uint32, localExecFile string, sdfsPrefix string, nJuices uint32) error {
+func SendJuiceTask(ipDest string, sdfsKeyFiles []string, nodeIdx uint32, localExecFile string, sdfsPrefix string, nJuices uint32, sdfsDst string) error {
 	if ipDest == "" {
 		return errors.New("Ip destination was empty for sending juice task")
 	}
@@ -116,15 +116,16 @@ func SendJuiceTask(ipDest string, sdfsKeyFiles []string, nodeIdx uint32, localEx
 			SdfsPrefix:      sdfsKeyFile,
 			SdfsExecFile:    localExecFile,
 			NumberOfMJTasks: nJuices,
+			SdfsDst:         sdfsDst,
 		}
-	
+
 		arr := Task.Marshal()
 		_, err = conn.Write(arr)
 		fmt.Println("Sent juice task to end node ", ipDest)
 		if err != nil {
 			return err
 		}
-	
+
 		n, err := conn.Write([]byte("\n"))
 		if err != nil || n != 1 {
 			return err
