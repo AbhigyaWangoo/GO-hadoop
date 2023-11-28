@@ -61,38 +61,39 @@ func RunCLI() {
 			log.Fatal(err)
 		}
 
-		if strings.Contains(command, string(LIST_MEM)) {
+		commandArgs := strings.Split(command, " ")
+		numArgs := len(commandArgs)
+		command = commandArgs[0]
+
+		if strings.Contains(command, string(LIST_MEM)) && numArgs == 1 {
 			gossip.PrintMembership()
-		} else if strings.Contains(command, string(LIST_SELF)) {
+		} else if strings.Contains(command, string(LIST_SELF)) && numArgs == 1 {
 			if selfMember, ok := utils.MembershipMap.Get(utils.Ip); ok {
 				fmt.Printf("%d\n", selfMember.CreationTimestamp)
 			}
-		} else if strings.Contains(command, string(LEAVE)) {
+		} else if strings.Contains(command, string(LEAVE)) && numArgs == 1 {
 			if member, ok := utils.MembershipMap.Get(utils.Ip); ok {
 				member.State = utils.LEFT
 				utils.MembershipMap.Set(utils.Ip, member)
 				time.Sleep(time.Second)
 			}
 			os.Exit(0)
-		} else if strings.Contains(command, string(EN_SUS)) {
+		} else if strings.Contains(command, string(EN_SUS)) && numArgs == 1 {
 			setSendingSuspicionFlip(true)
-		} else if strings.Contains(command, string(D_SUS)) {
+		} else if strings.Contains(command, string(D_SUS)) && numArgs == 1 {
 			setSendingSuspicionFlip(false)
-		} else if strings.Contains(command, string(PUT)) {
-			parts := strings.Split(command, " ")
-			localfilename := strings.TrimSpace(parts[1])
-			sdfsFileName := strings.TrimSpace(parts[2])
+		} else if strings.Contains(command, string(PUT)) && numArgs == 3 {
+			localfilename := strings.TrimSpace(commandArgs[1])
+			sdfsFileName := strings.TrimSpace(commandArgs[2])
 
 			sdfsclient.CLIPut(localfilename, sdfsFileName)
-		} else if strings.Contains(command, string(GET)) {
-			parts := strings.Split(command, " ")
-			localfilename := strings.TrimSpace(parts[1])
-			sdfsFileName := strings.TrimSpace(parts[2])
+		} else if strings.Contains(command, string(GET)) && numArgs == 3 {
+			localfilename := strings.TrimSpace(commandArgs[1])
+			sdfsFileName := strings.TrimSpace(commandArgs[2])
 
 			sdfs.CLIGet(sdfsFileName, localfilename)
-		} else if strings.Contains(command, string(DELETE)) {
-			parts := strings.Split(command, " ")
-			sdfsFileName := strings.TrimSpace(parts[1])
+		} else if strings.Contains(command, string(DELETE)) && numArgs == 2 {
+			sdfsFileName := strings.TrimSpace(commandArgs[1])
 
 			mappings, mappingsErr := sdfsclient.SdfsClientMain(sdfsFileName)
 			if mappingsErr != nil {
@@ -103,9 +104,8 @@ func RunCLI() {
 
 			sdfsclient.InitiateDeleteCommand(sdfsFileName, mappings)
 
-		} else if strings.Contains(command, string(LS)) {
-			parts := strings.Split(command, " ")
-			sdfsFileName := strings.TrimSpace(parts[1])
+		} else if strings.Contains(command, string(LS)) && numArgs == 2 {
+			sdfsFileName := strings.TrimSpace(commandArgs[1])
 
 			mappings, mappingsErr := sdfsclient.SdfsClientMain(sdfsFileName)
 			if mappingsErr != nil {
@@ -115,43 +115,40 @@ func RunCLI() {
 
 			sdfsclient.InitiateLsCommand(sdfsFileName, mappings)
 
-		} else if strings.Contains(command, string(STORE)) {
+		} else if strings.Contains(command, string(STORE)) && numArgs == 1 {
 			sdfsclient.InitiateStoreCommand()
 		} else if strings.Contains(command, string(MULTIREAD)) {
-			parts := strings.Split(command, " ")
-			for i, part := range parts {
+			for i, part := range commandArgs {
 				part = strings.TrimSpace(part)
-				parts[i] = part
+				commandArgs[i] = part
 			}
-			sdfsclient.InitiateMultiRead(parts[1], parts[2:])
-		} else if strings.Contains(command, string(MAPLE)) {
+			sdfsclient.InitiateMultiRead(commandArgs[1], commandArgs[2:])
+		} else if strings.Contains(command, string(MAPLE)) && numArgs == 5 {
 			fmt.Println("GOT MAPLE")
-			parts := strings.Split(command, " ")
-			for i, part := range parts {
+			for i, part := range commandArgs {
 				part = strings.TrimSpace(part)
-				parts[i] = part
+				commandArgs[i] = part
 			}
-			numMapleTasks, _ := strconv.ParseUint(parts[2], 10, 32)
-			maplejuiceclient.InitiateMaplePhase(parts[1], uint32(numMapleTasks), parts[3], parts[4])
+			numMapleTasks, _ := strconv.ParseUint(commandArgs[2], 10, 32)
+			maplejuiceclient.InitiateMaplePhase(commandArgs[1], uint32(numMapleTasks), commandArgs[3], commandArgs[4])
 			// func InitiateMaplePhase(LocalExecFile string, NMaples uint32, SdfsPrefix string, SdfsSrcDataset string) {
 
-		} else if strings.Contains(command, string(JUICE)) {
-			parts := strings.Split(command, " ")
-			for i, part := range parts {
+		} else if strings.Contains(command, string(JUICE)) && numArgs == 5 {
+			for i, part := range commandArgs {
 				part = strings.TrimSpace(part)
-				parts[i] = part
+				commandArgs[i] = part
 			}
-			numJuiceTasks, _ := strconv.ParseUint(parts[2], 10, 32)
-			deleteInput := parts[5] == string(0)
+			numJuiceTasks, _ := strconv.ParseUint(commandArgs[2], 10, 32)
+			deleteInput := commandArgs[5] == string(0)
 
 			var pt maplejuiceutils.PartitioningType
-			if parts[6] == "hash" {
+			if commandArgs[6] == "hash" {
 				pt = maplejuiceutils.HASH
-			} else if parts[6] == "range" {
+			} else if commandArgs[6] == "range" {
 				pt = maplejuiceutils.RANGE
 			}
 
-			maplejuiceclient.InitiateJuicePhase(parts[1], uint32(numJuiceTasks), parts[3], parts[4], deleteInput, pt)
+			maplejuiceclient.InitiateJuicePhase(commandArgs[1], uint32(numJuiceTasks), commandArgs[3], commandArgs[4], deleteInput, pt)
 		} else {
 			error_msg := `
 			Command not understood. Available commands are as follows:
