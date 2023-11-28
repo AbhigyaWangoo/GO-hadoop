@@ -11,6 +11,7 @@ import (
 
 	mapleutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
+	sdfsfuncs "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
 	sdfsutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
@@ -22,19 +23,29 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 	// 	return
 	// }
 
+	sdfsFileNames := sdfsfuncs.InitiateLsWithPrefix(SdfsSrcDataset)
+	for _, sdfsFile := range sdfsFileNames {
+		blockLocations, locationErr := sdfsfuncs.SdfsClientMain(sdfsFile)
+		if locationErr != nil {
+			fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
+			return
+		}
+		sdfsfuncs.InitiateGetCommand(sdfsFile, "mapTestDir/"+sdfsFile, blockLocations)
+	}
+
 	ipsToConnections := make(map[string]net.Conn)
 
 	// sdfsclient.InitiateGetCommand(SdfsSrcDataset, SdfsSrcDataset, locations)
 	mapleIps := getMapleIps(nMaples)
 
-	entries, err := os.ReadDir(SdfsSrcDataset)
+	entries, err := os.ReadDir("mapTestDir/")
 	if err != nil {
 		fmt.Println("Error reading directory:", err)
 		return
 	}
 
 	for _, entry := range entries {
-		fileName := filepath.Join(SdfsSrcDataset, entry.Name())
+		fileName := filepath.Join("mapTestDir/", entry.Name())
 
 		if entry.IsDir() {
 			continue
