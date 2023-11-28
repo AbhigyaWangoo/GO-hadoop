@@ -25,11 +25,12 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 
 	sdfsFileNames := sdfsfuncs.InitiateLsWithPrefix(SdfsSrcDataset)
 	for _, sdfsFile := range sdfsFileNames {
-		blockLocations, locationErr := sdfsfuncs.SdfsClientMain(sdfsFile)
+		blockLocations, locationErr := sdfsfuncs.SdfsClientMain(sdfsFile, true)
 		if locationErr != nil {
 			fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
 			return
 		}
+		log.Println(sdfsFile)
 		sdfsfuncs.InitiateGetCommand(sdfsFile, "mapTestDir/"+sdfsFile, blockLocations)
 	}
 
