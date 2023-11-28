@@ -34,7 +34,7 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 	for IpAddr, sdfsKeyFiles := range PartitionedKeys {
 
 		// 5. SendJuiceTask(IpAddr, [sdfsKeyFiles])
-		err := SendJuiceTask(IpAddr, sdfsKeyFiles, i, SdfsPrefix, LocalExecFile, NJuices, SdfsDst)
+		err := SendJuiceTask(IpAddr, sdfsKeyFiles, i, LocalExecFile, SdfsPrefix, NJuices, SdfsDst)
 		if err != nil {
 			fmt.Printf("Error with sending juice task to ip addr %s, %v\n", IpAddr, err)
 		}

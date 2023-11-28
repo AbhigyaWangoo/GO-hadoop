@@ -17,6 +17,7 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 	fmt.Println("Entering handle juice request for ", Task.SdfsPrefix)
 	SdfsFilename := Task.SdfsPrefix // SdfsFilename is the one to pull from SDFS, and run the juice task on.
 	juice_exec := Task.SdfsExecFile
+
 	// dst_file := Task.SdfsDst
 
 	// CLI GET file locally
