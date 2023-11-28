@@ -30,6 +30,7 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 			fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
 			return
 		}
+		log.Println(sdfsFile)
 		sdfsfuncs.InitiateGetCommand(sdfsFile, "mapTestDir/"+sdfsFile, blockLocations)
 	}
 

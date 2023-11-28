@@ -113,6 +113,8 @@ func RunCLI() {
 				return
 			}
 
+			log.Fatalf("Received Maps")
+
 			sdfsclient.InitiateLsCommand(sdfsFileName, mappings)
 
 		} else if strings.Contains(command, string(STORE)) {
@@ -143,14 +145,14 @@ func RunCLI() {
 			}
 			numJuiceTasks, _ := strconv.ParseUint(parts[2], 10, 32)
 			deleteInput := parts[5] == string(0)
-			
+
 			var pt maplejuiceutils.PartitioningType
 			if parts[6] == "hash" {
 				pt = maplejuiceutils.HASH
 			} else if parts[6] == "range" {
 				pt = maplejuiceutils.RANGE
 			}
-			
+
 			maplejuiceclient.InitiateJuicePhase(parts[1], uint32(numJuiceTasks), parts[3], parts[4], deleteInput, pt)
 		} else {
 			error_msg := `
