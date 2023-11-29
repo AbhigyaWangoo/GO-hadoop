@@ -21,7 +21,11 @@ const RANGE PartitioningType = 1
 const MAPLE MapleJuiceType = 0
 const JUICE MapleJuiceType = 1
 
-const MAPLE_JUICE_PORT = "6432"
+const COMMAND_1 SQLCommandType = 0
+const COMMAND_2 SQLCommandType = 1
+const INVALID_COMMAND SQLCommandType = 2
+
+const MAPLE_JUICE_PORT = "7898"
 
 type MapleJuiceTask struct {
 	Type              MapleJuiceType
