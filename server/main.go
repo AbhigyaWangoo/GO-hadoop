@@ -94,7 +94,7 @@ func RunCLI() {
 			parts := strings.Split(command, " ")
 			sdfsFileName := strings.TrimSpace(parts[1])
 
-			mappings, mappingsErr := sdfsclient.SdfsClientMain(sdfsFileName)
+			mappings, mappingsErr := sdfsclient.SdfsClientMain(sdfsFileName, true)
 			if mappingsErr != nil {
 				fmt.Println("Error with sdfsclient main. Aborting Get command: ", mappingsErr)
 				return
@@ -107,7 +107,7 @@ func RunCLI() {
 			parts := strings.Split(command, " ")
 			sdfsFileName := strings.TrimSpace(parts[1])
 
-			mappings, mappingsErr := sdfsclient.SdfsClientMain(sdfsFileName)
+			mappings, mappingsErr := sdfsclient.SdfsClientMain(sdfsFileName, true)
 			if mappingsErr != nil {
 				fmt.Println("Error with sdfsclient main. Aborting Get command: ", mappingsErr)
 				return

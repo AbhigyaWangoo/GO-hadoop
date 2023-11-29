@@ -74,7 +74,7 @@ func RequestBlockMappings(FileName string) ([][]string, error) {
 }
 
 // Client main function, becomes the entry point for all client operations. This function continuously requests from the master until an operation is finished
-func SdfsClientMain(SdfsFilename string) ([][]string, error) {
+func SdfsClientMain(SdfsFilename string, WaitForUpdate bool) ([][]string, error) {
 	// var blockLocationArr [][]string
 	// blockLocationArr, _ = RequestBlockMappings(SdfsFilename)
 	var blockLocationArr [][]string
@@ -83,7 +83,7 @@ func SdfsClientMain(SdfsFilename string) ([][]string, error) {
 
 	for WorkInProgress {
 		blockLocationArr, blockErr = RequestBlockMappings(SdfsFilename)
-
+		
 		if blockErr != nil {
 			fmt.Println("Could not fetch block locations from master in client main")
 			return blockLocationArr, blockErr
@@ -97,7 +97,7 @@ func SdfsClientMain(SdfsFilename string) ([][]string, error) {
 			for j := range blockLocationArr[i] {
 				if blockLocationArr[i][j] == utils.WRITE_OP || blockLocationArr[i][j] == utils.DELETE_OP {
 					fmt.Printf("Found WIP Op here: %d %d \n", i, j)
-					WorkInProgress = true
+					WorkInProgress = WaitForUpdate
 					break
 				}
 			}

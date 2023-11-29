@@ -87,7 +87,7 @@ func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn
 		}
 		conn.Write([]byte(line))
 		conn.Write([]byte{'\n'})
-		// log.Println(line)
+		log.Println(line)
 	}
 	return ipsToConnections
 }

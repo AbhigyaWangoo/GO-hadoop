@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"sort"
 
-	// "strconv"
-
 	maplejuiceUtils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	sdfs_client "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"

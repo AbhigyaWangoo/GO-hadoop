@@ -70,7 +70,7 @@ func HandleConnection(conn net.Conn) {
 	} else if task.ConnectionOperation == utils.FORCE_GET {
 		startTime := time.Now()
 		fileName := utils.BytesToString(task.FileName[:])
-		locations, locationErr := SdfsClientMain(fileName)
+		locations, locationErr := SdfsClientMain(fileName, true)
 		if locationErr != nil {
 			fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
 			return
@@ -85,7 +85,7 @@ func HandleConnection(conn net.Conn) {
 }
 
 func CLIPut(localfilename string, sdfsFileName string) {
-	locations, locationErr := SdfsClientMain(sdfsFileName)
+	locations, locationErr := SdfsClientMain(sdfsFileName, true)
 	if locationErr != nil {
 		fmt.Println("Error with sdfsclient main. Aborting Put command: ", locationErr)
 		return
@@ -95,7 +95,7 @@ func CLIPut(localfilename string, sdfsFileName string) {
 		time.Sleep(time.Second)
 		InitiateDeleteCommand(sdfsFileName, locations)
 
-		locations, locationErr = SdfsClientMain(sdfsFileName)
+		locations, locationErr = SdfsClientMain(sdfsFileName, true)
 		if locationErr != nil {
 			fmt.Println("Error with sdfsclient main. Aborting Put command: ", locationErr)
 			return
@@ -107,7 +107,7 @@ func CLIPut(localfilename string, sdfsFileName string) {
 }
 
 func CLIGet(sdfsFileName string, localfilename string) {
-	locations, locationErr := SdfsClientMain(sdfsFileName)
+	locations, locationErr := SdfsClientMain(sdfsFileName, false)
 	if locationErr != nil {
 		fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
 		return
