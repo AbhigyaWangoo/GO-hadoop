@@ -19,7 +19,7 @@ const RANGE PartitioningType = 1
 const MAPLE MapleJuiceType = 0
 const JUICE MapleJuiceType = 1
 
-const MAPLE_JUICE_PORT = "7898"
+const MAPLE_JUICE_PORT = "6000"
 
 type MapleJuiceTask struct {
 	Type            MapleJuiceType
