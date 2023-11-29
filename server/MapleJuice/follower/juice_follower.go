@@ -2,13 +2,11 @@ package maplejuice
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 
 	maplejuiceutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -34,10 +32,10 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 		return
 	}
 
-	ParseOutput(Task.NodeDesignation, string(output), dst_file)
+	ParseOutput(Task.NodeDesignation, string(output), dst_file, Task.NumberOfMJTasks * uint32(sdfsutils.BLOCK_SIZE))
 }
 
-func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) error {
+func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string, FileSize uint32) error {
 	// Take the output, and append it to the dst sdfs file.
 	nodeIdxStr := strconv.FormatUint(uint64(nodeIdx), 10)
 	oFileName := sdfsutils.FILESYSTEM_ROOT + nodeIdxStr + "_" + dstSdfsFile
@@ -67,19 +65,19 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) error {
 		return err
 	}
 
-	var resultString string
-	lastUnderscoreIndex := strings.LastIndex(dstSdfsFile, "_")
-	if lastUnderscoreIndex != -1 {
-		// Remove characters starting from the last '_'
-		resultString := dstSdfsFile[:lastUnderscoreIndex]
-		fmt.Println(resultString)
-	} else {
-		// If '_' is not found, error out
-		fmt.Println("No underscores found on the dstSdfsFile")
-		return errors.New("No underscores found on the dstSdfsFile")
-	}
-	FileSize, err := sdfs.GetFileSizeByPrefix(resultString)
-	fmt.Println("Got file size for file ", resultString)
+	// var resultString string
+	// lastUnderscoreIndex := strings.LastIndex(dstSdfsFile, "_")
+	// if lastUnderscoreIndex != -1 {
+	// 	// Remove characters starting from the last '_'
+	// 	resultString := dstSdfsFile[:lastUnderscoreIndex]
+	// 	fmt.Println(resultString)
+	// } else {
+	// 	// If '_' is not found, error out
+	// 	fmt.Println("No underscores found on the dstSdfsFile")
+	// 	return errors.New("No underscores found on the dstSdfsFile")
+	// }
+	// FileSize, err := sdfs.GetFileSizeByPrefix(resultString)
+	// fmt.Println("Got file size for file ", resultString)
 
 	// Send ack to master
 	SdfsAck := sdfsutils.Task{
