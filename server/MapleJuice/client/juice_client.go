@@ -124,6 +124,8 @@ func SendJuiceTask(ipDest string, sdfsKeyFiles []string, nodeIdx uint32, localEx
 		if err != nil || n != 1 {
 			return err
 		}
+
+		// sdfsutils.ReadSmallAck(conn)
 	}
 
 	return nil
