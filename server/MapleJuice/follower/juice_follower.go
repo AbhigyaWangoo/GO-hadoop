@@ -66,19 +66,6 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string, FileSize uin
 		return err
 	}
 
-	// var resultString string
-	// lastUnderscoreIndex := strings.LastIndex(dstSdfsFile, "_")
-	// if lastUnderscoreIndex != -1 {
-	// 	// Remove characters starting from the last '_'
-	// 	resultString := dstSdfsFile[:lastUnderscoreIndex]
-	// 	fmt.Println(resultString)
-	// } else {
-	// 	// If '_' is not found, error out
-	// 	fmt.Println("No underscores found on the dstSdfsFile")
-	// 	return errors.New("No underscores found on the dstSdfsFile")
-	// }
-	// FileSize, err := sdfs.GetFileSizeByPrefix(resultString)
-	// fmt.Println("Got file size for file ", resultString)
 
 	// Send ack to master
 	SdfsAck := sdfsutils.Task{
