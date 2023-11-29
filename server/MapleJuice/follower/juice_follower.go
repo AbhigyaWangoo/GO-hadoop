@@ -75,9 +75,11 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string) error {
 		fmt.Println(resultString)
 	} else {
 		// If '_' is not found, error out
-		return errors.New("No underscored found on the dstSdfsFile")
+		fmt.Println("No underscores found on the dstSdfsFile")
+		return errors.New("No underscores found on the dstSdfsFile")
 	}
 	FileSize, err := sdfs.GetFileSizeByPrefix(resultString)
+	fmt.Println("Got file size for file ", resultString)
 
 	// Send ack to master
 	SdfsAck := sdfsutils.Task{

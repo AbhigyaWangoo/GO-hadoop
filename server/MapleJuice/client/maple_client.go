@@ -68,6 +68,7 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 
 	for _, conn := range ipsToConnections {
 		conn.Close()
+		fmt.Println("Closed connection")
 	}
 
 	// Initiates the Maple phase via client command
