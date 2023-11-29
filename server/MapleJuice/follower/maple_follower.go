@@ -17,7 +17,6 @@ import (
 
 func HandleMapleRequest(Task *maplejuiceutils.MapleJuiceTask, MapleConn net.Conn) {
 	// a function to handle a single maple task request
-	sdfsutils.SendSmallAck(MapleConn)
 	execOutputFp := getExecutableOutput(MapleConn, Task.SdfsPrefix, Task.SdfsExecFile)
 	blockIdx := Task.NodeDesignation
 	numMJTasks := Task.NumberOfMJTasks
