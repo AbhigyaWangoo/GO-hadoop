@@ -22,10 +22,12 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 
 	// CLI GET file locally
 	sdfs.CLIGet(SdfsFilename, SdfsFilename)
+	fmt.Println("Got file in juice follower: ", Task.SdfsPrefix)
 
 	// Run exec file on input file
 	cmd := exec.Command(juice_exec, "-i", SdfsFilename)
 	output, err := cmd.CombinedOutput()
+	fmt.Println("Ran juice cmd", juice_exec)
 	// _, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println("Error running command:", err)
@@ -33,6 +35,7 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 	}
 
 	ParseOutput(Task.NodeDesignation, string(output), dst_file, Task.NumberOfMJTasks * uint32(sdfsutils.BLOCK_SIZE))
+	fmt.Println("parsed output on juice task")
 }
 
 func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string, FileSize uint32) error {

@@ -100,7 +100,7 @@ func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn
 
 			nodeDesignation++
 			sdfsutils.ReadSmallAck(conn)
-		}
+		} 
 		conn.Write([]byte(line))
 		conn.Write([]byte{'\n'})
 		numlines+=1
