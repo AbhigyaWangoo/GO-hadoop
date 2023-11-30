@@ -76,6 +76,7 @@ func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn
 	scanner := bufio.NewScanner(fp)
 
 	nodeDesignation := uint32(0)
+	numlines := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		ip := getPartitionIp(line, mapleIps)
@@ -100,8 +101,9 @@ func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn
 		}
 		conn.Write([]byte(line))
 		conn.Write([]byte{'\n'})
-		log.Println(line)
+		numlines+=1
 	}
+	fmt.Printf("Read %d lines in maple task\n", numlines)
 	return ipsToConnections
 }
 
@@ -111,7 +113,6 @@ func getMapleIps(nMaples uint32) []string {
 }
 
 func getPartitionIp(key string, ips []string) string {
-	// log.Println(ips[0], ips[1])
 	numPartitions := uint32(len(ips))
 	return ips[hashFunction(key, numPartitions)]
 }
