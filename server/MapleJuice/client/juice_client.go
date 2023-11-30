@@ -96,14 +96,13 @@ func SendJuiceTask(ipDest string, sdfsKeyFiles []string, nodeIdx uint32, localEx
 		return errors.New("Ip destination was empty for sending juice task")
 	}
 
-	conn, err := sdfsutils.OpenTCPConnection(ipDest, maplejuiceUtils.MAPLE_JUICE_PORT)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
+	
 	for _, sdfsKeyFile := range sdfsKeyFiles {
-
+		conn, err := sdfsutils.OpenTCPConnection(ipDest, maplejuiceUtils.MAPLE_JUICE_PORT)
+		if err != nil {
+			return err
+		}
+		
 		Task := maplejuiceUtils.MapleJuiceTask{
 			Type:            maplejuiceUtils.JUICE,
 			NodeDesignation: nodeIdx,
@@ -112,21 +111,22 @@ func SendJuiceTask(ipDest string, sdfsKeyFiles []string, nodeIdx uint32, localEx
 			NumberOfMJTasks: nJuices,
 			SdfsDst:         sdfsDst,
 		}
-
+		
 		arr := Task.Marshal()
 		_, err = conn.Write(arr)
 		fmt.Println("Sent juice task to end node ", ipDest)
 		if err != nil {
 			return err
 		}
-
+		
 		n, err := conn.Write([]byte("\n"))
 		if err != nil || n != 1 {
 			return err
 		}
-
+		
 		// sdfsutils.ReadSmallAck(conn)
+		conn.Close()
 	}
-
+	
 	return nil
 }
