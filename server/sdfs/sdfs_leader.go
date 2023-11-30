@@ -56,6 +56,10 @@ func HandleAck(IncomingAck utils.Task, conn *net.Conn) error {
 
 	fileName := utils.BytesToString(IncomingAck.FileName[:])
 	ackSourceIp := utils.BytesToString(IncomingAck.AckTargetIp[:])
+	
+	var arr []byte
+	BlockLocations.UnmarshalJSON(arr)
+	fmt.Println("Got ack for delete, block locations are ", string(arr))
 
 	if IncomingAck.ConnectionOperation == utils.WRITE {
 
@@ -270,6 +274,8 @@ func Handle2DArrRequest(Filename string, conn net.Conn) {
 			break
 		}
 	}
+	// put d1/mapout map
+	// juice ./juice 2 map dst 0 hash
 
 	if allDs {
 		BlockLocations.Remove(Filename)
