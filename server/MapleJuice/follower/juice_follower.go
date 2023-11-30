@@ -42,19 +42,17 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string, FileSize uin
 	// Take the output, and append it to the dst sdfs file.
 	nodeIdxStr := strconv.FormatUint(uint64(nodeIdx), 10)
 	oFileName := sdfsutils.FILESYSTEM_ROOT + nodeIdxStr + "_" + dstSdfsFile
+	
 	fmt.Println("Writing juice node to loacl fs: ", oFileName)
-	file, err := os.Create(oFileName)
-	if err != nil {
-		fmt.Println("Error creating file:", err)
-		return err
-	}
+	file := maplejuiceutils.OpenFile(oFileName, os.O_APPEND | os.O_RDWR)
 	defer file.Close()
+	
 	fmt.Println("Created local file")
 
 	writer := bufio.NewWriter(file)
 
 	// Write data to the file
-	_, err = writer.WriteString(output)
+	_, err := writer.WriteString(output)
 	if err != nil {
 		fmt.Println("Error writing to file:", err)
 		return err
