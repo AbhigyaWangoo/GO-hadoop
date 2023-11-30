@@ -44,7 +44,7 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string, FileSize uin
 	oFileName := sdfsutils.FILESYSTEM_ROOT + nodeIdxStr + "_" + dstSdfsFile
 	
 	fmt.Println("Writing juice node to loacl fs: ", oFileName)
-	file := maplejuiceutils.OpenFile(oFileName, os.O_APPEND | os.O_RDWR)
+	file := maplejuiceutils.OpenFile(oFileName, os.O_CREATE | os.O_APPEND | os.O_RDWR)
 	defer file.Close()
 	
 	fmt.Println("Created local file")
