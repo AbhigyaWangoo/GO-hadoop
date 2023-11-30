@@ -84,7 +84,7 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string, FileSize uin
 		DataTargetIp:        sdfsutils.New19Byte(gossiputils.Ip),
 		AckTargetIp:         sdfsutils.New19Byte(gossiputils.Ip),
 		ConnectionOperation: sdfsutils.WRITE,
-		FileName:            sdfsutils.New1024Byte(oFileName),
+		FileName:            sdfsutils.New1024Byte(dstSdfsFile),
 		OriginalFileSize:    int64(FileSize), // TODO not sure how I could even assign this info...
 		BlockIndex:          int64(nodeIdx),
 		DataSize:            int64(len(output)),
