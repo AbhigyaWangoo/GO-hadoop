@@ -31,6 +31,13 @@ func HandleMapleRequest(Task *maplejuiceutils.MapleJuiceTask, MapleConn net.Conn
 		(*masterConn).Close()
 	}
 
+	remoteAddr := MapleConn.RemoteAddr()
+
+	// Convert to a TCP address
+	tcpAddr, _ := remoteAddr.(*net.TCPAddr)
+
+	sdfsutils.OpenTCPConnection(tcpAddr.IP.String(), maplejuiceutils.MAPLE_JUICE_ACK_PORT)
+
 	// 1. Take Maple task, Retrieve exec file from sdfs, and [dataset lines] from connection
 	// 2. Run executable on each line of the [dataset lines]
 	// 3. From the resultant [K, V], store each unique K, V in Task.NodeDesignation_Task.SdfsPrefix_K locally, MAKE SURE TO OPEN FILE IF DNE, OR IN APPEND MODE
