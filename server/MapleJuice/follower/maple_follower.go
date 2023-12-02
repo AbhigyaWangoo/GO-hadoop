@@ -119,7 +119,7 @@ func getExecutableOutput(conn net.Conn, sdfsPrefix string, executableFileName st
 
 	maplejuiceutils.ReadAllDataFromConn(conn, sdfsPrefix)
 
-	cmd := exec.Command("python3", executableFileName+".py", sdfsPrefix)
+	cmd := exec.Command("./"+executableFileName, sdfsPrefix)
 
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {

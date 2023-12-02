@@ -13,21 +13,29 @@ import (
 
 type MapleJuiceType int
 type PartitioningType int
+type SQLCommandType uint16
 
 const HASH PartitioningType = 0
 const RANGE PartitioningType = 1
+
 const MAPLE MapleJuiceType = 0
 const JUICE MapleJuiceType = 1
+
+const COMMAND_1 SQLCommandType = 0
+const COMMAND_2 SQLCommandType = 1
+const INVALID_COMMAND SQLCommandType = 2
 
 const MAPLE_JUICE_PORT = "7898"
 
 type MapleJuiceTask struct {
-	Type            MapleJuiceType
-	NodeDesignation uint32 // The 'index' of the node recieving the maplejuice task
-	SdfsPrefix      string
-	SdfsExecFile    string // The name of the executable that exists in sdfs
-	NumberOfMJTasks uint32
-	SdfsDst         string
+	Type              MapleJuiceType
+	NodeDesignation   uint32 // The 'index' of the node recieving the maplejuice task
+	SdfsPrefix        string
+	SdfsExecFile      string // The name of the executable that exists in sdfs
+	NumberOfMJTasks   uint32
+	SdfsDst           string
+	SqlCommand        SQLCommandType
+	ExecFileArguments []string
 	// We also need to somehow track
 }
 

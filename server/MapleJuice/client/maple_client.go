@@ -15,7 +15,7 @@ import (
 	sdfsutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
-func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string, SdfsSrcDataset string) {
+func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string, SdfsSrcDataset string, ExecFileArgs []string, SqlCommand mapleutils.SQLCommandType) {
 
 	// locations, locationErr := sdfsclient.SdfsClientMain(SdfsSrcDataset)
 	// if locationErr != nil {
@@ -45,6 +45,14 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		return
 	}
 
+	mapleTask := mapleutils.MapleJuiceTask{
+		Type:              mapleutils.MAPLE,
+		SdfsPrefix:        SdfsPrefix,
+		SdfsExecFile:      LocalExecFile,
+		NumberOfMJTasks:   nMaples,
+		ExecFileArguments: ExecFileArgs,
+	}
+
 	for _, entry := range entries {
 		fileName := filepath.Join("mapTestDir/", entry.Name())
 
@@ -55,7 +63,7 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		fp := mapleutils.OpenFile(fileName, os.O_RDONLY)
 		defer fp.Close()
 
-		ipsToConnections = sendAllLinesInAFile(mapleIps, ipsToConnections, fp, nMaples, SdfsPrefix, LocalExecFile)
+		ipsToConnections = sendAllLinesInAFile(mapleIps, ipsToConnections, fp, mapleTask)
 	}
 
 	for _, conn := range ipsToConnections {
@@ -71,7 +79,7 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 	// 		5. SendMapleTask(MapleDsts[i], CreatedTask) // Need to think about this carefully
 }
 
-func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn, fp *os.File, nMaples uint32, sdfsPrefix, localExecFile string) map[string]net.Conn {
+func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn, fp *os.File, mapleTask mapleutils.MapleJuiceTask) map[string]net.Conn {
 	scanner := bufio.NewScanner(fp)
 
 	nodeDesignation := uint32(0)
@@ -83,14 +91,8 @@ func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn
 			log.Printf(ip)
 			conn, _ = sdfsutils.OpenTCPConnection(ip, mapleutils.MAPLE_JUICE_PORT)
 			ipsToConnections[ip] = conn
-			mapleTask := mapleutils.MapleJuiceTask{
-				Type:            mapleutils.MAPLE,
-				NodeDesignation: nodeDesignation,
-				SdfsPrefix:      sdfsPrefix,
-				SdfsExecFile:    localExecFile,
-				NumberOfMJTasks: nMaples,
-			}
 
+			mapleTask.NodeDesignation = nodeDesignation
 			conn.Write(mapleTask.Marshal())
 			conn.Write([]byte{'\n'})
 
