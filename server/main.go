@@ -12,6 +12,7 @@ import (
 	maplejuice "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice"
 	maplejuiceclient "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/client"
 	maplejuiceutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
+	sqlcommands "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/sqlCommands"
 	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip"
 	utils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
@@ -34,6 +35,7 @@ const (
 	MULTIREAD CLICommand = "multiread"
 	MAPLE     CLICommand = "maple"
 	JUICE     CLICommand = "juice"
+	SELECT    CLICommand = "SELECT"
 )
 
 // Send suspicion flip message to all machines
@@ -63,36 +65,35 @@ func RunCLI() {
 
 		commandArgs := strings.Split(command, " ")
 		numArgs := len(commandArgs)
-		command = commandArgs[0]
 
-		if strings.Contains(command, string(LIST_MEM)) && numArgs == 1 {
+		if strings.Contains(commandArgs[0], string(LIST_MEM)) && numArgs == 1 {
 			gossip.PrintMembership()
-		} else if strings.Contains(command, string(LIST_SELF)) && numArgs == 1 {
+		} else if strings.Contains(commandArgs[0], string(LIST_SELF)) && numArgs == 1 {
 			if selfMember, ok := utils.MembershipMap.Get(utils.Ip); ok {
 				fmt.Printf("%d\n", selfMember.CreationTimestamp)
 			}
-		} else if strings.Contains(command, string(LEAVE)) && numArgs == 1 {
+		} else if strings.Contains(commandArgs[0], string(LEAVE)) && numArgs == 1 {
 			if member, ok := utils.MembershipMap.Get(utils.Ip); ok {
 				member.State = utils.LEFT
 				utils.MembershipMap.Set(utils.Ip, member)
 				time.Sleep(time.Second)
 			}
 			os.Exit(0)
-		} else if strings.Contains(command, string(EN_SUS)) && numArgs == 1 {
+		} else if strings.Contains(commandArgs[0], string(EN_SUS)) && numArgs == 1 {
 			setSendingSuspicionFlip(true)
-		} else if strings.Contains(command, string(D_SUS)) && numArgs == 1 {
+		} else if strings.Contains(commandArgs[0], string(D_SUS)) && numArgs == 1 {
 			setSendingSuspicionFlip(false)
-		} else if strings.Contains(command, string(PUT)) && numArgs == 3 {
+		} else if strings.Contains(commandArgs[0], string(PUT)) && numArgs == 3 {
 			localfilename := strings.TrimSpace(commandArgs[1])
 			sdfsFileName := strings.TrimSpace(commandArgs[2])
 
 			sdfsclient.CLIPut(localfilename, sdfsFileName)
-		} else if strings.Contains(command, string(GET)) && numArgs == 3 {
+		} else if strings.Contains(commandArgs[0], string(GET)) && numArgs == 3 {
 			localfilename := strings.TrimSpace(commandArgs[1])
 			sdfsFileName := strings.TrimSpace(commandArgs[2])
 
 			sdfs.CLIGet(sdfsFileName, localfilename)
-		} else if strings.Contains(command, string(DELETE)) && numArgs == 2 {
+		} else if strings.Contains(commandArgs[0], string(DELETE)) && numArgs == 2 {
 			sdfsFileName := strings.TrimSpace(commandArgs[1])
 
 			mappings, mappingsErr := sdfsclient.SdfsClientMain(sdfsFileName, true)
@@ -104,7 +105,7 @@ func RunCLI() {
 
 			sdfsclient.InitiateDeleteCommand(sdfsFileName, mappings)
 
-		} else if strings.Contains(command, string(LS)) && numArgs == 2 {
+		} else if strings.Contains(commandArgs[0], string(LS)) && numArgs == 2 {
 			sdfsFileName := strings.TrimSpace(commandArgs[1])
 
 			mappings, mappingsErr := sdfsclient.SdfsClientMain(sdfsFileName, true)
@@ -115,22 +116,22 @@ func RunCLI() {
 
 			sdfsclient.InitiateLsCommand(sdfsFileName, mappings)
 
-		} else if strings.Contains(command, string(STORE)) && numArgs == 1 {
+		} else if strings.Contains(commandArgs[0], string(STORE)) && numArgs == 1 {
 			sdfsclient.InitiateStoreCommand()
-		} else if strings.Contains(command, string(MULTIREAD)) {
+		} else if strings.Contains(commandArgs[0], string(MULTIREAD)) {
 			for i, part := range commandArgs {
 				part = strings.TrimSpace(part)
 				commandArgs[i] = part
 			}
 			sdfsclient.InitiateMultiRead(commandArgs[1], commandArgs[2:])
-		} else if strings.Contains(command, string(MAPLE)) && numArgs == 5 {
+		} else if strings.Contains(commandArgs[0], string(MAPLE)) && numArgs == 5 {
 			fmt.Println("GOT MAPLE")
 			for i, part := range commandArgs {
 				part = strings.TrimSpace(part)
 				commandArgs[i] = part
 			}
 			numMapleTasks, _ := strconv.ParseUint(commandArgs[2], 10, 32)
-			maplejuiceclient.InitiateMaplePhase(commandArgs[1], uint32(numMapleTasks), commandArgs[3], commandArgs[4])
+			maplejuiceclient.InitiateMaplePhase(commandArgs[1], uint32(numMapleTasks), commandArgs[3], commandArgs[4], make([]string, 0), maplejuiceutils.INVALID_COMMAND)
 			// func InitiateMaplePhase(LocalExecFile string, NMaples uint32, SdfsPrefix string, SdfsSrcDataset string) {
 
 		} else if strings.Contains(command, string(JUICE)) && numArgs == 7 {
@@ -149,6 +150,11 @@ func RunCLI() {
 			}
 
 			maplejuiceclient.InitiateJuicePhase(commandArgs[1], uint32(numJuiceTasks), commandArgs[3], commandArgs[4], deleteInput, pt)
+		} else if strings.Contains(commandArgs[0], string(SELECT)) {
+			sqlcommands.ProcessSQLCommand(command)
+			// command, output, _ := sqlcommands.SqlCommandParsing(command)
+			// log.Println(command)
+			// log.Println(output)
 		} else {
 			error_msg := `
 			Command not understood. Available commands are as follows:
