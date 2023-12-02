@@ -14,6 +14,7 @@ import (
 type MapleJuiceType int
 type PartitioningType int
 type SQLCommandType uint16
+
 const HASH PartitioningType = 0
 const RANGE PartitioningType = 1
 
@@ -24,7 +25,8 @@ const COMMAND_1 SQLCommandType = 0
 const COMMAND_2 SQLCommandType = 1
 const INVALID_COMMAND SQLCommandType = 2
 
-const MAPLE_JUICE_PORT = "6000"
+const MAPLE_JUICE_PORT = "7898"
+const MAPLE_JUICE_ACK_PORT = "4096"
 
 type MapleJuiceTask struct {
 	Type              MapleJuiceType

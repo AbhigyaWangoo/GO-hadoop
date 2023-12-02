@@ -71,6 +71,33 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		fmt.Println("Closed connection")
 	}
 
+	tcpConn, listenError := sdfsutils.ListenOnTCPConnection(mapleutils.MAPLE_JUICE_ACK_PORT)
+	if listenError != nil {
+		fmt.Printf("Error listening on port %s", mapleutils.MAPLE_JUICE_ACK_PORT)
+		return
+	}
+	defer tcpConn.Close()
+
+	fmt.Println("maplejuiceack client is listening on local machine")
+
+	numAcksRecieved := uint32(0)
+	for {
+		if numAcksRecieved == nMaples {
+			break
+		}
+		// Read data from the TCP connection
+		conn, err := tcpConn.Accept()
+		// conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
+
+		if err != nil {
+			fmt.Println("Error accepting tcp connection:", err)
+			continue
+		}
+
+		numAcksRecieved++
+		conn.Close()
+	}
+
 	// Initiates the Maple phase via client command
 
 	// 1. GET SdfsSrcDataset -> dataset.txt
@@ -100,10 +127,10 @@ func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn
 
 			nodeDesignation++
 			sdfsutils.ReadSmallAck(conn)
-		} 
+		}
 		conn.Write([]byte(line))
 		conn.Write([]byte{'\n'})
-		numlines+=1
+		numlines += 1
 	}
 	fmt.Printf("Read %d lines in maple task\n", numlines)
 	return ipsToConnections
