@@ -67,14 +67,13 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string, FileSize uin
 		return err
 	}
 
-
 	// Send ack to master
 	SdfsAck := sdfsutils.Task{
 		DataTargetIp:        sdfsutils.New19Byte(gossiputils.Ip),
 		AckTargetIp:         sdfsutils.New19Byte(gossiputils.Ip),
 		ConnectionOperation: sdfsutils.WRITE,
 		FileName:            sdfsutils.New1024Byte(dstSdfsFile),
-		OriginalFileSize:    int64(FileSize), // TODO not sure how I could even assign this info...
+		OriginalFileSize:    int64(FileSize),
 		BlockIndex:          int64(nodeIdx),
 		DataSize:            int64(len(output)),
 		IsAck:               true,

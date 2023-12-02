@@ -43,23 +43,12 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 
 func PartitionKeys(SdfsPrefixKeys []string, JuiceDsts []string, Partition maplejuiceUtils.PartitioningType) map[string][]string {
 	rv := make(map[string][]string)
-	// nKeys := len(SdfsPrefixKeys)
 
 	if Partition == maplejuiceUtils.RANGE {
 		sort.Strings(SdfsPrefixKeys)
-		// nKeysPerDst := len(SdfsPrefixKeys) / len(JuiceDsts)
-
-		// min, err := strconv.Atoi(SdfsPrefixKeys[0])
-		// if err != nil {
-		// 	panic(err)
-		// }
-
-		// max, err = strconv.Atoi(SdfsPrefixKeys[len(SdfsPrefixKeys)-1])
-		// if err != nil {
-		// 	panic(err)
-		// }
 	}
 
+	dstIdx := 0
 	for _, key := range SdfsPrefixKeys {
 		var ipaddr string
 
@@ -75,7 +64,9 @@ func PartitionKeys(SdfsPrefixKeys []string, JuiceDsts []string, Partition maplej
 			idx := intHash % len(JuiceDsts)
 			ipaddr = JuiceDsts[idx]
 		} else if Partition == maplejuiceUtils.RANGE {
-
+			idx := dstIdx % len(JuiceDsts)
+			ipaddr = JuiceDsts[idx]
+			dstIdx++
 		}
 
 		val, exists := rv[ipaddr]
