@@ -15,7 +15,7 @@ import (
 	sdfsutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
 )
 
-func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string, SdfsSrcDataset string, ExecFileArgs []string, SqlCommand mapleutils.SQLCommandType) {
+func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string, SdfsSrcDataset string, ExecFileArgs []string) {
 
 	// locations, locationErr := sdfsclient.SdfsClientMain(SdfsSrcDataset)
 	// if locationErr != nil {

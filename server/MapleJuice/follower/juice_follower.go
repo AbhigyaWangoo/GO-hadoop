@@ -25,7 +25,8 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 	fmt.Println("Got file in juice follower: ", Task.SdfsPrefix)
 
 	// Run exec file on input file
-	cmd := exec.Command(juice_exec, "-i", SdfsFilename)
+	cmd := exec.Command(juice_exec, append([]string{"-i", SdfsFilename}, Task.ExecFileArguments...)...)
+
 	output, err := cmd.CombinedOutput()
 	fmt.Println("Ran juice cmd", juice_exec)
 	// _, err := cmd.CombinedOutput()
@@ -34,7 +35,7 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 		return
 	}
 
-	ParseOutput(Task.NodeDesignation, string(output), dst_file, Task.NumberOfMJTasks * uint32(sdfsutils.BLOCK_SIZE))
+	ParseOutput(Task.NodeDesignation, string(output), dst_file, Task.NumberOfMJTasks*uint32(sdfsutils.BLOCK_SIZE))
 	fmt.Println("parsed output on juice task")
 }
 
@@ -42,11 +43,11 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string, FileSize uin
 	// Take the output, and append it to the dst sdfs file.
 	nodeIdxStr := strconv.FormatUint(uint64(nodeIdx), 10)
 	oFileName := sdfsutils.FILESYSTEM_ROOT + nodeIdxStr + "_" + dstSdfsFile
-	
+
 	fmt.Println("Writing juice node to loacl fs: ", oFileName)
-	file := maplejuiceutils.OpenFile(oFileName, os.O_CREATE | os.O_APPEND | os.O_RDWR)
+	file := maplejuiceutils.OpenFile(oFileName, os.O_CREATE|os.O_APPEND|os.O_RDWR)
 	defer file.Close()
-	
+
 	fmt.Println("Created local file")
 
 	writer := bufio.NewWriter(file)
@@ -94,6 +95,6 @@ func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string, FileSize uin
 
 	sdfsutils.SendAckToMaster(SdfsAck)
 	fmt.Println("Sent ack to master from juice follower")
-	
+
 	return nil
 }

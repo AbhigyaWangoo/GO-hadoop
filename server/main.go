@@ -131,7 +131,7 @@ func RunCLI() {
 				commandArgs[i] = part
 			}
 			numMapleTasks, _ := strconv.ParseUint(commandArgs[2], 10, 32)
-			maplejuiceclient.InitiateMaplePhase(commandArgs[1], uint32(numMapleTasks), commandArgs[3], commandArgs[4], make([]string, 0), maplejuiceutils.INVALID_COMMAND)
+			maplejuiceclient.InitiateMaplePhase(commandArgs[1], uint32(numMapleTasks), commandArgs[3], commandArgs[4], make([]string, 0))
 			// func InitiateMaplePhase(LocalExecFile string, NMaples uint32, SdfsPrefix string, SdfsSrcDataset string) {
 
 		} else if strings.Contains(command, string(JUICE)) && numArgs == 7 {
