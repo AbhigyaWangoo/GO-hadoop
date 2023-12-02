@@ -17,7 +17,7 @@ import (
 
 func HandleMapleRequest(Task *maplejuiceutils.MapleJuiceTask, MapleConn net.Conn) {
 	// a function to handle a single maple task request
-	execOutputFp := getExecutableOutput(MapleConn, Task.SdfsPrefix, Task.SdfsExecFile)
+	execOutputFp := getExecutableOutput(MapleConn, Task.SdfsPrefix, Task.SdfsExecFile, Task.ExecFileArguments)
 	blockIdx := Task.NodeDesignation
 	numMJTasks := Task.NumberOfMJTasks
 	execOutputFp.Seek(0, 0)
@@ -112,13 +112,13 @@ func getKeyValueFromLine(line string) (key string, value string) {
 	}
 }
 
-func getExecutableOutput(conn net.Conn, sdfsPrefix string, executableFileName string) *os.File {
+func getExecutableOutput(conn net.Conn, sdfsPrefix string, executableFileName string, execArgs []string) *os.File {
 	execOutputFileName := sdfsPrefix + "_execOutput"
 	execOutputFp := maplejuiceutils.OpenFile(execOutputFileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC)
 
 	maplejuiceutils.ReadAllDataFromConn(conn, sdfsPrefix)
 
-	cmd := exec.Command("./"+executableFileName, sdfsPrefix)
+	cmd := exec.Command("./"+executableFileName, append([]string{sdfsPrefix}, execArgs...)...)
 
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
