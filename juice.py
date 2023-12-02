@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     if inputfile == NOINPUT or juicetype == NOINPUT:
         print("Usage: python3 juice.py -i <inputfile> -t [unit | filter | join]")
-        exit(0)
+        sys.exit()
 
     if juicetype == UNIT:
         task = UnitJuiceTask(inputfile)
