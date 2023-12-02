@@ -14,7 +14,6 @@ import (
 type MapleJuiceType int
 type PartitioningType int
 type SQLCommandType uint16
-
 const HASH PartitioningType = 0
 const RANGE PartitioningType = 1
 
