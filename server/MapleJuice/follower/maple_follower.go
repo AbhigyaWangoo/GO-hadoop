@@ -102,7 +102,7 @@ func readAndStoreKeyValues(inputFp *os.File, blockIdx uint32, sdfsPrefix string,
 
 func getKeyValueFromLine(line string) (key string, value string) {
 
-	regexPattern := `\[(?P<key>\w+):\s*(?P<value>\w+)\]`
+	regexPattern := `\[(?P<key>(.+)):\s*(?P<value>(.+))\]`
 
 	regex := regexp.MustCompile(regexPattern)
 
