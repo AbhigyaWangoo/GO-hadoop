@@ -37,6 +37,8 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		ExecFileArguments: ExecFileArgs,
 	}
 
+	filesRead := make([]*os.File, 0)
+
 	sdfsFileNames := sdfsfuncs.InitiateLsWithPrefix(SdfsSrcDataset)
 	for _, sdfsFile := range sdfsFileNames {
 		blockLocations, locationErr := sdfsfuncs.SdfsClientMain(sdfsFile, true)
@@ -53,9 +55,31 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 			continue
 		}
 		defer fp.Close()
+		filesRead = append(filesRead, fp)
 
 		ipsToConnections = sendAllLinesInAFile(mapleIps, ipsToConnections, fp, mapleTask)
+	}
 
+	for {
+		numFailures := 0
+		maplesToRedo := make([]string, 0)
+
+		for _, ip := range mapleIps {
+			if ip == "redo" {
+				numFailures++
+				maplesToRedo = append(maplesToRedo, getMapleIps(uint32(1))[0])
+			} else {
+				maplesToRedo = append(maplesToRedo, "")
+			}
+		}
+
+		if numFailures != 0 {
+			for _, fp := range filesRead {
+				sendAllLinesInAFile(maplesToRedo, ipsToConnections, fp, mapleTask)
+			}
+		} else {
+			break
+		}
 	}
 
 	for _, conn := range ipsToConnections {
@@ -100,28 +124,45 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 }
 
 func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn, fp *os.File, mapleTask mapleutils.MapleJuiceTask) map[string]net.Conn {
+	fp.Seek(0, 0)
 	scanner := bufio.NewScanner(fp)
 
-	nodeDesignation := uint32(0)
+	// nodeDesignation := uint32(0)
 	numlines := 0
 	for scanner.Scan() {
 		line := scanner.Text()
-		ip := getPartitionIp(line, mapleIps)
+		ip, ipIdx := getPartitionIp(line, mapleIps)
+		if ip == "" || ip == "redo" {
+			continue
+		}
 		conn, exists := ipsToConnections[ip]
 		if !exists {
 			log.Printf(ip)
-			conn, _ = sdfsutils.OpenTCPConnection(ip, mapleutils.MAPLE_JUICE_PORT)
+			conn, err := sdfsutils.OpenTCPConnection(ip, mapleutils.MAPLE_JUICE_PORT)
+			if err != nil {
+				mapleIps[ipIdx] = "redo"
+			}
 			ipsToConnections[ip] = conn
+			mapleTask.NodeDesignation = ipIdx
 
-			mapleTask.NodeDesignation = nodeDesignation
-			conn.Write(mapleTask.Marshal())
-			conn.Write([]byte{'\n'})
-
-			nodeDesignation++
+			_, err = conn.Write(mapleTask.Marshal())
+			if err != nil {
+				mapleIps[ipIdx] = "redo"
+			}
+			_, err = conn.Write([]byte{'\n'})
+			if err != nil {
+				mapleIps[ipIdx] = "redo"
+			}
 			sdfsutils.ReadSmallAck(conn)
 		}
-		conn.Write([]byte(line))
-		conn.Write([]byte{'\n'})
+		_, err := conn.Write([]byte(line))
+		if err != nil {
+			mapleIps[ipIdx] = "redo"
+		}
+		_, err = conn.Write([]byte{'\n'})
+		if err != nil {
+			mapleIps[ipIdx] = "redo"
+		}
 		numlines += 1
 	}
 	fmt.Printf("Read %d lines in maple task\n", numlines)
@@ -133,9 +174,10 @@ func getMapleIps(nMaples uint32) []string {
 	return kRandomIpAddrs
 }
 
-func getPartitionIp(key string, ips []string) string {
+func getPartitionIp(key string, ips []string) (string, uint32) {
 	numPartitions := uint32(len(ips))
-	return ips[hashFunction(key, numPartitions)]
+	ipIdx := hashFunction(key, numPartitions)
+	return ips[ipIdx], ipIdx
 }
 
 func hashFunction(key string, numPartitions uint32) uint32 {

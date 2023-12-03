@@ -2,6 +2,7 @@ package maplejuice
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -64,7 +65,7 @@ func readAndStoreKeyValues(inputFp *os.File, blockIdx uint32, sdfsPrefix string,
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Println("Error reading file:", err)
+		fmt.Println("Error reading file:", err)
 	}
 
 	for key, _ := range keyToFp {
@@ -101,7 +102,7 @@ func readAndStoreKeyValues(inputFp *os.File, blockIdx uint32, sdfsPrefix string,
 
 func getKeyValueFromLine(line string) (key string, value string) {
 
-	regexPattern := `\[(?P<key>(.+)):\s(?P<value>(.+))\]`
+	regexPattern := `\[(?P<key>\w+):\s*(?P<value>\w+)\]`
 
 	regex := regexp.MustCompile(regexPattern)
 
@@ -144,15 +145,13 @@ func getExecutableOutput(conn net.Conn, sdfsPrefix string, executableFileName st
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Println("Error reading from stdout pipe:", err)
+		fmt.Println("Error reading from stdout pipe:", err)
 	}
 
 	err = cmd.Wait()
 	if err != nil {
-		log.Println("Error waiting for command to finish:", err)
+		fmt.Println("Error waiting for command to finish:", err)
 	}
-
-	// log.Fatalf("Finished")
 
 	return execOutputFp
 }
