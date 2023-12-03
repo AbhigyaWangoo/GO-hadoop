@@ -37,6 +37,13 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 
 	ParseOutput(Task.NodeDesignation, string(output), dst_file, Task.NumberOfMJTasks*uint32(sdfsutils.BLOCK_SIZE))
 	fmt.Println("parsed output on juice task")
+
+	remoteAddr := (*conn).RemoteAddr()
+
+	// Convert to a TCP address
+	tcpAddr, _ := remoteAddr.(*net.TCPAddr)
+
+	sdfsutils.OpenTCPConnection(tcpAddr.IP.String(), maplejuiceutils.MAPLE_JUICE_ACK_PORT)
 }
 
 func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string, FileSize uint32) error {

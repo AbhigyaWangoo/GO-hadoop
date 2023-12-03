@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	maplejuiceUtils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
+	mapleutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	sdfs_client "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
 	sdfsutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
@@ -39,6 +40,37 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 
 		i++
 	}
+
+
+	
+
+	tcpConn, listenError := sdfsutils.ListenOnTCPConnection(mapleutils.MAPLE_JUICE_ACK_PORT)
+	if listenError != nil {
+		fmt.Printf("Error listening on port %s", mapleutils.MAPLE_JUICE_ACK_PORT)
+		return
+	}
+	defer tcpConn.Close()
+
+	fmt.Println("maplejuiceack client is listening on local machine")
+
+	numAcksRecieved := uint32(0)
+	for {
+		if numAcksRecieved == NJuices {
+			break
+		}
+		// Read data from the TCP connection
+		conn, err := tcpConn.Accept()
+		// conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
+
+		if err != nil {
+			fmt.Println("Error accepting tcp connection:", err)
+			continue
+		}
+
+		numAcksRecieved++
+		conn.Close()
+	}
+
 }
 
 func PartitionKeys(SdfsPrefixKeys []string, JuiceDsts []string, Partition maplejuiceUtils.PartitioningType) map[string][]string {
@@ -77,7 +109,7 @@ func PartitionKeys(SdfsPrefixKeys []string, JuiceDsts []string, Partition maplej
 		} else {
 			rv[ipaddr] = append(val, key)
 		}
-	} 
+	}
 
 	return rv
 }
@@ -87,13 +119,12 @@ func SendJuiceTask(ipDest string, sdfsKeyFiles []string, nodeIdx uint32, localEx
 		return errors.New("Ip destination was empty for sending juice task")
 	}
 
-	
 	for _, sdfsKeyFile := range sdfsKeyFiles {
 		conn, err := sdfsutils.OpenTCPConnection(ipDest, maplejuiceUtils.MAPLE_JUICE_PORT)
 		if err != nil {
 			return err
 		}
-		
+
 		Task := maplejuiceUtils.MapleJuiceTask{
 			Type:            maplejuiceUtils.JUICE,
 			NodeDesignation: nodeIdx,
@@ -102,22 +133,22 @@ func SendJuiceTask(ipDest string, sdfsKeyFiles []string, nodeIdx uint32, localEx
 			NumberOfMJTasks: nJuices,
 			SdfsDst:         sdfsDst,
 		}
-		
+
 		arr := Task.Marshal()
 		_, err = conn.Write(arr)
 		fmt.Println("Sent juice task to end node ", ipDest)
 		if err != nil {
 			return err
 		}
-		
+
 		n, err := conn.Write([]byte("\n"))
 		if err != nil || n != 1 {
 			return err
 		}
-		
+
 		// sdfsutils.ReadSmallAck(conn)
 		conn.Close()
 	}
-	
+
 	return nil
 }

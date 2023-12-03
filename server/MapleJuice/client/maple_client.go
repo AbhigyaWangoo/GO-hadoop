@@ -55,25 +55,6 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 
 	}
 
-	// entries, err := os.ReadDir("mapTestDir/")
-	// if err != nil {
-	// 	fmt.Println("Error reading directory:", err)
-	// 	return
-	// }
-
-	// for _, entry := range entries {
-	// 	fileName := filepath.Join("mapTestDir/", entry.Name())
-
-	// 	if entry.IsDir() {
-	// 		continue
-	// 	}
-
-	// 	fp := mapleutils.OpenFile(fileName, os.O_RDONLY)
-	// 	defer fp.Close()
-
-	// 	ipsToConnections = sendAllLinesInAFile(mapleIps, ipsToConnections, fp, mapleTask)
-	// }
-
 	for _, conn := range ipsToConnections {
 		conn.Close()
 		fmt.Println("Closed connection")
@@ -105,8 +86,6 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		numAcksRecieved++
 		conn.Close()
 	}
-
-	log.Println()
 
 	// Initiates the Maple phase via client command
 
