@@ -120,6 +120,68 @@ class JoinR1JuiceJob(MapleJob):
         except Exception as e:
             print(f"Error: {e}")
         sys.stdout.flush()
+    
+class CompositionMapleJob(MapleJob):
+    def __init__(self, input_file: str, line_regex: str) -> None:
+        self.line_regex = line_regex
+        super().__init__(input_file)
+
+    def process_file(self):
+        try:
+            firstLine = True
+            columnIdx = -1
+            # Open the input file for reading
+            with open(self.input_file, 'r') as file:
+                # Read and print each line
+                for line in file:
+                    line = line.strip()
+                    line = line.split(',')
+                    if firstLine:
+                        firstLine = False
+                        for i, columnNames in enumerate(line):
+                            if columnNames == "Interconne":
+                                columnIdx = i
+                                break
+                        continue
+                    if line[columnIdx] == self.line_regex:
+                        if line[columnIdx-1] == " ":
+                            line[columnIdx-1] = ""
+                        sys.stdout.write('[' + line[columnIdx] + ': ' + line[columnIdx-1] + ']\n')
+                    
+        except FileNotFoundError:
+            print(f"Error: File '{self.input_file}' not found.")
+        except Exception as e:
+            print(f"Error: {e}")
+        sys.stdout.flush()
+
+class CompositionJuiceJob(MapleJob): # Should only be 1 reduce job
+    def __init__(self, input_file: str) -> None:
+        super().__init__(input_file)
+
+    def process_file(self):
+        try:
+            aggregation = {}
+            # Open the input file for reading
+            with open(self.input_file, 'r') as file:
+                # Read and print each line
+                totalNumElements = 0
+                for line in file:
+                    line = line.strip()
+                    parsed = line.split(':')
+                    key = parsed[0][1:]
+                    value = parsed[1][1:-1]
+                    if value in aggregation:
+                        aggregation[value] += 1
+                    else:
+                        aggregation[value] = 1
+                    totalNumElements += 1
+                for key, value in aggregation.items():
+                    sys.stdout.write('[' + key + ': ' + str(value/totalNumElements) + ']\n')
+        except FileNotFoundError:
+            print(f"Error: File '{self.input_file}' not found.")
+        except Exception as e:
+            print(f"Error: {e}")
+        sys.stdout.flush()
 # class JoinMapleJob(MapleJob):
 #     def __init__(self, input_file: str, line_regex: str) -> None:
 #         self.line_regex = f'({line_regex})'
@@ -148,7 +210,9 @@ if __name__ == "__main__":
 
     # maple=UnitMapleJob(input_file)
     regex = args.pattern
-    maple=FilterMapleJob(input_file, regex)
+    # maple=CompositionMapleJob(input_file, regex)
+    maple=CompositionJuiceJob(input_file)
+
 
     # Process the file
     maple.process_file()

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -64,4 +65,15 @@ func sqlCommandParsing(command string) (maplejuiceutils.SQLCommandType, map[stri
 
 	// No match found
 	return maplejuiceutils.INVALID_COMMAND, nil, fmt.Errorf("No match found for the input command")
+}
+
+func ProcessCompositionCommand(args []string) {
+	pattern := args[1]
+	numMaples, _ := strconv.Atoi(args[2])
+	numJuices, _ := strconv.Atoi(args[3])
+	randomHash, _ := maplejuiceclient.GenerateRandomHash()
+	maplejuiceclient.InitiateMaplePhase("composition_map_exec", uint32(numMaples), "composition_map_out"+randomHash, "composition_data", []string{"-p", pattern})
+	time.Sleep(time.Second)
+	maplejuiceclient.InitiateJuicePhase("composition_reduce_exec", uint32(numJuices), "composition_map_out"+randomHash, "composition_data_out", false, maplejuiceutils.HASH)
+
 }

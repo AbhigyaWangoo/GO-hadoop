@@ -155,6 +155,9 @@ func RunCLI() {
 			// command, output, _ := sqlcommands.SqlCommandParsing(command)
 			// log.Println(command)
 			// log.Println(output)
+		} else if strings.Contains(commandArgs[0], "composition") {
+			sqlcommands.ProcessCompositionCommand(commandArgs)
+
 		} else {
 			error_msg := `
 			Command not understood. Available commands are as follows:
