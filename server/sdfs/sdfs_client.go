@@ -217,12 +217,11 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 func InitiateGetCommand(sdfsFilename string, localfilename string, blockLocationArr [][]string) {
 	fmt.Printf("localfilename: %s sdfs: %s\n", localfilename, sdfsFilename)
 
-	fp, err := os.OpenFile(localfilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
-	if err != nil {
-		log.Fatalln("unable to open local file, ", err)
-	}
+	var fp *os.File = nil
 
-	fmt.Println("Unmarshalled block location arr: ", blockLocationArr)
+	log.Println("Unmarshalled block location arr: ", blockLocationArr)
+
+	sdfsFileDataExists := false
 	for blockIdx, replicas := range blockLocationArr {
 		for {
 			randomReplicaIp, err := PopRandomElementInArray(&replicas)
@@ -232,6 +231,12 @@ func InitiateGetCommand(sdfsFilename string, localfilename string, blockLocation
 			}
 			if randomReplicaIp == "w" {
 				continue
+			}
+			if fp == nil {
+				fp, err = os.OpenFile(localfilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+				if err != nil {
+					log.Fatalln("unable to open local file, ", err)
+				}
 			}
 			task := utils.Task{
 				DataTargetIp:        utils.New19Byte(randomReplicaIp),
@@ -266,6 +271,10 @@ func InitiateGetCommand(sdfsFilename string, localfilename string, blockLocation
 			// utils.BufferedReadAndWrite(replicaConnBuf, fp, blockMetadata.DataSize, false, 0)
 			break
 		}
+	}
+
+	if sdfsFileDataExists == false {
+		log.Printf("sdfs file doesn't exist")
 	}
 }
 
