@@ -125,7 +125,7 @@ func getExecutableOutput(conn net.Conn, sdfsPrefix string, executableFileName st
 
 	maplejuiceutils.ReadAllDataFromConn(conn, sdfsPrefix)
 
-	cmd := exec.Command("./"+executableFileName, append([]string{sdfsPrefix}, execArgs...)...)
+	cmd := exec.Command("./"+executableFileName, append([]string{"-f", sdfsPrefix}, execArgs...)...)
 
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {

@@ -17,11 +17,11 @@ func ProcessSQLCommand(command string) {
 	}
 
 	if commandNumber == maplejuiceutils.COMMAND_1 {
-		maplejuiceclient.InitiateMaplePhase("sql_command_1_map_exec", 6, "command_1_map_out", parsedData["dataset"], []string{parsedData["condition"]})
+		maplejuiceclient.InitiateMaplePhase("sql_command_1_map_exec", 6, "command_1_map_out", parsedData["dataset"], []string{"-p", parsedData["Pattern"]})
 		maplejuiceclient.InitiateJuicePhase("sql_command_1_reduce_exec", 6, "command_1_map_out", "command_1_reduce_out", false, maplejuiceutils.HASH)
 		// maplejuiceclient.InitiateJuicePhase()
 	} else if commandNumber == maplejuiceutils.COMMAND_2 {
-		maplejuiceclient.InitiateMaplePhase("sql_command_2_exec", 6, "command_2_out", parsedData["D1"], []string{parsedData["condition"]})
+		maplejuiceclient.InitiateMaplePhase("sql_command_2_exec", 6, "command_2_out", parsedData["D1"], []string{parsedData["Pattern"]})
 	}
 }
 
@@ -33,8 +33,8 @@ func sqlCommandParsing(command string) (maplejuiceutils.SQLCommandType, map[stri
 	// Check for a match with the first command
 	if matches := regex1.FindStringSubmatch(command); len(matches) == 3 {
 		return maplejuiceutils.COMMAND_1, map[string]string{
-			"Dataset":   matches[1],
-			"Condition": matches[2],
+			"Dataset": matches[1],
+			"Pattern": matches[2],
 		}, nil
 	}
 
