@@ -69,10 +69,11 @@ func sqlCommandParsing(command string) (maplejuiceutils.SQLCommandType, map[stri
 
 func ProcessCompositionCommand(args []string) {
 	pattern := args[1]
-	numMaples, _ := strconv.Atoi(args[2])
-	numJuices, _ := strconv.Atoi(args[3])
+	srcDataset := args[2]
+	numMaples, _ := strconv.Atoi(args[3])
+	numJuices, _ := strconv.Atoi(args[4])
 	randomHash, _ := maplejuiceclient.GenerateRandomHash()
-	maplejuiceclient.InitiateMaplePhase("composition_map_exec", uint32(numMaples), "composition_map_out"+randomHash, "composition_data", []string{"-p", pattern})
+	maplejuiceclient.InitiateMaplePhase("composition_map_exec", uint32(numMaples), "composition_map_out"+randomHash, srcDataset, []string{"-p", pattern})
 	time.Sleep(time.Second)
 	maplejuiceclient.InitiateJuicePhase("composition_reduce_exec", uint32(numJuices), "composition_map_out"+randomHash, "composition_data_out", false, maplejuiceutils.HASH)
 
