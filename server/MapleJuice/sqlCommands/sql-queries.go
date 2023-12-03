@@ -21,6 +21,7 @@ func ProcessSQLCommand(command string) {
 		log.Println(parsedData)
 		sdfs.CLIDelete("command_1_map_out")
 		sdfs.CLIDelete("command_1_reduce_out")
+
 		maplejuiceclient.InitiateMaplePhase("sql_command_1_map_exec", 1, "command_1_map_out", parsedData["Dataset"], []string{"-p", parsedData["Pattern"]})
 		maplejuiceclient.InitiateJuicePhase("sql_command_1_reduce_exec", 1, "command_1_map_out", "command_1_reduce_out", false, maplejuiceutils.HASH)
 		// maplejuiceclient.InitiateJuicePhase()

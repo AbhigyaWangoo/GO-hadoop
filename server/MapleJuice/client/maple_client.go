@@ -49,6 +49,9 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		sdfsfuncs.InitiateGetCommand(sdfsFile, randomHash+sdfsFile, blockLocations)
 
 		fp := mapleutils.OpenFile(randomHash+sdfsFile, os.O_RDONLY)
+		if fp == nil {
+			continue
+		}
 		defer fp.Close()
 
 		ipsToConnections = sendAllLinesInAFile(mapleIps, ipsToConnections, fp, mapleTask)

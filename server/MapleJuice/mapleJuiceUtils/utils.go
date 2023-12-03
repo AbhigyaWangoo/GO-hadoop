@@ -100,7 +100,7 @@ func ReadAllDataFromConn(conn net.Conn, outputFileName string) {
 func OpenFile(fileName string, permissions int) *os.File {
 	fp, err := os.OpenFile(fileName, permissions, 0644)
 	if err != nil {
-		log.Fatalf("Error opening or creating the file:", err)
+		// log.f("Error opening or creating the file:", err)
 		return nil
 	}
 	return fp
