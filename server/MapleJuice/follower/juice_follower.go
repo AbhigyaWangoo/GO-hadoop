@@ -22,10 +22,11 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 
 	// CLI GET file locally
 	sdfs.CLIGet(SdfsFilename, SdfsFilename)
+	sdfs.CLIDelete(SdfsFilename)
 	fmt.Println("Got file in juice follower: ", Task.SdfsPrefix)
 
 	// Run exec file on input file
-	cmd := exec.Command(juice_exec, append([]string{"-i", SdfsFilename}, Task.ExecFileArguments...)...)
+	cmd := exec.Command("./"+juice_exec, append([]string{"-i", SdfsFilename}, Task.ExecFileArguments...)...)
 
 	output, err := cmd.CombinedOutput()
 	fmt.Println("Ran juice cmd", juice_exec)
@@ -38,12 +39,15 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 	ParseOutput(Task.NodeDesignation, string(output), dst_file, Task.NumberOfMJTasks*uint32(sdfsutils.BLOCK_SIZE))
 	fmt.Println("parsed output on juice task")
 
+	os.RemoveAll(SdfsFilename)
+
 	remoteAddr := (*conn).RemoteAddr()
 
 	// Convert to a TCP address
 	tcpAddr, _ := remoteAddr.(*net.TCPAddr)
 
 	sdfsutils.OpenTCPConnection(tcpAddr.IP.String(), maplejuiceutils.MAPLE_JUICE_ACK_PORT)
+
 }
 
 func ParseOutput(nodeIdx uint32, output string, dstSdfsFile string, FileSize uint32) error {

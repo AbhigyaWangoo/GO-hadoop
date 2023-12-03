@@ -83,7 +83,7 @@ func SdfsClientMain(SdfsFilename string, WaitForUpdate bool) ([][]string, error)
 
 	for WorkInProgress {
 		blockLocationArr, blockErr = RequestBlockMappings(SdfsFilename)
-		
+
 		if blockErr != nil {
 			fmt.Println("Could not fetch block locations from master in client main")
 			return blockLocationArr, blockErr
@@ -217,7 +217,7 @@ func InitiatePutCommand(LocalFilename string, SdfsFilename string) {
 func InitiateGetCommand(sdfsFilename string, localfilename string, blockLocationArr [][]string) {
 	fmt.Printf("localfilename: %s sdfs: %s\n", localfilename, sdfsFilename)
 
-	fp, err := os.OpenFile(localfilename, os.O_CREATE|os.O_WRONLY, 0666)
+	fp, err := os.OpenFile(localfilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
 		log.Fatalln("unable to open local file, ", err)
 	}

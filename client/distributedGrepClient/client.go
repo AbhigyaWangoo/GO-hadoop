@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -23,14 +24,14 @@ var mu sync.Mutex
 
 func InitializeClient() {
 	if len(os.Args) != 2 {
-		fmt.Println("Usage: go run client.go <grep pattern>")
+		log.Println("Usage: go run client.go <grep pattern>")
 		return
 	}
 	machine_file := "../logs/machine.txt"
 
 	content, read_err := os.ReadFile(machine_file)
 	if read_err != nil {
-		fmt.Println("SERVER:99 = Error:", read_err)
+		log.Println("SERVER:99 = Error:", read_err)
 		return
 	}
 

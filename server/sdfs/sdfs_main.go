@@ -115,3 +115,13 @@ func CLIGet(sdfsFileName string, localfilename string) {
 
 	InitiateGetCommand(sdfsFileName, localfilename, locations)
 }
+
+func CLIDelete(sdfsFileName string) {
+	locations, locationErr := SdfsClientMain(sdfsFileName, false)
+	if locationErr != nil {
+		fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
+		return
+	}
+
+	InitiateDeleteCommand(sdfsFileName, locations)
+}
