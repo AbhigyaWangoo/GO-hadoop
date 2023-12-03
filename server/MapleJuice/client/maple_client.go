@@ -2,12 +2,14 @@ package maplejuice
 
 import (
 	"bufio"
+	"crypto/rand"
 	"fmt"
 	"hash/crc32"
+	"hash/fnv"
 	"log"
+	"math/big"
 	"net"
 	"os"
-	"path/filepath"
 
 	mapleutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
@@ -22,28 +24,10 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 	// 	fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
 	// 	return
 	// }
-
-	sdfsFileNames := sdfsfuncs.InitiateLsWithPrefix(SdfsSrcDataset)
-	for _, sdfsFile := range sdfsFileNames {
-		blockLocations, locationErr := sdfsfuncs.SdfsClientMain(sdfsFile, true)
-		if locationErr != nil {
-			fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
-			return
-		}
-		log.Println(sdfsFile)
-		sdfsfuncs.InitiateGetCommand(sdfsFile, "mapTestDir/"+sdfsFile, blockLocations)
-	}
-
 	ipsToConnections := make(map[string]net.Conn)
 
 	// sdfsclient.InitiateGetCommand(SdfsSrcDataset, SdfsSrcDataset, locations)
 	mapleIps := getMapleIps(nMaples)
-
-	entries, err := os.ReadDir("mapTestDir/")
-	if err != nil {
-		fmt.Println("Error reading directory:", err)
-		return
-	}
 
 	mapleTask := mapleutils.MapleJuiceTask{
 		Type:              mapleutils.MAPLE,
@@ -53,18 +37,42 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		ExecFileArguments: ExecFileArgs,
 	}
 
-	for _, entry := range entries {
-		fileName := filepath.Join("mapTestDir/", entry.Name())
-
-		if entry.IsDir() {
-			continue
+	sdfsFileNames := sdfsfuncs.InitiateLsWithPrefix(SdfsSrcDataset)
+	for _, sdfsFile := range sdfsFileNames {
+		blockLocations, locationErr := sdfsfuncs.SdfsClientMain(sdfsFile, true)
+		if locationErr != nil {
+			fmt.Println("Error with sdfsclient main. Aborting Get command: ", locationErr)
+			return
 		}
+		log.Println(sdfsFile)
+		randomHash, _ := generateRandomHash()
+		sdfsfuncs.InitiateGetCommand(sdfsFile, randomHash+sdfsFile, blockLocations)
 
-		fp := mapleutils.OpenFile(fileName, os.O_RDONLY)
+		fp := mapleutils.OpenFile(randomHash+sdfsFile, os.O_RDONLY)
 		defer fp.Close()
 
 		ipsToConnections = sendAllLinesInAFile(mapleIps, ipsToConnections, fp, mapleTask)
+
 	}
+
+	// entries, err := os.ReadDir("mapTestDir/")
+	// if err != nil {
+	// 	fmt.Println("Error reading directory:", err)
+	// 	return
+	// }
+
+	// for _, entry := range entries {
+	// 	fileName := filepath.Join("mapTestDir/", entry.Name())
+
+	// 	if entry.IsDir() {
+	// 		continue
+	// 	}
+
+	// 	fp := mapleutils.OpenFile(fileName, os.O_RDONLY)
+	// 	defer fp.Close()
+
+	// 	ipsToConnections = sendAllLinesInAFile(mapleIps, ipsToConnections, fp, mapleTask)
+	// }
 
 	for _, conn := range ipsToConnections {
 		conn.Close()
@@ -97,6 +105,8 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		numAcksRecieved++
 		conn.Close()
 	}
+
+	log.Println()
 
 	// Initiates the Maple phase via client command
 
@@ -152,3 +162,22 @@ func hashFunction(key string, numPartitions uint32) uint32 {
 }
 
 // maple map_executable 1 prefix mapTestDir
+
+func generateRandomHash() (string, error) {
+	randomNum, err := rand.Int(rand.Reader, big.NewInt(100000))
+	if err != nil {
+		return "", err
+	}
+
+	randomStr := randomNum.String()
+
+	hasher := fnv.New32()
+
+	hasher.Write([]byte(randomStr))
+
+	hashSum := hasher.Sum32() % 100000
+
+	hashString := fmt.Sprintf("%05d", hashSum)
+
+	return hashString, nil
+}
