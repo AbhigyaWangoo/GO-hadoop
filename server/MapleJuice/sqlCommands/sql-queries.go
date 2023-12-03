@@ -22,8 +22,8 @@ func ProcessSQLCommand(command string) {
 		sdfs.CLIDelete("command_1_map_out")
 		sdfs.CLIDelete("command_1_reduce_out")
 
-		maplejuiceclient.InitiateMaplePhase("sql_command_1_map_exec", 1, "command_1_map_out", parsedData["Dataset"], []string{"-p", parsedData["Pattern"]})
-		maplejuiceclient.InitiateJuicePhase("sql_command_1_reduce_exec", 1, "command_1_map_out", "command_1_reduce_out", false, maplejuiceutils.HASH)
+		maplejuiceclient.InitiateMaplePhase("sql_command_1_map_exec", 2, "command_1_map_out", parsedData["Dataset"], []string{"-p", parsedData["Pattern"]})
+		maplejuiceclient.InitiateJuicePhase("sql_command_1_reduce_exec", 2, "command_1_map_out", "command_1_reduce_out", false, maplejuiceutils.HASH)
 		// maplejuiceclient.InitiateJuicePhase()
 	} else if commandNumber == maplejuiceutils.COMMAND_2 {
 		maplejuiceclient.InitiateMaplePhase("sql_command_2_exec_1", 6, "command_2_M1", parsedData["D1"], []string{parsedData["LeftCondition"]})

@@ -22,7 +22,7 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 
 	// CLI GET file locally
 	sdfs.CLIGet(SdfsFilename, SdfsFilename)
-	sdfs.CLIDelete(SdfsFilename)
+	// sdfs.CLIDelete(SdfsFilename)
 	fmt.Println("Got file in juice follower: ", Task.SdfsPrefix)
 
 	// Run exec file on input file
