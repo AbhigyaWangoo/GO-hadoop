@@ -8,7 +8,7 @@ import (
 
 	maplejuiceclient "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/client"
 	maplejuiceutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
-	sdfs "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
+	"gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs"
 )
 
 func ProcessSQLCommand(command string) {
@@ -19,17 +19,19 @@ func ProcessSQLCommand(command string) {
 
 	if commandNumber == maplejuiceutils.COMMAND_1 {
 		log.Println(parsedData)
-		sdfs.CLIDelete("command_1_map_out")
+		// sdfs.CLIDelete("command_1_map_out")
 		sdfs.CLIDelete("command_1_reduce_out")
 
-		maplejuiceclient.InitiateMaplePhase("sql_command_1_map_exec", 2, "command_1_map_out", parsedData["Dataset"], []string{"-p", parsedData["Pattern"]})
-		maplejuiceclient.InitiateJuicePhase("sql_command_1_reduce_exec", 2, "command_1_map_out", "command_1_reduce_out", false, maplejuiceutils.HASH)
+		randomHash, _ := maplejuiceclient.GenerateRandomHash()
+
+		maplejuiceclient.InitiateMaplePhase("sql_command_1_map_exec", 2, "command_1_map_out"+randomHash, parsedData["Dataset"], []string{"-p", parsedData["Pattern"]})
+		maplejuiceclient.InitiateJuicePhase("sql_command_1_reduce_exec", 2, "command_1_map_out"+randomHash, "command_1_reduce_out", false, maplejuiceutils.HASH)
 		// maplejuiceclient.InitiateJuicePhase()
 	} else if commandNumber == maplejuiceutils.COMMAND_2 {
 		maplejuiceclient.InitiateMaplePhase("sql_command_2_exec_1", 6, "command_2_M1", parsedData["D1"], []string{parsedData["LeftCondition"]})
 		maplejuiceclient.InitiateMaplePhase("sql_command_2_exec_1", 6, "command_2_M2", parsedData["D2"], []string{parsedData["RightCondition"]})
-		maplejuiceclient.InitiateJuicePhase("sql_command_2_reduce_exec_1", 6, "command_2_m1", "command_2_R1", false, maplejuiceutils.HASH)
-		maplejuiceclient.InitiateJuicePhase("sql_command_2_reduce_exec_1", 6, "command_2_m1", "command_2_R2", false, maplejuiceutils.HASH)
+		maplejuiceclient.InitiateJuicePhase("sql_command_2_reduce_exec_1", 6, "command_2_m1", "command_2_R", false, maplejuiceutils.HASH)
+		maplejuiceclient.InitiateJuicePhase("sql_command_2_reduce_exec_1", 6, "command_2_m1", "command_2_R", false, maplejuiceutils.HASH)
 		maplejuiceclient.InitiateMaplePhase("sql_command_2_exec_1", 6, "command_2_M1", parsedData["D1"], []string{parsedData["LeftCondition"]})
 
 	}

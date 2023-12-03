@@ -47,7 +47,7 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 			return
 		}
 		log.Println(sdfsFile)
-		randomHash, _ := generateRandomHash()
+		randomHash, _ := GenerateRandomHash()
 		sdfsfuncs.InitiateGetCommand(sdfsFile, randomHash+sdfsFile, blockLocations)
 
 		fp := mapleutils.OpenFile(randomHash+sdfsFile, os.O_RDONLY)
@@ -190,7 +190,7 @@ func hashFunction(key string, numPartitions uint32) uint32 {
 
 // maple map_executable 1 prefix mapTestDir
 
-func generateRandomHash() (string, error) {
+func GenerateRandomHash() (string, error) {
 	randomNum, err := rand.Int(rand.Reader, big.NewInt(100000))
 	if err != nil {
 		return "", err

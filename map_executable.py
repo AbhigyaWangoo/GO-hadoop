@@ -57,6 +57,69 @@ class FilterMapleJob(MapleJob):
             print(f"Error: {e}")
         sys.stdout.flush()
 
+class JoinM1MapleJob(MapleJob):
+    def __init__(self, input_file: str, column_name: str) -> None:
+        self.column_name = column_name
+        super().__init__(input_file)
+
+    def process_file(self):
+        try:
+            columnIdx = -1
+            firstLine = True
+            # Open the input file for reading
+            with open(self.input_file, 'r') as file:
+                # Read and print each line
+                for line in file:
+                    line = line.strip()
+                    lineValues = line.split(',')
+                    if firstLine:
+                        firstLine = False
+                        for i, val in enumerate(lineValues):
+                            if val == self.column_name:
+                                columnIdx = i
+                                break
+                        continue
+                    
+                    key, val = lineValues[columnIdx].strip(), ','.join(lineValues[:columnIdx]+lineValues[columnIdx+1:]).strip()
+                    sys.stdout.write('[' + key + ': ' + val + ']\n')
+        except FileNotFoundError:
+            print(f"Error: File '{self.input_file}' not found.")
+        except Exception as e:
+            print(f"Error: {e}")
+        sys.stdout.flush()
+
+
+class JoinR1JuiceJob(MapleJob):
+    def __init__(self, input_file: str) -> None:
+        super().__init__(input_file)
+
+    def process_file(self):
+        try:
+            aggregation = {}
+            # Open the input file for reading
+            with open(self.input_file, 'r') as file:
+                # Read and print each line
+                for line in file:
+                    line = line.strip()
+                    parsed = line.split(':')
+                    key = parsed[0][1:]
+                    value = parsed[1][1:-1]
+                    if key in aggregation:
+                        aggregation[key].append(value)
+                    else:
+                        aggregation[key] = [value]
+                    
+                for key, value in aggregation:
+                    output = ""
+                    for v in value:
+                        output += v
+                        output += ','
+                    sys.stdout.write('[' + key + ': ' + output[:-1] + ']\n')
+        except FileNotFoundError:
+            print(f"Error: File '{self.input_file}' not found.")
+        except Exception as e:
+            print(f"Error: {e}")
+        sys.stdout.flush()
 # class JoinMapleJob(MapleJob):
 #     def __init__(self, input_file: str, line_regex: str) -> None:
 #         self.line_regex = f'({line_regex})'
