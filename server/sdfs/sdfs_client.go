@@ -238,6 +238,7 @@ func InitiateGetCommand(sdfsFilename string, localfilename string, blockLocation
 					log.Fatalln("unable to open local file, ", err)
 				}
 			}
+			sdfsFileDataExists = true
 			task := utils.Task{
 				DataTargetIp:        utils.New19Byte(randomReplicaIp),
 				AckTargetIp:         utils.New19Byte(gossipUtils.Ip),

@@ -57,7 +57,11 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		defer fp.Close()
 		filesRead = append(filesRead, fp)
 
+		log.Printf("ERROR NOT WITH sending data")
+
 		ipsToConnections = sendAllLinesInAFile(mapleIps, ipsToConnections, fp, mapleTask)
+
+		log.Printf("ERROR WITH sending data")
 	}
 
 	for {
@@ -135,7 +139,8 @@ func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn
 		if ip == "" || ip == "redo" {
 			continue
 		}
-		conn, exists := ipsToConnections[ip]
+		_, exists := ipsToConnections[ip]
+		log.Printf("Connection doesn't exist")
 		if !exists {
 			log.Printf(ip)
 			conn, err := sdfsutils.OpenTCPConnection(ip, mapleutils.MAPLE_JUICE_PORT)
@@ -155,11 +160,13 @@ func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn
 			}
 			sdfsutils.ReadSmallAck(conn)
 		}
-		_, err := conn.Write([]byte(line))
+		log.Printf("Connection exists")
+
+		_, err := ipsToConnections[ip].Write([]byte(line))
 		if err != nil {
 			mapleIps[ipIdx] = "redo"
 		}
-		_, err = conn.Write([]byte{'\n'})
+		_, err = ipsToConnections[ip].Write([]byte{'\n'})
 		if err != nil {
 			mapleIps[ipIdx] = "redo"
 		}
