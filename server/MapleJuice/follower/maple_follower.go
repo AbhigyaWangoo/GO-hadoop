@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"strconv"
 
-	mapleclient "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/client"
 	maplejuiceutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	sdfsutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
@@ -39,16 +38,16 @@ func HandleMapleRequest(Task *maplejuiceutils.MapleJuiceTask, MapleConn net.Conn
 
 	sdfsutils.OpenTCPConnection(tcpAddr.IP.String(), maplejuiceutils.MAPLE_JUICE_ACK_PORT)
 
-	if numMJTasks >= 2 {
-		go func() {
-			replicaIps := mapleclient.GetMapleIps(3)
-			for _, putAck := range putAcksToSend {
-				for _, ip := range replicaIps {
-					ReplicateBlock(sdfsutils.BytesToString(putAck.FileName[:]), putAck.BlockIndex, ip, sdfsutils.BLOCK_SIZE*int64(numMJTasks))
-				}
-			}
-		}()
-	}
+	// if numMJTasks >= 2 {
+	// 	go func() {
+	// 		replicaIps := mapleclient.GetMapleIps(3)
+	// 		for _, putAck := range putAcksToSend {
+	// 			for _, ip := range replicaIps {
+	// 				ReplicateBlock(sdfsutils.BytesToString(putAck.FileName[:]), putAck.BlockIndex, ip, sdfsutils.BLOCK_SIZE*int64(numMJTasks))
+	// 			}
+	// 		}
+	// 	}()
+	// }
 
 	// 1. Take Maple task, Retrieve exec file from sdfs, and [dataset lines] from connection
 	// 2. Run executable on each line of the [dataset lines]

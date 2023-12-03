@@ -5,6 +5,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"time"
 
 	maplejuiceclient "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/client"
 	maplejuiceutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
@@ -25,6 +26,7 @@ func ProcessSQLCommand(command string) {
 		randomHash, _ := maplejuiceclient.GenerateRandomHash()
 
 		maplejuiceclient.InitiateMaplePhase("sql_command_1_map_exec", 2, "command_1_map_out"+randomHash, parsedData["Dataset"], []string{"-p", parsedData["Pattern"]})
+		time.Sleep(time.Second)
 		maplejuiceclient.InitiateJuicePhase("sql_command_1_reduce_exec", 2, "command_1_map_out"+randomHash, "command_1_reduce_out", false, maplejuiceutils.HASH)
 		// maplejuiceclient.InitiateJuicePhase()
 	} else if commandNumber == maplejuiceutils.COMMAND_2 {
