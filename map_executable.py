@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 import re
 import argparse
 
+NOFILE="NOFILE"
+
 class MapleJob(ABC):
     def __init__(self, input_file: str) -> None:
         self.input_file=input_file
@@ -63,8 +65,7 @@ class FilterMapleJob(MapleJob):
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-f", "--inputfile", type=str, default="data.csv")
-    parser.add_argument("-t", "--type", type=str, default="unit")
+    parser.add_argument("-f", "--inputfile", type=str, default="NOFILE")
     parser.add_argument("-p", "--pattern", type=str, default="Video,Radio")
 
     return parser.parse_args()
@@ -75,22 +76,16 @@ if __name__ == "__main__":
     # Get the input file from the command-line arguments
     args = parse_args()
     
-    if len(sys.argv) < 4:
-        print("Usage: python3 script.py -f input_file -t [unit | filter | join] -p <pattern>")
-        sys.exit(1)
 
     input_file = args.inputfile
-    type=args.type
-    if type == "unit":
-        maple=UnitMapleJob(input_file)
-    elif type == "filter":
-        regex = args.pattern
-        maple=FilterMapleJob(input_file, regex)
-    elif type == "join":
-        print("not impl yet")
-    else:
-        print("Usage: python3 script.py input_file -t [unit | filter | join] -p <pattern>")
+    
+    if input_file == NOFILE:
+        print("Usage: ./maplexec -f input_file -p <pattern>")
         sys.exit(1)
+
+    # maple=UnitMapleJob(input_file)
+    regex = args.pattern
+    maple=FilterMapleJob(input_file, regex)
 
     # Process the file
     maple.process_file()

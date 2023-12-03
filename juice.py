@@ -13,7 +13,6 @@ JOIN="join"
 def parse_args(args_list: List[str]):
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--inputfile", type=str, default=NOINPUT)
-    parser.add_argument("-t", "--type", type=str, default=NOINPUT)
     
     return parser.parse_args(args_list)
 
@@ -75,17 +74,13 @@ class JoinJuiceTask(JuiceTask):
 if __name__ == "__main__":
     args = parse_args(sys.argv[1:])
     inputfile = args.inputfile
-    juicetype = args.type
 
-    if inputfile == NOINPUT or juicetype == NOINPUT:
-        print("Usage: python3 juice.py -i <inputfile> -t [unit | filter | join]")
+    if inputfile == NOINPUT:
+        print("Usage: python3 juice.py -i <inputfile>")
         sys.exit()
 
-    if juicetype == UNIT:
-        task = UnitJuiceTask(inputfile)
-    elif juicetype == FILTER:
-        task = FilterJuiceTask(inputfile)
-    elif juicetype == JOIN:
-        task = JoinJuiceTask(inputfile)
+    # task = UnitJuiceTask(inputfile)
+    task = FilterJuiceTask(inputfile)
+    # task = JoinJuiceTask(inputfile)
 
     task.output_task()
