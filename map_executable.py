@@ -24,7 +24,7 @@ class UnitMapleJob(MapleJob):
                 for line in file:
                     line = line.strip()
                     line = line.split(',')
-                    key, val = line[0].strip(), '-'.join(line[1:]).strip()
+                    key, val = line[0].strip(), '_'.join(line[1:]).strip()
                     sys.stdout.write('[' + key + ': ' + val + ']\n')
         except FileNotFoundError:
             print(f"Error: File '{self.input_file}' not found.")
