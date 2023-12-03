@@ -32,7 +32,6 @@ func ProcessSQLCommand(command string) {
 		maplejuiceclient.InitiateJuicePhase("sql_command_2_reduce_exec_1", 6, "command_2_m1", "command_2_R2", false, maplejuiceutils.HASH)
 		maplejuiceclient.InitiateMaplePhase("sql_command_2_exec_1", 6, "command_2_M1", parsedData["D1"], []string{parsedData["LeftCondition"]})
 
-
 	}
 }
 

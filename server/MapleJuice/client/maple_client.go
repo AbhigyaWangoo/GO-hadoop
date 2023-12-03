@@ -27,7 +27,7 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 	ipsToConnections := make(map[string]net.Conn)
 
 	// sdfsclient.InitiateGetCommand(SdfsSrcDataset, SdfsSrcDataset, locations)
-	mapleIps := getMapleIps(nMaples)
+	mapleIps := GetMapleIps(nMaples)
 
 	mapleTask := mapleutils.MapleJuiceTask{
 		Type:              mapleutils.MAPLE,
@@ -57,11 +57,7 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		defer fp.Close()
 		filesRead = append(filesRead, fp)
 
-		log.Printf("ERROR NOT WITH sending data")
-
 		ipsToConnections = sendAllLinesInAFile(mapleIps, ipsToConnections, fp, mapleTask)
-
-		log.Printf("ERROR WITH sending data")
 	}
 
 	for {
@@ -71,7 +67,7 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		for _, ip := range mapleIps {
 			if ip == "redo" {
 				numFailures++
-				maplesToRedo = append(maplesToRedo, getMapleIps(uint32(1))[0])
+				maplesToRedo = append(maplesToRedo, GetMapleIps(uint32(1))[0])
 			} else {
 				maplesToRedo = append(maplesToRedo, "")
 			}
@@ -176,7 +172,7 @@ func sendAllLinesInAFile(mapleIps []string, ipsToConnections map[string]net.Conn
 	return ipsToConnections
 }
 
-func getMapleIps(nMaples uint32) []string {
+func GetMapleIps(nMaples uint32) []string {
 	kRandomIpAddrs := gossiputils.RandomKIpAddrs(int(nMaples), true)
 	return kRandomIpAddrs
 }

@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 
+	mapleclient "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/client"
 	maplejuiceutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/MapleJuice/mapleJuiceUtils"
 	gossiputils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/gossip/gossipUtils"
 	sdfsutils "gitlab.engr.illinois.edu/asehgal4/cs425mps/server/sdfs/sdfsUtils"
@@ -37,6 +38,17 @@ func HandleMapleRequest(Task *maplejuiceutils.MapleJuiceTask, MapleConn net.Conn
 	tcpAddr, _ := remoteAddr.(*net.TCPAddr)
 
 	sdfsutils.OpenTCPConnection(tcpAddr.IP.String(), maplejuiceutils.MAPLE_JUICE_ACK_PORT)
+
+	if numMJTasks >= 2 {
+		go func() {
+			replicaIps := mapleclient.GetMapleIps(3)
+			for _, putAck := range putAcksToSend {
+				for _, ip := range replicaIps {
+					ReplicateBlock(sdfsutils.BytesToString(putAck.FileName[:]), putAck.BlockIndex, ip, sdfsutils.BLOCK_SIZE*int64(numMJTasks))
+				}
+			}
+		}()
+	}
 
 	// 1. Take Maple task, Retrieve exec file from sdfs, and [dataset lines] from connection
 	// 2. Run executable on each line of the [dataset lines]
@@ -154,4 +166,56 @@ func getExecutableOutput(conn net.Conn, sdfsPrefix string, executableFileName st
 	}
 
 	return execOutputFp
+}
+
+func ReplicateBlock(sdfsFilename string, blockIdx int64, ipDst string, OriginalFileSize int64) {
+	fmt.Println("Entering put block")
+	_, fileSize, fp, err := sdfsutils.GetFilePtr(sdfsFilename, fmt.Sprint(blockIdx), os.O_RDONLY)
+	if err != nil {
+		fmt.Println("Couldn't get file pointer", err)
+	}
+
+	blockWritingTask := sdfsutils.Task{
+		DataTargetIp:        sdfsutils.New19Byte(ipDst),
+		AckTargetIp:         sdfsutils.New19Byte(sdfsutils.LEADER_IP),
+		ConnectionOperation: sdfsutils.WRITE,
+		FileName:            sdfsutils.New1024Byte(sdfsFilename),
+		OriginalFileSize:    OriginalFileSize,
+		BlockIndex:          blockIdx,
+		DataSize:            int64(fileSize),
+		IsAck:               false,
+	}
+
+	member, ok := gossiputils.MembershipMap.Get(ipDst)
+	if ipDst == gossiputils.Ip || !ok || member.State == gossiputils.DOWN {
+		return
+	}
+	fmt.Println("Got member from ip target")
+
+	conn, err := sdfsutils.OpenTCPConnection(ipDst, sdfsutils.SDFS_PORT)
+	if err != nil {
+		fmt.Printf("error opening follower connection: %v\n", err)
+		return
+	}
+	fmt.Println("Opened connection to replication target")
+
+	marshalledBytesWritten, writeError := conn.Write(blockWritingTask.Marshal())
+	conn.Write([]byte{'\n'})
+	if writeError != nil {
+		fmt.Printf("Could not write struct to connection in client put: %v\n", writeError)
+	}
+
+	sdfsutils.ReadSmallAck(conn)
+	fmt.Println("Read small ack in put block")
+
+	totalBytesWritten, writeErr := sdfsutils.BufferedWriteToConnection(conn, fp, int64(fileSize), 0)
+	fmt.Println("------BYTES_WRITTEN------: ", totalBytesWritten)
+	fmt.Println("------BYTES_WRITTEN marshalled------: ", marshalledBytesWritten)
+
+	if writeErr != nil { // If failure to write full block, redo loop
+		fmt.Println("connection broke early, rewrite block: ", writeErr)
+		return
+	}
+	sdfsutils.ReadSmallAck(conn)
+	fmt.Println("Read another small ack in put block")
 }
