@@ -57,6 +57,25 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		defer fp.Close()
 		filesRead = append(filesRead, fp)
 
+		for ipIdx, ip := range mapleIps {
+			conn, err := sdfsutils.OpenTCPConnection(ip, mapleutils.MAPLE_JUICE_PORT)
+			if err != nil {
+				mapleIps[ipIdx] = "redo"
+			}
+			ipsToConnections[ip] = conn
+			mapleTask.NodeDesignation = uint32(ipIdx)
+
+			_, err = conn.Write(mapleTask.Marshal())
+			if err != nil {
+				mapleIps[ipIdx] = "redo"
+			}
+			_, err = conn.Write([]byte{'\n'})
+			if err != nil {
+				mapleIps[ipIdx] = "redo"
+			}
+			sdfsutils.ReadSmallAck(conn)
+		}
+
 		ipsToConnections = sendAllLinesInAFile(mapleIps, ipsToConnections, fp, mapleTask)
 	}
 
