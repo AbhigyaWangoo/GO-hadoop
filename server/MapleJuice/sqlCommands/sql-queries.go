@@ -28,8 +28,9 @@ func ProcessSQLCommand(command string) {
 
 		maplejuiceclient.InitiateMaplePhase("sql_command_1_map_exec", 2, "command_1_map_out"+randomHash, parsedData["Dataset"], []string{"-p", parsedData["Pattern"]})
 		time.Sleep(time.Second)
-		maplejuiceclient.InitiateJuicePhase("sql_command_1_reduce_exec", 2, "command_1_map_out"+randomHash, "command_1_reduce_out", false, maplejuiceutils.HASH)
+		maplejuiceclient.InitiateJuicePhase("sql_command_1_reduce_exec", 2, "command_1_map_out"+randomHash, "command_1_reduce_out"+randomHash, false, maplejuiceutils.HASH)
 		// maplejuiceclient.InitiateJuicePhase()
+		fmt.Println("command_1_reduce_out"+randomHash)
 	} else if commandNumber == maplejuiceutils.COMMAND_2 {
 		maplejuiceclient.InitiateMaplePhase("sql_command_2_exec_1", 6, "command_2_M1", parsedData["D1"], []string{parsedData["LeftCondition"]})
 		maplejuiceclient.InitiateMaplePhase("sql_command_2_exec_1", 6, "command_2_M2", parsedData["D2"], []string{parsedData["RightCondition"]})
