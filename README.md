@@ -1,5 +1,17 @@
 # cs425 mps
 
+## MP4
+
+### Usage
+Usage is the same as the other mps. Simply start main.go, and run one of the following commands for maple or juice:
+
+```bash
+maple <local_exec_file> <N maples> <sdfs prefix> <sdfs src dataset>
+juice <local_exec_file> <N juices> <sdfs prefix> <sdfs dst dataset> <delete input 0 | 1> <HASH | RANGE>
+
+SELECT ALL FROM <sdfs dataset> WHERE <pattern>
+```
+
 ## MP3
 
 ### Usage
