@@ -25,8 +25,8 @@ const COMMAND_1 SQLCommandType = 0
 const COMMAND_2 SQLCommandType = 1
 const INVALID_COMMAND SQLCommandType = 2
 
-const MAPLE_JUICE_PORT = "6232"
-const MAPLE_JUICE_ACK_PORT = "8756"
+const MAPLE_JUICE_PORT = "4000"
+const MAPLE_JUICE_ACK_PORT = "4001"
 
 type MapleJuiceTask struct {
 	Type              MapleJuiceType
