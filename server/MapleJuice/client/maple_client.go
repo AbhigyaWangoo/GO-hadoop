@@ -60,39 +60,39 @@ func InitiateMaplePhase(LocalExecFile string, nMaples uint32, SdfsPrefix string,
 		ipsToConnections = sendAllLinesInAFile(mapleIps, ipsToConnections, fp, mapleTask)
 	}
 
-	for {
-		numFailures := 0
-		maplesToRedo := make([]string, 0)
+	// for {
+	// 	numFailures := 0
+	// 	maplesToRedo := make([]string, 0)
 
-		for _, ip := range mapleIps {
-			if ip == "redo" {
-				numFailures++
-				maplesToRedo = append(maplesToRedo, GetMapleIps(uint32(1))[0])
-			} else {
-				maplesToRedo = append(maplesToRedo, "")
-			}
-		}
+	// 	for _, ip := range mapleIps {
+	// 		if ip == "redo" {
+	// 			numFailures++
+	// 			maplesToRedo = append(maplesToRedo, GetMapleIps(uint32(1))[0])
+	// 		} else {
+	// 			maplesToRedo = append(maplesToRedo, "")
+	// 		}
+	// 	}
 
-		if numFailures != 0 {
-			for _, fp := range filesRead {
-				sendAllLinesInAFile(maplesToRedo, ipsToConnections, fp, mapleTask)
-			}
-		} else {
-			break
-		}
-	}
+	// 	if numFailures != 0 {
+	// 		for _, fp := range filesRead {
+	// 			sendAllLinesInAFile(maplesToRedo, ipsToConnections, fp, mapleTask)
+	// 		}
+	// 	} else {
+	// 		break
+	// 	}
+	// }
+
+	tcpConn, listenError := sdfsutils.ListenOnTCPConnection(mapleutils.MAPLE_JUICE_ACK_PORT)
+	defer tcpConn.Close()
 
 	for _, conn := range ipsToConnections {
 		conn.Close()
 		fmt.Println("Closed connection")
 	}
-
-	tcpConn, listenError := sdfsutils.ListenOnTCPConnection(mapleutils.MAPLE_JUICE_ACK_PORT)
 	if listenError != nil {
 		fmt.Printf("Error listening on port %s", mapleutils.MAPLE_JUICE_ACK_PORT)
 		return
 	}
-	defer tcpConn.Close()
 
 	fmt.Println("maplejuiceack client is listening on local machine")
 
