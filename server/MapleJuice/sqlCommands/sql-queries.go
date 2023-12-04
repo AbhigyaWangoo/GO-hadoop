@@ -30,7 +30,7 @@ func ProcessSQLCommand(command string) {
 		time.Sleep(time.Second)
 		maplejuiceclient.InitiateJuicePhase("sql_command_1_reduce_exec", 2, "command_1_map_out"+randomHash, "command_1_reduce_out"+randomHash, false, maplejuiceutils.HASH)
 		// maplejuiceclient.InitiateJuicePhase()
-		fmt.Println("command_1_reduce_out"+randomHash)
+		fmt.Println("command_1_reduce_out" + randomHash)
 	} else if commandNumber == maplejuiceutils.COMMAND_2 {
 		maplejuiceclient.InitiateMaplePhase("sql_command_2_exec_1", 6, "command_2_M1", parsedData["D1"], []string{parsedData["LeftCondition"]})
 		maplejuiceclient.InitiateMaplePhase("sql_command_2_exec_1", 6, "command_2_M2", parsedData["D2"], []string{parsedData["RightCondition"]})
@@ -72,10 +72,14 @@ func ProcessCompositionCommand(args []string) {
 	pattern := args[1]
 	srcDataset := args[2]
 	numMaples, _ := strconv.Atoi(args[3])
-	numJuices, _ := strconv.Atoi(args[4])
+	numJuice, err := strconv.Atoi(strings.TrimSpace(args[4]))
+	if err != nil {
+		log.Printf("PArsing error: ", err)
+	}
 	randomHash, _ := maplejuiceclient.GenerateRandomHash()
+	log.Printf("args: ", args)
 	maplejuiceclient.InitiateMaplePhase("composition_map_exec", uint32(numMaples), "composition_map_out"+randomHash, srcDataset, []string{"-p", pattern})
 	time.Sleep(time.Second)
-	maplejuiceclient.InitiateJuicePhase("composition_reduce_exec", uint32(numJuices), "composition_map_out"+randomHash, "composition_data_out", false, maplejuiceutils.HASH)
+	maplejuiceclient.InitiateJuicePhase("composition_reduce_exec", uint32(numJuice), "composition_map_out"+randomHash, "composition_data_out", false, maplejuiceutils.HASH)
 
 }

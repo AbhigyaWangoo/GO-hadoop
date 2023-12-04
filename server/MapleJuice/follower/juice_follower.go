@@ -26,7 +26,7 @@ func HandleJuiceRequest(Task *maplejuiceutils.MapleJuiceTask, conn *net.Conn) {
 	fmt.Println("Got file in juice follower: ", Task.SdfsPrefix)
 
 	// Run exec file on input file
-	cmd := exec.Command("./"+juice_exec, append([]string{"-i", SdfsFilename}, Task.ExecFileArguments...)...)
+	cmd := exec.Command("./"+juice_exec, append([]string{"-f", SdfsFilename}, Task.ExecFileArguments...)...)
 
 	output, err := cmd.CombinedOutput()
 	fmt.Println("Ran juice cmd", juice_exec)

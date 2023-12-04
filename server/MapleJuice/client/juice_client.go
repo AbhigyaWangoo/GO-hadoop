@@ -21,6 +21,7 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 	fmt.Println(SdfsPrefixKeys)
 
 	// 2. get an array of NJuices IPs from gossip memlist, call it JuiceDsts
+	// log.Printf("Num juices: ", NJuices)
 	JuiceDsts := gossiputils.RandomKIpAddrs(int(NJuices), true)
 	fmt.Println(JuiceDsts)
 
@@ -36,13 +37,10 @@ func InitiateJuicePhase(LocalExecFile string, NJuices uint32, SdfsPrefix string,
 		err := SendJuiceTask(IpAddr, sdfsKeyFiles, i, LocalExecFile, SdfsPrefix, NJuices, SdfsDst)
 		if err != nil {
 			fmt.Printf("Error with sending juice task to ip addr %s, %v\n", IpAddr, err)
-		} 
+		}
 
 		i++
 	}
-
-
-	
 
 	tcpConn, listenError := sdfsutils.ListenOnTCPConnection(mapleutils.MAPLE_JUICE_ACK_PORT)
 	if listenError != nil {
