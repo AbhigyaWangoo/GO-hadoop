@@ -27,7 +27,7 @@ func ProcessSQLCommand(command string) {
 		randomHash, _ := maplejuiceclient.GenerateRandomHash()
 
 		maplejuiceclient.InitiateMaplePhase("sql_command_1_map_exec", 2, "command_1_map_out"+randomHash, parsedData["Dataset"], []string{"-p", parsedData["Pattern"]})
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 2)
 		maplejuiceclient.InitiateJuicePhase("sql_command_1_reduce_exec", 2, "command_1_map_out"+randomHash, "command_1_reduce_out"+randomHash, false, maplejuiceutils.HASH)
 		// maplejuiceclient.InitiateJuicePhase()
 		fmt.Println("command_1_reduce_out" + randomHash)
@@ -79,7 +79,7 @@ func ProcessCompositionCommand(args []string) {
 	randomHash, _ := maplejuiceclient.GenerateRandomHash()
 	log.Printf("args: ", args)
 	maplejuiceclient.InitiateMaplePhase("composition_map_exec", uint32(numMaples), "composition_map_out"+randomHash, srcDataset, []string{"-p", pattern})
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 2)
 	maplejuiceclient.InitiateJuicePhase("composition_reduce_exec", uint32(numJuice), "composition_map_out"+randomHash, "composition_data_out", false, maplejuiceutils.HASH)
 
 }
