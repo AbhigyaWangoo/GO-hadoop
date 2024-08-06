@@ -1,10 +1,6 @@
-# cs425 mps
+# Hadoop
 
-## MP4
-
-Checkout branch ananya-testing.
-
-## MP3
+This is an implementation of Hadoop. We've implemented a custom distributed filesystem called SDFS, as well as our own consensus protocol for failure detection, based loosely on gossip style failure detection.
 
 ### Usage
 
@@ -48,9 +44,7 @@ const (
 )
 ```
 
-## MP2
-
-### Usage
+### Failure detector Usage
 
 In order to start the failure detector, you must first start the introducer server (currently hardcoded to ```172.22.158.162```, or ```fa23-cs425-4902.cs.illinois.edu```). 
 
@@ -97,10 +91,7 @@ git clone https://gitlab.engr.illinois.edu/asehgal4/cs425mps.git
 and treat it like any non-introducer machine, the process of which is outlined in the other machines.
 
 
-
-## MP1 
-
-### Usage
+### Distributed logger Usage
 
 In order to successfully run the distributed grep, complete the following steps:
 
